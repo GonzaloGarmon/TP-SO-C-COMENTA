@@ -5,4 +5,7 @@
 int main(int argc, char* argv[]) {
     decir_hola("Kernel");
     return 0;
+    decir_hola("Kernel");
+    decir_hola("Kernel");
+
 }
