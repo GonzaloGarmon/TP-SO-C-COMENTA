@@ -7,5 +7,5 @@ int main(int argc, char* argv[]) {
     return 0;
     decir_hola("Kernel");
     decir_hola("Kernel");
-
+    decir_hola("Kernel");
 }
