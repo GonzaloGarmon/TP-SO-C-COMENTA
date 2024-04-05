@@ -29,9 +29,7 @@ int main(int argc, char* argv[]) {
     
     log_info(log_cpu, "finalizo conexion con cliente");
 
-    //comentado para que arranque el server y no tire error de conexion
-    //establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
-
+    establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
 
     return 0;
 }

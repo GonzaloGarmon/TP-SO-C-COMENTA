@@ -19,7 +19,8 @@ char* block_count;
 
 int conexion_entradasalida;
 
-void establecer_conexion(char * ip_kernel, char* puerto_kernel, t_config* config, t_log* logger);
+void establecer_conexion_kernel(char * ip_kernel, char* puerto_kernel, t_config* config, t_log* logger);
+void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
 
 
 #endif

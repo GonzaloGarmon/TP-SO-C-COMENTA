@@ -34,10 +34,10 @@ int main(int argc, char* argv[]) {
     
     log_info(log_kernel, "finalizo conexion con cliente");
 
-    //comentado para que arranque el server y no tire error de conexion
-    //establecer_conexion(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
-    
+    establecer_conexion_cpu(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
 
+    establecer_conexion_memoria(ip_memoria, puerto_memoria, config_kernel, log_kernel);
+    
     return 0;
 }
 
@@ -45,15 +45,32 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
     enviar_mensaje("recibido entradasalida", SOCKET_CLIENTE_ENTRADASALIDA);
 }
 
-void establecer_conexion(char * ip_cpu, char* puerto_cpu_dispatch, t_config* config, t_log* loggs){
+void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config* config, t_log* loggs){
+
+    log_trace(loggs, "Inicio como cliente");
+
+    log_trace(loggs,"Lei la IP %s , el Puerto CPU %s ", ip_cpu, puerto_cpu_dispatch);
+
+    // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
+    if((conexion_kernel = crear_conexion(ip_cpu, puerto_cpu_dispatch)) == -1){
+        log_trace(loggs, "Error al conectar con CPU. El servidor no esta activo");
+
+        exit(2);
+    }
+
+    //recibir_operacion(conexion_kernel);
+    recibir_mensaje(conexion_kernel,loggs);
+}
+
+void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria_dispatch, t_config* config, t_log* loggs){
 
 
     log_trace(loggs, "Inicio como cliente");
 
-    log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_cpu, puerto_cpu_dispatch);
+    log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_memoria, puerto_memoria_dispatch);
 
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
-    if((conexion_kernel = crear_conexion(ip_cpu, puerto_cpu_dispatch)) == -1){
+    if((conexion_kernel = crear_conexion(ip_memoria, puerto_memoria_dispatch)) == -1){
         log_trace(loggs, "Error al conectar con Memoria. El servidor no esta activo");
 
         exit(2);
@@ -62,4 +79,5 @@ void establecer_conexion(char * ip_cpu, char* puerto_cpu_dispatch, t_config* con
     //recibir_operacion(conexion_kernel);
     recibir_mensaje(conexion_kernel,loggs);
 }
+
 

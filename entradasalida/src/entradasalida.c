@@ -19,14 +19,16 @@ int main(int argc, char* argv[]) {
     block_count = config_get_string_value(config_entradasalida, "BLOCK_COUNT");
 
 
-    establecer_conexion(ip_kernel, puerto_kernel, config_entradasalida, log_entradasalida);
+    establecer_conexion_kernel(ip_kernel, puerto_kernel, config_entradasalida, log_entradasalida);
+
+    establecer_conexion_memoria(ip_memoria, puerto_memoria, config_entradasalida, log_entradasalida);
 
 
     return 0;
 }
 
 
-void establecer_conexion(char * ip_kernel, char* puerto_kernel, t_config* config, t_log* loggs){
+void establecer_conexion_kernel(char * ip_kernel, char* puerto_kernel, t_config* config, t_log* loggs){
 
 
     log_trace(loggs, "Inicio como cliente");
@@ -36,6 +38,24 @@ void establecer_conexion(char * ip_kernel, char* puerto_kernel, t_config* config
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
     if((conexion_entradasalida = crear_conexion(ip_kernel, puerto_kernel)) == -1){
         log_trace(loggs, "Error al conectar con Kernel. El servidor no esta activo");
+
+        exit(2);
+    }
+
+    //recibir_operacion(conexion_entradasalida);
+    recibir_mensaje(conexion_entradasalida,loggs);
+}
+
+void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* loggs){
+
+
+    log_trace(loggs, "Inicio como cliente");
+
+    log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_memoria, puerto_memoria);
+
+    // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
+    if((conexion_entradasalida = crear_conexion(ip_memoria, puerto_memoria)) == -1){
+        log_trace(loggs, "Error al conectar con Memoria. El servidor no esta activo");
 
         exit(2);
     }
