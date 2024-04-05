@@ -1,5 +1,5 @@
-#ifndef UTILS_HELLO_H_
-#define UTILS_HELLO_H_
+#ifndef UTILS_H_
+#define UTILS_H_
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -41,7 +41,7 @@ int iniciar_servidor(char *puerto, t_log* loggs);
 int esperar_cliente(int socket_servidor);
 int recibir_operacion(int socket_cliente);
 void* recibir_buffer(int* size, int socket_cliente);
-void recibir_mensaje(int socket_cliente);
+void recibir_mensaje(int socket_cliente, t_log* loggs);
 t_list* recibir_paquete(int socket_cliente);
 void* serializar_paquete(t_paquete* paquete, int bytes);
 int crear_conexion(char *ip, char* puerto);

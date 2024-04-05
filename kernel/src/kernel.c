@@ -3,7 +3,7 @@
 int main(int argc, char* argv[]) {
 
 
-log_kernel = log_create("./kernel.log", "KERNEL", 1, LOG_LEVEL_INFO);
+log_kernel = log_create("./kernel.log", "KERNEL", 1, LOG_LEVEL_TRACE);
 
 config_kernel = iniciar_config("./config/kernel.config");
     
@@ -27,21 +27,21 @@ config_kernel = iniciar_config("./config/kernel.config");
 }
 
 
-void establecer_conexion(char * ip_cpu, char* puerto_cpu_dispatch, t_config* config, t_log* logger){
+void establecer_conexion(char * ip_cpu, char* puerto_cpu_dispatch, t_config* config, t_log* loggs){
 
 
-    log_trace(logger, "Inicio como cliente");
+    log_trace(loggs, "Inicio como cliente");
 
-    log_trace(logger,"Lei la IP %s , el Puerto Memoria %s ", ip_cpu, puerto_cpu_dispatch);
+    log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_cpu, puerto_cpu_dispatch);
 
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
     if((conexion_kernel = crear_conexion(ip_cpu, puerto_cpu_dispatch)) == -1){
-        log_trace(logger, "Error al conectar con Memoria. El servidor no esta activo");
+        log_trace(loggs, "Error al conectar con Memoria. El servidor no esta activo");
 
         exit(2);
     }
 
-    recibir_operacion(conexion_kernel);
-    recibir_mensaje(conexion_kernel);
+    //recibir_operacion(conexion_kernel);
+    recibir_mensaje(conexion_kernel,loggs);
 }
 

@@ -4,7 +4,7 @@ t_log* logger;
 
 int iniciar_servidor(char *puerto, t_log* loggs)
 {
-	log_info(loggs, "levanto la configuracion del cpu 3");
+
     int socket_servidor;
 
 	struct addrinfo hints, *servinfo;
@@ -14,33 +14,22 @@ int iniciar_servidor(char *puerto, t_log* loggs)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	log_info(loggs, "levanto la configuracion del cpu 4");
-
-	log_trace(logger, "Listo para escuchar a mi cliente");
 
 	getaddrinfo(NULL, puerto, &hints, &servinfo);
-
-	log_info(loggs, "levanto la configuracion del cpu 5");
 
 	// Creamos el socket de escucha del servidor
 	socket_servidor = socket(servinfo->ai_family,
                          servinfo->ai_socktype,
                          servinfo->ai_protocol);
 
-	log_info(loggs, "levanto la configuracion del cpu 6");
-
 	// Asociamos el socket a un puerto
 	bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen);
-
-	log_info(loggs, "levanto la configuracion del cpu 7");
 
 	// Escuchamos las conexiones entrantes
 	listen(socket_servidor, SOMAXCONN);
 
-	log_info(loggs, "levanto la configuracion del cpu 8");
-
 	freeaddrinfo(servinfo);
-	log_trace(logger, "Listo para escuchar a mi cliente");
+	log_trace(loggs, "Listo para escuchar a mi cliente");
 
 	return socket_servidor;
 }
@@ -48,8 +37,8 @@ int iniciar_servidor(char *puerto, t_log* loggs)
 int esperar_cliente(int socket_servidor)
 {
 	// Aceptamos un nuevo cliente
-	int socket_cliente;
-	log_info(logger, "Se conecto un cliente!");
+	int socket_cliente = accept(socket_servidor,NULL,NULL);
+
 
 	return socket_cliente;
 }
@@ -77,11 +66,11 @@ void* recibir_buffer(int* size, int socket_cliente)
 	return buffer;
 }
 
-void recibir_mensaje(int socket_cliente)
+void recibir_mensaje(int socket_cliente, t_log* loggs)
 {
 	int size;
 	char* buffer = recibir_buffer(&size, socket_cliente);
-	log_info(logger, "Me llego el mensaje %s", buffer);
+	log_trace(loggs, "Me llego el mensaje %s", buffer);
 	free(buffer);
 }
 
@@ -135,10 +124,13 @@ int crear_conexion(char *ip, char* puerto)
 	getaddrinfo(ip, puerto, &hints, &server_info);
 
 	// Ahora vamos a crear el socket.
-	int socket_cliente = 0;
+	int socket_cliente = socket(server_info->ai_family,server_info->ai_socktype,server_info->ai_protocol);
 
 	// Ahora que tenemos el socket, vamos a conectarlo
-
+	if(connect(socket_cliente,server_info->ai_addr,server_info->ai_addrlen) == -1)
+	{
+		return -1;
+	}
 
 	freeaddrinfo(server_info);
 
