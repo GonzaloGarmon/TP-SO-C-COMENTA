@@ -4,8 +4,8 @@
 #include <utils/utils.h>
 
 
-
-
+t_log* log_cpu;
+t_config* config_cpu;
 
 char* ip_memoria;
 char* puerto_memoria; 
@@ -21,8 +21,6 @@ int socket_cliente_kernel;
 int conexion_cpu;
 
 
-t_log* log_cpu;
-t_config* config_cpu;
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL);
 void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);

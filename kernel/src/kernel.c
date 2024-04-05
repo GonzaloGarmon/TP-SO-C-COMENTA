@@ -2,30 +2,48 @@
 
 int main(int argc, char* argv[]) {
 
+    log_kernel = log_create("./kernel.log", "KERNEL", 1, LOG_LEVEL_TRACE);
 
-log_kernel = log_create("./kernel.log", "KERNEL", 1, LOG_LEVEL_TRACE);
+    log_info(log_kernel, "INICIA EL MODULO DE KERNEL");
 
-config_kernel = iniciar_config("./config/kernel.config");
+    config_kernel = iniciar_config("./config/kernel.config");
+        
+    puerto_escucha = config_get_string_value(config_kernel, "PUERTO_ESCUCHA");
+    ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
+    puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
+    ip_cpu = config_get_string_value(config_kernel, "IP_CPU");
+    puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
+    puerto_cpu_dispatch = config_get_string_value(config_kernel, "PUERTO_CPU_DISPATCH");
+    algoritmo_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
+    quantum = config_get_string_value(config_kernel, "QUANTUM");
+    recursos = config_get_string_value(config_kernel, "RECURSOS");
+    instancias_recursos = config_get_string_value(config_kernel, "INSTANCIAS_RECURSOS");
+    grado_multiprogramacion = config_get_string_value(config_kernel, "GRADO_MULTIPROGRAMACION");
+
+    log_info(log_kernel, "levanto la configuracion del kernel");
+
+    socket_servidor_kernel_dispatch = iniciar_servidor(puerto_escucha, log_kernel);
+
+    log_info(log_kernel, "INICIO SERVIDOR");
+
+    socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
+
+    pthread_t atiende_cliente_entradasalida;
+    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) socket_cliente_entradasalida);
+    pthread_detach(atiende_cliente_entradasalida);
     
- puerto_escucha = config_get_string_value(config_kernel, "PUERTO_ESCUCHA");
- ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
- puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
- ip_cpu = config_get_string_value(config_kernel, "IP_CPU");
- puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
- puerto_cpu_dispatch = config_get_string_value(config_kernel, "PUERTO_CPU_DISPATCH");
- algoritmo_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
- quantum = config_get_string_value(config_kernel, "QUANTUM");
- recursos = config_get_string_value(config_kernel, "RECURSOS");
- instancias_recursos = config_get_string_value(config_kernel, "INSTANCIAS_RECURSOS");
- grado_multiprogramacion = config_get_string_value(config_kernel, "GRADO_MULTIPROGRAMACION");
+    log_info(log_kernel, "finalizo conexion con cliente");
 
-
-    establecer_conexion(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
+    //comentado para que arranque el server y no tire error de conexion
+    //establecer_conexion(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
     
 
     return 0;
 }
 
+void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
+    enviar_mensaje("recibido entradasalida", SOCKET_CLIENTE_ENTRADASALIDA);
+}
 
 void establecer_conexion(char * ip_cpu, char* puerto_cpu_dispatch, t_config* config, t_log* loggs){
 

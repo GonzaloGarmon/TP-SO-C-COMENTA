@@ -4,13 +4,9 @@ int main(int argc, char* argv[]) {
     
     log_cpu = log_create("./cpu.log", "CPU", 1, LOG_LEVEL_TRACE);
 
-    log_info(log_cpu, "INICIA EL MODULO DE cpu");
-
-    
+    log_info(log_cpu, "INICIA EL MODULO DE CPU");
 
     config_cpu = iniciar_config("/home/utnso/tp-2024-1c-GoC/cpu/config/cpu.config");
-
-    
 
     ip_memoria = config_get_string_value(config_cpu, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_cpu, "PUERTO_MEMORIA");
@@ -20,8 +16,6 @@ int main(int argc, char* argv[]) {
     algoritmo_tlb = config_get_string_value(config_cpu, "ALGORITMO_TLB");
 
     log_info(log_cpu, "levanto la configuracion del cpu");
-    //establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
-
 
     socket_servidor_cpu_dispatch = iniciar_servidor(puerto_escucha_dispatch, log_cpu);
 
@@ -34,6 +28,9 @@ int main(int argc, char* argv[]) {
     pthread_detach(atiende_cliente_kernel);
     
     log_info(log_cpu, "finalizo conexion con cliente");
+
+    //comentado para que arranque el server y no tire error de conexion
+    //establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
 
 
     return 0;
