@@ -37,7 +37,7 @@ typedef struct
 */
 
 void decir_hola(char* quien);
-int iniciar_servidor(char *puerto);
+int iniciar_servidor(char *puerto, t_log* loggs);
 int esperar_cliente(int socket_servidor);
 int recibir_operacion(int socket_cliente);
 void* recibir_buffer(int* size, int socket_cliente);

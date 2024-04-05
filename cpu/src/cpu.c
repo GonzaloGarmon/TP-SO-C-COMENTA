@@ -23,15 +23,15 @@ int main(int argc, char* argv[]) {
     //establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
 
 
-    socket_servidor_cpu_dispatch = iniciar_servidor(puerto_escucha_dispatch);
+    socket_servidor_cpu_dispatch = iniciar_servidor(puerto_escucha_dispatch, log_cpu);
 
     log_info(log_cpu, "INICIO SERVIDOR");
 
-        pthread_t atiende_cliente_memoria, atiende_cliente_kernel;
+    pthread_t atiende_cliente_memoria, atiende_cliente_kernel;
 
-        socket_cliente_kernel = esperar_cliente(socket_servidor_cpu_dispatch);
-        pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) socket_cliente_kernel);
-        pthread_detach(atiende_cliente_kernel);
+    socket_cliente_kernel = esperar_cliente(socket_servidor_cpu_dispatch);
+    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) socket_cliente_kernel);
+    pthread_detach(atiende_cliente_kernel);
 
 
     

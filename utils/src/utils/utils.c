@@ -2,8 +2,9 @@
 
 t_log* logger;
 
-int iniciar_servidor(char *puerto)
+int iniciar_servidor(char *puerto, t_log* loggs)
 {
+	log_info(loggs, "levanto la configuracion del cpu 3");
     int socket_servidor;
 
 	struct addrinfo hints, *servinfo;
@@ -13,20 +14,30 @@ int iniciar_servidor(char *puerto)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
+	log_info(loggs, "levanto la configuracion del cpu 4");
+
 	log_trace(logger, "Listo para escuchar a mi cliente");
 
 	getaddrinfo(NULL, puerto, &hints, &servinfo);
+
+	log_info(loggs, "levanto la configuracion del cpu 5");
 
 	// Creamos el socket de escucha del servidor
 	socket_servidor = socket(servinfo->ai_family,
                          servinfo->ai_socktype,
                          servinfo->ai_protocol);
 
+	log_info(loggs, "levanto la configuracion del cpu 6");
+
 	// Asociamos el socket a un puerto
 	bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen);
 
+	log_info(loggs, "levanto la configuracion del cpu 7");
+
 	// Escuchamos las conexiones entrantes
 	listen(socket_servidor, SOMAXCONN);
+
+	log_info(loggs, "levanto la configuracion del cpu 8");
 
 	freeaddrinfo(servinfo);
 	log_trace(logger, "Listo para escuchar a mi cliente");
