@@ -18,21 +18,23 @@ int main(int argc, char* argv[]) {
 
     socket_servidor_memoria_dispatch = iniciar_servidor(puerto_escucha, log_memoria);
 
-    log_info(log_memoria, "INICIO SERVIDOR");
-
-    socket_cliente_kernel = esperar_cliente(socket_servidor_memoria_dispatch);
-    socket_cliente_cpu = esperar_cliente(socket_servidor_memoria_dispatch);
-    socket_cliente_entradasalida = esperar_cliente(socket_servidor_memoria_dispatch);
+    log_info(log_memoria, "Inicia el servidor de memoria");
 
     pthread_t atiende_cliente_cpu, atiende_cliente_kernel, atiende_cliente_entradasalida;
-    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) socket_cliente_kernel);
-    pthread_detach(atiende_cliente_kernel);
-    
+
+    log_info(log_memoria, "Listo para recibir a CPU");
+    socket_cliente_cpu = esperar_cliente(socket_servidor_memoria_dispatch);
     pthread_create(&atiende_cliente_cpu, NULL, (void *)recibir_cpu, (void *) socket_cliente_cpu);
     pthread_detach(atiende_cliente_cpu);
-
+    log_info(log_memoria, "Listo para recibir a Kernel");
+    socket_cliente_kernel = esperar_cliente(socket_servidor_memoria_dispatch);
+    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) socket_cliente_kernel);
+    pthread_detach(atiende_cliente_kernel);
+    log_info(log_memoria, "Listo para recibir a EntradaSalida");
+    socket_cliente_entradasalida = esperar_cliente(socket_servidor_memoria_dispatch);
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
+
 
     return 0;
 }

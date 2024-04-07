@@ -22,9 +22,15 @@ int main(int argc, char* argv[]) {
 
     log_info(log_kernel, "levanto la configuracion del kernel");
 
+    establecer_conexion_memoria(ip_memoria, puerto_memoria, config_kernel, log_kernel);
+
+    establecer_conexion_cpu(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
+
     socket_servidor_kernel_dispatch = iniciar_servidor(puerto_escucha, log_kernel);
 
     log_info(log_kernel, "INICIO SERVIDOR");
+
+    log_info(log_kernel, "Listo para recibir a EntradaSalida");
 
     socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
 
@@ -34,9 +40,7 @@ int main(int argc, char* argv[]) {
     
     log_info(log_kernel, "finalizo conexion con cliente");
 
-    establecer_conexion_cpu(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
 
-    establecer_conexion_memoria(ip_memoria, puerto_memoria, config_kernel, log_kernel);
     
     return 0;
 }

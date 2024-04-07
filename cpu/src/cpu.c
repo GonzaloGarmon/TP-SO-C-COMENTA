@@ -17,10 +17,14 @@ int main(int argc, char* argv[]) {
 
     log_info(log_cpu, "levanto la configuracion del cpu");
 
+    establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
+
+
     socket_servidor_cpu_dispatch = iniciar_servidor(puerto_escucha_dispatch, log_cpu);
 
     log_info(log_cpu, "INICIO SERVIDOR");
 
+    log_info(log_cpu, "Listo para recibir a kernel");
     socket_cliente_kernel = esperar_cliente(socket_servidor_cpu_dispatch);
 
     pthread_t atiende_cliente_memoria, atiende_cliente_kernel;
@@ -29,7 +33,7 @@ int main(int argc, char* argv[]) {
     
     log_info(log_cpu, "finalizo conexion con cliente");
 
-    establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
+    
 
     return 0;
 }

@@ -29,7 +29,6 @@ int iniciar_servidor(char *puerto, t_log* loggs)
 	listen(socket_servidor, SOMAXCONN);
 
 	freeaddrinfo(servinfo);
-	log_trace(loggs, "Listo para escuchar a mi cliente");
 
 	return socket_servidor;
 }
