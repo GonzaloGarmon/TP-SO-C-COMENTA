@@ -18,10 +18,11 @@ int main(int argc, char* argv[]) {
     block_size = config_get_string_value(config_entradasalida, "BLOCK_SIZE");
     block_count = config_get_string_value(config_entradasalida, "BLOCK_COUNT");
 
+    establecer_conexion_memoria(ip_memoria, puerto_memoria, config_entradasalida, log_entradasalida);
 
     establecer_conexion_kernel(ip_kernel, puerto_kernel, config_entradasalida, log_entradasalida);
 
-    establecer_conexion_memoria(ip_memoria, puerto_memoria, config_entradasalida, log_entradasalida);
+    log_info(log_entradasalida, "Finalizo conexion con servidores");
 
 
     return 0;

@@ -22,9 +22,12 @@ int main(int argc, char* argv[]) {
 
     log_info(log_kernel, "levanto la configuracion del kernel");
 
+    establecer_conexion_cpu(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
+    
     establecer_conexion_memoria(ip_memoria, puerto_memoria, config_kernel, log_kernel);
 
-    establecer_conexion_cpu(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
+    log_info(log_kernel, "Finalizo conexion con servidores");
+
 
     socket_servidor_kernel_dispatch = iniciar_servidor(puerto_escucha, log_kernel);
 
@@ -38,7 +41,7 @@ int main(int argc, char* argv[]) {
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
     
-    log_info(log_kernel, "finalizo conexion con cliente");
+    log_info(log_kernel, "Finalizo conexion con cliente");
 
 
     

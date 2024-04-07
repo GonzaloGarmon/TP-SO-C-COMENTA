@@ -19,6 +19,8 @@ int main(int argc, char* argv[]) {
 
     establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
 
+    log_info(log_cpu, "Finalizo conexion con servidor");
+
 
     socket_servidor_cpu_dispatch = iniciar_servidor(puerto_escucha_dispatch, log_cpu);
 
@@ -31,7 +33,7 @@ int main(int argc, char* argv[]) {
     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) socket_cliente_kernel);
     pthread_detach(atiende_cliente_kernel);
     
-    log_info(log_cpu, "finalizo conexion con cliente");
+    log_info(log_cpu, "Finalizo conexion con cliente");
 
     
 

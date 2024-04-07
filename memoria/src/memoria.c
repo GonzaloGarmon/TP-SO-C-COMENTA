@@ -26,15 +26,18 @@ int main(int argc, char* argv[]) {
     socket_cliente_cpu = esperar_cliente(socket_servidor_memoria_dispatch);
     pthread_create(&atiende_cliente_cpu, NULL, (void *)recibir_cpu, (void *) socket_cliente_cpu);
     pthread_detach(atiende_cliente_cpu);
+    
     log_info(log_memoria, "Listo para recibir a Kernel");
     socket_cliente_kernel = esperar_cliente(socket_servidor_memoria_dispatch);
     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) socket_cliente_kernel);
     pthread_detach(atiende_cliente_kernel);
+
     log_info(log_memoria, "Listo para recibir a EntradaSalida");
     socket_cliente_entradasalida = esperar_cliente(socket_servidor_memoria_dispatch);
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
 
+    log_info(log_memoria, "Finalizo conexion con clientes");
 
     return 0;
 }
