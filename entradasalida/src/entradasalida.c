@@ -9,14 +9,14 @@ int main(int argc, char* argv[]) {
     config_entradasalida = iniciar_config("/home/utnso/tp-2024-1c-GoC/entradasalida/config/entrada.config");
 
     tipo_interfaz = config_get_string_value(config_entradasalida, "TIPO_INTERFAZ");
-    tiempo_unidad_trabajo = config_get_string_value(config_entradasalida, "TIEMPO_UNIDAD_TRABAJO");
+    tiempo_unidad_trabajo = config_get_int_value(config_entradasalida, "TIEMPO_UNIDAD_TRABAJO");
     ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
     puerto_kernel = config_get_string_value(config_entradasalida, "PUERTO_KERNEL");
     ip_memoria = config_get_string_value(config_entradasalida, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_entradasalida, "PUERTO_MEMORIA");
     path_base_dialfs = config_get_string_value(config_entradasalida, "PATH_BASE_DIALFS");
-    block_size = config_get_string_value(config_entradasalida, "BLOCK_SIZE");
-    block_count = config_get_string_value(config_entradasalida, "BLOCK_COUNT");
+    block_size = config_get_int_value(config_entradasalida, "BLOCK_SIZE");
+    block_count = config_get_int_value(config_entradasalida, "BLOCK_COUNT");
 
     establecer_conexion_memoria(ip_memoria, puerto_memoria, config_entradasalida, log_entradasalida);
 

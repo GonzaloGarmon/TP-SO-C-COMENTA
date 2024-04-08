@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     puerto_memoria = config_get_string_value(config_cpu, "PUERTO_MEMORIA");
     puerto_escucha_dispatch = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_DISPATCH");
     puerto_escucha_interrupt = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_INTERRUPT");
-    cantidad_entradas_tlb = config_get_string_value(config_cpu, "CANTIDAD_ENTRADAS_TLB");
+    cantidad_entradas_tlb = config_get_int_value(config_cpu, "CANTIDAD_ENTRADAS_TLB");
     algoritmo_tlb = config_get_string_value(config_cpu, "ALGORITMO_TLB");
 
     log_info(log_cpu, "levanto la configuracion del cpu");

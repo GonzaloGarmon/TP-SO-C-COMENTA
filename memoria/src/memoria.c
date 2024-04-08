@@ -9,10 +9,10 @@ int main(int argc, char* argv[]) {
     config_memoria = iniciar_config("/home/utnso/tp-2024-1c-GoC/memoria/config/memoria.config");
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
-    tam_memoria = config_get_string_value(config_memoria, "TAM_MEMORIA");
-    tam_pagina = config_get_string_value(config_memoria, "TAM_PAGINA");
+    tam_memoria = config_get_int_value(config_memoria, "TAM_MEMORIA");
+    tam_pagina = config_get_int_value(config_memoria, "TAM_PAGINA");
     path_instrucciones = config_get_string_value(config_memoria, "PATH_INSTRUCCIONES");
-    retardo_respuesta = config_get_string_value(config_memoria, "RETARDO_RESPUESTA");
+    retardo_respuesta = config_get_int_value(config_memoria, "RETARDO_RESPUESTA");
     
     log_info(log_memoria, "levanto la configuracion de memoria");
 

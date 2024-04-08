@@ -8,14 +8,14 @@ t_log* log_entradasalida;
 t_config* config_entradasalida;
 
 char* tipo_interfaz;
-char* tiempo_unidad_trabajo;
+int tiempo_unidad_trabajo;
 char* ip_kernel;
 char* puerto_kernel;
 char* ip_memoria;
 char* puerto_memoria;
 char* path_base_dialfs;
-char* block_size;
-char* block_count;
+int block_size;
+int block_count;
 
 int conexion_entradasalida;
 

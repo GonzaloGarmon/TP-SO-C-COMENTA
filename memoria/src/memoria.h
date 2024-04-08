@@ -8,10 +8,10 @@ t_log* log_memoria;
 t_config* config_memoria;
 
 char* puerto_escucha;
-char* tam_memoria;
-char* tam_pagina;
+int tam_memoria;
+int tam_pagina;
 char* path_instrucciones;
-char* retardo_respuesta;
+int retardo_respuesta;
 
 
 int socket_servidor_memoria_dispatch;

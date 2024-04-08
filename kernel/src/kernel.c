@@ -15,10 +15,10 @@ int main(int argc, char* argv[]) {
     puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
     puerto_cpu_dispatch = config_get_string_value(config_kernel, "PUERTO_CPU_DISPATCH");
     algoritmo_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
-    quantum = config_get_string_value(config_kernel, "QUANTUM");
+    quantum = config_get_int_value(config_kernel, "QUANTUM");
     recursos = config_get_string_value(config_kernel, "RECURSOS");
     instancias_recursos = config_get_string_value(config_kernel, "INSTANCIAS_RECURSOS");
-    grado_multiprogramacion = config_get_string_value(config_kernel, "GRADO_MULTIPROGRAMACION");
+    grado_multiprogramacion = config_get_int_value(config_kernel, "GRADO_MULTIPROGRAMACION");
 
     log_info(log_kernel, "levanto la configuracion del kernel");
 
@@ -72,7 +72,7 @@ void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config*
     recibir_mensaje(conexion_kernel,loggs);
 }
 
-void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria_dispatch, t_config* config, t_log* loggs){
+void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria_dispatch, t_config* config, t_log* loggs){
 
 
     log_trace(loggs, "Inicio como cliente");
@@ -130,9 +130,14 @@ void iniciar_consola(){
     }
 }
 
+void ejecutar_script(){}
 void iniciar_proceso(){
     char* path = malloc(30*sizeof(char));
 
     printf("Por favor ingrese el path: ");
     scanf("%s", path);
 }
+void finalizar_proceso(){}
+void iniciar_planificacion(){}
+void detener_planificacion(){}
+void listar_procesos_estado(){}
