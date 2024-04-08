@@ -41,6 +41,9 @@ int main(int argc, char* argv[]) {
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
     
+    iniciar_consola();
+
+
     log_info(log_kernel, "Finalizo conexion con cliente");
 
 
@@ -85,6 +88,46 @@ void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria_dispatc
 
     //recibir_operacion(conexion_kernel);
     recibir_mensaje(conexion_kernel,loggs);
+}
+
+void iniciar_consola(){
+    int eleccion;
+    printf("Operaciones disponibles para realizar:\n");
+    printf("1. Ejecutar Script de Operaciones\n");
+    printf("2. Iniciar proceso\n");
+    printf("3. Finalizar proceso\n");
+    printf("4. Iniciar planificación\n");
+    printf("5. Detener planificación\n");
+    printf("6. Listar procesos por estado\n");
+
+    printf("seleccione la opción que desee: ");
+    scanf("%d", &eleccion);
+
+    switch (eleccion)
+    {
+    case 1:
+        /* code */
+        break;
+    case 2:
+        /* code */
+        break;
+    case 3:
+        /* code */
+        break;
+    case 4:
+        /* code */
+        break;
+    case 5:
+        /* code */
+        break;
+    case 6:
+        /* code */
+        break;
+    default:
+        printf("Opción no valida intente de nuevo!\n");
+        iniciar_consola();
+        break;
+    }
 }
 
 
