@@ -106,22 +106,22 @@ void iniciar_consola(){
     switch (eleccion)
     {
     case 1:
-        /* code */
+        ejecutar_script();
         break;
     case 2:
-        /* code */
+        iniciar_proceso();
         break;
     case 3:
-        /* code */
+        finalizar_proceso();
         break;
     case 4:
-        /* code */
+        iniciar_planificacion();
         break;
     case 5:
-        /* code */
+        detener_planificacion();
         break;
     case 6:
-        /* code */
+        listar_procesos_estado();
         break;
     default:
         printf("Opción no valida intente de nuevo!\n");
@@ -130,4 +130,9 @@ void iniciar_consola(){
     }
 }
 
+void iniciar_proceso(){
+    char* path = malloc(30*sizeof(char));
 
+    printf("Por favor ingrese el path: ");
+    scanf("%s", path);
+}

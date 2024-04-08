@@ -24,11 +24,19 @@ typedef struct{
 	uint32_t EDX;
 }t_registros_cpu;
 
+typedef enum{
+	NEW,
+	READY,
+	EXEC,
+	BLOCK,
+	EXIT,
+}estado_proceso;
 typedef struct {
 	uint16_t pid;
 	uint32_t pc;
 	//FALTA LO DEL QUANTUM
 	t_registros_cpu* registros;
+	estado_proceso estado;
 }t_pcb;
 
 typedef enum

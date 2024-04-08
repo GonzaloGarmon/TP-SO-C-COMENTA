@@ -29,4 +29,11 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA);
 void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
 void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* logger);
 void iniciar_consola();
+void ejecutar_script();
+void iniciar_proceso();
+void finalizar_proceso();
+void iniciar_planificacion();
+void detener_planificacion();
+void listar_procesos_estado();
+
 #endif
