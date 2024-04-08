@@ -13,6 +13,24 @@
 #include <commons/collections/list.h>
 #include <assert.h>
 
+typedef struct{
+	uint8_t AX;
+	uint8_t BX;
+	uint8_t CX;
+	uint8_t DX;
+	uint32_t EAX;
+	uint32_t EBX;
+	uint32_t ECX;
+	uint32_t EDX;
+}t_registros_cpu;
+
+typedef struct {
+	uint16_t pid;
+	uint32_t pc;
+	//FALTA LO DEL QUANTUM
+	t_registros_cpu* registros;
+}t_pcb;
+
 typedef enum
 {
 	MENSAJE,
