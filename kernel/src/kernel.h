@@ -6,6 +6,9 @@
 
 t_log* log_kernel;
 t_config* config_kernel;
+t_list* cola_new;
+
+pthread_mutex_t mutex_cola_new;
 
 char* puerto_escucha;
 char* ip_memoria;
@@ -24,6 +27,7 @@ int socket_servidor_kernel_dispatch;
 int socket_servidor_kernel_interrupt;
 int socket_cliente_entradasalida;
 int conexion_kernel;
+int generador_pid;
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA);
 void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
@@ -35,5 +39,5 @@ void finalizar_proceso();
 void iniciar_planificacion();
 void detener_planificacion();
 void listar_procesos_estado();
-
+t_registros_cpu* inicializar_registros();
 #endif

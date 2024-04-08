@@ -130,9 +130,57 @@ void iniciar_consola(){
     }
 }
 
+void ejecutar_script(){
+
+}
+
 void iniciar_proceso(){
     char* path = malloc(30*sizeof(char));
 
     printf("Por favor ingrese el path: ");
     scanf("%s", path);
+
+    //ACA HAY QUE AVISARLE A MEMORIA QUE SE CREA UN PROCESO DE ESE PATH, DEBERIA DEVOLVER ALGUNA INFO?
+
+    //creamos PCB
+    t_registros_cpu* registros = inicializar_registros();
+    t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
+    pcb_nuevo->estado = NEW;
+    pcb_nuevo->pid = generador_pid++;
+    pcb_nuevo->pc = 0;
+    pcb_nuevo ->registros = registros;
+    pthread_mutex_lock(&mutex_cola_new);
+    list_add(cola_new, pcb_nuevo);
+    pthread_mutex_unlock(&mutex_cola_new);
+}
+
+void finalizar_proceso(){
+
+}
+
+void iniciar_planificacion(){
+
+}
+
+void detener_planificacion(){
+
+}
+
+void listar_procesos_estado(){
+
+}
+
+t_registros_cpu* inicializar_registros(){
+    t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
+
+    registros->AX = malloc(sizeof(uint8_t));
+    registros->BX = malloc(sizeof(uint8_t));
+    registros->CX = malloc(sizeof(uint8_t));
+    registros->DX = malloc(sizeof(uint8_t));
+    registros->EAX = malloc(sizeof(uint32_t));
+    registros->EBX = malloc(sizeof(uint32_t));
+    registros->ECX = malloc(sizeof(uint32_t));
+    registros->EDX = malloc(sizeof(uint32_t));
+
+    return registros;
 }
