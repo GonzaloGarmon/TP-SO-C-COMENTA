@@ -6,6 +6,7 @@
 #include <commons/log.h> 
 #include <commons/config.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sys/socket.h>

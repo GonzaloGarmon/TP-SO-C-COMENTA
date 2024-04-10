@@ -14,13 +14,31 @@ int main(int argc, char* argv[]) {
     ip_cpu = config_get_string_value(config_kernel, "IP_CPU");
     puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
     puerto_cpu_dispatch = config_get_string_value(config_kernel, "PUERTO_CPU_DISPATCH");
-    algoritmo_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
+    algoritmo = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
+    if (strcmp(algoritmo, "FIFO") == 0)
+    {
+        algoritmo_planificacion = FIFO;
+    }
+    else if (strcmp(algoritmo, "RR") == 0)
+    {
+        algoritmo_planificacion = RR;
+    }
+    else if (strcmp(algoritmo, "VRR") == 0)
+    {
+        algoritmo_planificacion = VRR;
+    }
+    else
+    {
+        log_error(log_kernel, "El algoritmo no es valido");
+    }
     quantum = config_get_string_value(config_kernel, "QUANTUM");
     recursos = config_get_string_value(config_kernel, "RECURSOS");
     instancias_recursos = config_get_string_value(config_kernel, "INSTANCIAS_RECURSOS");
     grado_multiprogramacion = config_get_string_value(config_kernel, "GRADO_MULTIPROGRAMACION");
 
     log_info(log_kernel, "levanto la configuracion del kernel");
+
+    iniciar_semaforos();
 
     establecer_conexion_cpu(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
     
@@ -49,6 +67,14 @@ int main(int argc, char* argv[]) {
 
     
     return 0;
+}
+
+void iniciar_semaforos(){
+    pthread_mutex_init(&mutex_cola_ready, NULL);
+    pthread_mutex_init(&mutex_cola_new, NULL);
+
+    sem_init(&sem_multiprogamacion, 0, grado_multiprogramacion);
+    sem_init(&sem_listos_para_ready, 0, 0);
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
@@ -152,6 +178,7 @@ void iniciar_proceso(){
     pthread_mutex_lock(&mutex_cola_new);
     list_add(cola_new, pcb_nuevo);
     pthread_mutex_unlock(&mutex_cola_new);
+    sem_post(&sem_listos_para_ready);
 }
 
 void finalizar_proceso(){
@@ -183,4 +210,52 @@ t_registros_cpu* inicializar_registros(){
     registros->EDX = malloc(sizeof(uint32_t));
 
     return registros;
+}
+
+void planificar_largo_plazo(){
+     pthread_t hilo_ready;
+    
+    pthread_create(&hilo_ready, NULL, (void *)pcb_ready, log_kernel);
+
+    pthread_detach(hilo_ready);
+}
+
+t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
+{
+    t_pcb* pcbDelProceso = malloc(sizeof(t_pcb));
+    pthread_mutex_lock(mutex);
+    pcbDelProceso = list_remove(list, 0);
+    pthread_mutex_unlock(mutex);
+    return pcbDelProceso;
+}
+
+void pcb_ready(){
+    sem_wait(&sem_listos_para_ready);
+    t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
+    sem_wait(&sem_multiprogamacion);
+    pcb->estado = READY;
+    pthread_mutex_lock(&mutex_cola_ready);
+    list_add(cola_ready,pcb);
+    pthread_mutex_unlock(&mutex_cola_ready);
+    //sem_post(); para habilitar a que pase a ejecutar
+}
+
+t_pcb* elegir_pcb_segun_algoritmo(){
+    t_pcb* pcb_ejecutar = malloc(sizeof(t_pcb));
+
+    switch (algoritmo_planificacion)
+    {
+    case FIFO:
+        pthread_mutex_lock(&mutex_cola_ready);
+        pcb_ejecutar = list_remove(cola_ready,0);
+        pthread_mutex_unlock(&mutex_cola_ready);
+        break;
+    case RR:
+        break;
+    case VRR:
+        break;
+    default:
+        break;
+    }
+    return pcb_ejecutar;
 }
