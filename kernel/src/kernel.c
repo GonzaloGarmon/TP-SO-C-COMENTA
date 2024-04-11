@@ -14,6 +14,7 @@ int main(int argc, char* argv[]) {
     ip_cpu = config_get_string_value(config_kernel, "IP_CPU");
     puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
     puerto_cpu_dispatch = config_get_string_value(config_kernel, "PUERTO_CPU_DISPATCH");
+
     algoritmo = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
     if (strcmp(algoritmo, "FIFO") == 0)
     {
@@ -32,9 +33,13 @@ int main(int argc, char* argv[]) {
         log_error(log_kernel, "El algoritmo no es valido");
     }
     quantum = config_get_string_value(config_kernel, "QUANTUM");
+
+    algoritmo_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
+    quantum = config_get_int_value(config_kernel, "QUANTUM");
+
     recursos = config_get_string_value(config_kernel, "RECURSOS");
     instancias_recursos = config_get_string_value(config_kernel, "INSTANCIAS_RECURSOS");
-    grado_multiprogramacion = config_get_string_value(config_kernel, "GRADO_MULTIPROGRAMACION");
+    grado_multiprogramacion = config_get_int_value(config_kernel, "GRADO_MULTIPROGRAMACION");
 
     log_info(log_kernel, "levanto la configuracion del kernel");
 
@@ -56,16 +61,15 @@ int main(int argc, char* argv[]) {
     socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
 
     pthread_t atiende_cliente_entradasalida;
-    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) socket_cliente_entradasalida);
+    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
     
     iniciar_consola();
 
 
-    log_info(log_kernel, "Finalizo conexion con cliente");
+    log_info(log_kernel, "Finalizo conexion con cliente");//nunca finalizamos la conexion usar liberar_conexion
 
 
-    
     return 0;
 }
 
@@ -78,7 +82,9 @@ void iniciar_semaforos(){
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
-    enviar_mensaje("recibido entradasalida", SOCKET_CLIENTE_ENTRADASALIDA);
+    enviar_mensaje("recibido entradasalida", SOCKET_CLIENTE_ENTRADASALIDA); 
+    //Se deben enviar la cantidad de unidades de trabakp necesarias, crear una nueva funcion
+
 }
 
 void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config* config, t_log* loggs){
@@ -98,7 +104,7 @@ void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config*
     recibir_mensaje(conexion_kernel,loggs);
 }
 
-void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria_dispatch, t_config* config, t_log* loggs){
+void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria_dispatch, t_config* config, t_log* loggs){
 
 
     log_trace(loggs, "Inicio como cliente");
@@ -156,6 +162,7 @@ void iniciar_consola(){
     }
 }
 
+
 void ejecutar_script(){
 
 }
@@ -192,6 +199,7 @@ void iniciar_planificacion(){
 void detener_planificacion(){
 
 }
+
 
 void listar_procesos_estado(){
 
@@ -259,3 +267,4 @@ t_pcb* elegir_pcb_segun_algoritmo(){
     }
     return pcb_ejecutar;
 }
+

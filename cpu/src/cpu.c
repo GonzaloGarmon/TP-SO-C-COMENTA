@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     puerto_memoria = config_get_string_value(config_cpu, "PUERTO_MEMORIA");
     puerto_escucha_dispatch = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_DISPATCH");
     puerto_escucha_interrupt = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_INTERRUPT");
-    cantidad_entradas_tlb = config_get_string_value(config_cpu, "CANTIDAD_ENTRADAS_TLB");
+    cantidad_entradas_tlb = config_get_int_value(config_cpu, "CANTIDAD_ENTRADAS_TLB");
     algoritmo_tlb = config_get_string_value(config_cpu, "ALGORITMO_TLB");
 
     log_info(log_cpu, "levanto la configuracion del cpu");
@@ -29,8 +29,8 @@ int main(int argc, char* argv[]) {
     log_info(log_cpu, "Listo para recibir a kernel");
     socket_cliente_kernel = esperar_cliente(socket_servidor_cpu_dispatch);
 
-    pthread_t atiende_cliente_memoria, atiende_cliente_kernel;
-    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) socket_cliente_kernel);
+    pthread_t atiende_cliente_kernel;
+    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) (intptr_t) socket_cliente_kernel);
     pthread_detach(atiende_cliente_kernel);
     
     log_info(log_cpu, "Finalizo conexion con cliente");
