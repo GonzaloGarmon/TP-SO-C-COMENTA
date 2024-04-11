@@ -34,9 +34,6 @@ int main(int argc, char* argv[]) {
     }
     quantum = config_get_string_value(config_kernel, "QUANTUM");
 
-    algoritmo_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
-    quantum = config_get_int_value(config_kernel, "QUANTUM");
-
     recursos = config_get_string_value(config_kernel, "RECURSOS");
     instancias_recursos = config_get_string_value(config_kernel, "INSTANCIAS_RECURSOS");
     grado_multiprogramacion = config_get_int_value(config_kernel, "GRADO_MULTIPROGRAMACION");
