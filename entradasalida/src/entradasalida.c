@@ -22,15 +22,16 @@ int main(int argc, char* argv[]) {
 
     establecer_conexion_kernel(ip_kernel, puerto_kernel, config_entradasalida, log_entradasalida);
 
-    log_info(log_entradasalida, "Finalizo conexion con servidores");
+    // uso interfaz generica
+    inicializar_interfaz_generica(&interfazGen, "Interfaz Generica 1", tiempo_unidad_trabajo); //tiempo de unidad de trabajo sacado de config
+    io_gen_sleep(&interfazGen, 5); //5 interfaces genericas esperando, el dato se debe pedir a Kernel
 
+    log_info(log_entradasalida, "Finalizo conexion con servidores");
 
     return 0;
 }
 
-
 void establecer_conexion_kernel(char * ip_kernel, char* puerto_kernel, t_config* config, t_log* loggs){
-
 
     log_trace(loggs, "Inicio como cliente");
 
@@ -49,7 +50,6 @@ void establecer_conexion_kernel(char * ip_kernel, char* puerto_kernel, t_config*
 
 void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* loggs){
 
-
     log_trace(loggs, "Inicio como cliente");
 
     log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_memoria, puerto_memoria);
@@ -64,4 +64,18 @@ void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_conf
     //recibir_operacion(conexion_entradasalida);
     recibir_mensaje(conexion_entradasalida,loggs);
 }
+
+// iniciar interfaz genérica
+void inicializar_interfaz_generica(InterfazGenerica *interfazGen, const char *nombre, int tiempo) {
+    strcpy(interfazGen->nombre, nombre);
+    interfazGen->tiempo_unidad_trabajo = tiempo;
+}
+
+// función tiempo de espera
+void io_gen_sleep(InterfazGenerica *interfazGen, int unidades) {
+    int tiempo_espera = unidades * interfazGen->tiempo_unidad_trabajo; //multiplicas la cantidad de unidades genericas x el tiempo que tarda cada una
+    sleep(tiempo_espera);
+}
+
+
 

@@ -44,15 +44,16 @@ int main(int argc, char* argv[]) {
     iniciar_consola();
 
 
-    log_info(log_kernel, "Finalizo conexion con cliente");
+    log_info(log_kernel, "Finalizo conexion con cliente");//nunca finalizamos la conexion usar liberar_conexion
 
 
-    
     return 0;
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
-    enviar_mensaje("recibido entradasalida", SOCKET_CLIENTE_ENTRADASALIDA);
+    enviar_mensaje("recibido entradasalida", SOCKET_CLIENTE_ENTRADASALIDA); 
+    //Se deben enviar la cantidad de unidades de trabakp necesarias, crear una nueva funcion
+
 }
 
 void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config* config, t_log* loggs){
