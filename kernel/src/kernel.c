@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
 
     pthread_t atiende_cliente_entradasalida;
-    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) socket_cliente_entradasalida);
+    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
     
     iniciar_consola();
