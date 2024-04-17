@@ -35,7 +35,7 @@ typedef enum{
 	EXIT,
 }estado_proceso;
 typedef struct {
-	uint16_t pid;
+	uint32_t pid;
 	uint32_t pc;
 	//FALTA LO DEL QUANTUM
 	t_registros_cpu* registros;
@@ -82,6 +82,26 @@ void enviar_paquete(t_paquete* paquete, int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
 void liberar_conexion(int socket_cliente);
 t_config* iniciar_config(char *ruta);
+
+
+// Serializacion
+
+void agregar_entero_a_paquete(t_paquete *paquete, uint32_t numero);
+void agregar_string_a_paquete(t_paquete *paquete, char* palabra);
+void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb);
+void enviar_entero (int conexion, int numero, int codop);
+void enviar_string (int conexion, char* palabra, int codop);
+t_paquete* crear_paquete_op(op_code codop);
+
+
+// Una vez serializado -> recibimos y leemos estas variables
+
+int leer_entero(char *buffer, int * desplazamiento);
+uint32_t leer_entero_uint32(char *buffer, int * desplazamiento);
+char* leer_string(char *buffer, int * desplazamiento);
+
+uint32_t recibir_entero_uint32(int socket, t_log* loggs);
+char* recibir_string(int socket, t_log* loggs);
 
 
 

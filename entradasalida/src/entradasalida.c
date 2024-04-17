@@ -44,8 +44,8 @@ void establecer_conexion_kernel(char * ip_kernel, char* puerto_kernel, t_config*
         exit(2);
     }
 
-    //recibir_operacion(conexion_entradasalida);
-    recibir_mensaje(conexion_entradasalida,loggs);
+    recibir_operacion(conexion_entradasalida);
+    recibir_string(conexion_entradasalida, loggs);
 }
 
 void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* loggs){
@@ -61,8 +61,8 @@ void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_conf
         exit(2);
     }
 
-    //recibir_operacion(conexion_entradasalida);
-    recibir_mensaje(conexion_entradasalida,loggs);
+    recibir_operacion(conexion_entradasalida);
+    recibir_string(conexion_entradasalida, loggs);
 }
 
 // iniciar interfaz genérica

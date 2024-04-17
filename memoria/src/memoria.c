@@ -44,13 +44,13 @@ int main(int argc, char* argv[]) {
 
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
-    enviar_mensaje("recibido kernel", SOCKET_CLIENTE_KERNEL);
+    enviar_string(SOCKET_CLIENTE_KERNEL, "salame con patas", MENSAJE);
 }
 
 void recibir_cpu(int SOCKET_CLIENTE_CPU){
-    enviar_mensaje("recibido cpu", SOCKET_CLIENTE_CPU);
+    enviar_string(SOCKET_CLIENTE_CPU, "salame con patas", MENSAJE);
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
-    enviar_mensaje("recibido entrada salida", SOCKET_CLIENTE_ENTRADASALIDA);
+    enviar_string(SOCKET_CLIENTE_ENTRADASALIDA, "salame con patas", MENSAJE);
 }

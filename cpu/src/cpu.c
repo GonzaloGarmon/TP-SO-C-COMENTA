@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
-    enviar_mensaje("recibido kernel", SOCKET_CLIENTE_KERNEL);
+    enviar_string(SOCKET_CLIENTE_KERNEL, "recibido kernel", MENSAJE);
 }
 
 void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* loggs){
@@ -58,7 +58,7 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
 
         exit(2);
     }
-
-    // recibir_operacion(conexion_cpu);
-    recibir_mensaje(conexion_cpu, loggs);
+    
+    recibir_operacion(conexion_cpu);
+    recibir_string(conexion_cpu, loggs);
 }

@@ -214,3 +214,123 @@ t_config* iniciar_config(char *ruta)
 
 	return nuevo_config;
 }
+
+// Serializacion
+
+void agregar_entero_a_paquete(t_paquete *paquete, uint32_t numero){
+
+	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(uint32_t));
+	memcpy(paquete->buffer->stream + paquete->buffer->size, &numero, sizeof(uint32_t));
+	paquete->buffer->size += sizeof(uint32_t);
+
+}
+
+void agregar_string_a_paquete(t_paquete *paquete, char* palabra){
+
+	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(char*));
+	memcpy(paquete->buffer->stream + paquete->buffer->size, &palabra, sizeof(char*));
+	paquete->buffer->size += sizeof(char*);
+	
+}
+
+void enviar_entero (int conexion, int numero, int codop){
+	t_paquete* paquete = crear_paquete_op(codop);
+
+	agregar_entero_a_paquete(paquete,numero);
+	enviar_paquete(paquete,conexion);
+	eliminar_paquete(paquete);
+}
+
+void enviar_string (int conexion, char* palabra, int codop){
+	t_paquete* paquete = crear_paquete_op(codop);
+
+	agregar_a_paquete(paquete,palabra,strlen(palabra)+1);
+	enviar_paquete(paquete,conexion);
+	eliminar_paquete(paquete);
+}
+
+t_paquete* crear_paquete_op(op_code codop)
+{
+	t_paquete* paquete = malloc(sizeof(t_paquete));
+	paquete->codigo_operacion = codop;
+	crear_buffer(paquete);
+	return paquete;
+}
+
+void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb){
+	agregar_entero_a_paquete(paquete, pcb->pc);
+	agregar_entero_a_paquete(paquete, pcb->pid);
+	//agregar_registros_a_paquete(paquete, pcb->registros);
+	//agregar_estado_a_paquete(paquete, pcb->estado);
+	//agregar_quantum_a_paquete(paquete, pcb->quantum);
+}
+
+// Una vez serializado -> recibimos y leemos estas variables
+
+int leer_entero(char *buffer, int * desplazamiento)
+{
+	int entero;
+	memcpy(&entero, buffer + (*desplazamiento), sizeof(int));
+	(*desplazamiento) += sizeof(int);
+	return entero;
+}
+
+uint32_t leer_entero_uint32(char *buffer, int * desplazamiento)
+{
+	uint32_t entero;
+	memcpy(&entero, buffer + (*desplazamiento), sizeof(uint32_t));
+	(*desplazamiento) += sizeof(uint32_t);
+	return entero;
+}
+
+char* leer_string(char *buffer, int * desplazamiento)
+{
+
+	int tamanio = leer_entero(buffer,desplazamiento);
+
+	char* palabra = malloc(tamanio);
+	memcpy(palabra, buffer + (*desplazamiento), tamanio);
+	(*desplazamiento) += tamanio;
+	return palabra;
+}
+
+uint32_t recibir_entero_uint32(int socket, t_log* loggs){
+
+	int size = 0;
+	char* buffer;
+	int desp = 0;
+
+	buffer = recibir_buffer(&size, socket);
+	u_int32_t entero_nuevo32 = leer_entero_uint32(buffer, &desp);
+	log_trace(loggs, "Me llego en numero %i", entero_nuevo32);
+	free(buffer);
+	return entero_nuevo32;
+
+}
+
+char* recibir_string(int socket,t_log* loggs){
+	
+	int size = 0;
+	char* buffer;
+	int desp = 0;
+		
+	buffer = recibir_buffer(&size, socket);
+	char* nuevo_string = leer_string(buffer, &desp);
+	log_trace(loggs, "Recibi el mensaje %s", nuevo_string);
+
+	free(buffer);
+	return nuevo_string;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
