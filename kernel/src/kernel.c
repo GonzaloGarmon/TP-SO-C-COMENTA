@@ -97,8 +97,8 @@ void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config*
         exit(2);
     }
 
-    recibir_operacion(conexion_kernel);
-    recibir_string(conexion_kernel, loggs);
+    //recibir_operacion(conexion_kernel);
+    //recibir_string(conexion_kernel, loggs);
 }
 
 void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria_dispatch, t_config* config, t_log* loggs){
@@ -115,8 +115,8 @@ void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria_dispatch
         exit(2);
     }
 
-    recibir_operacion(conexion_kernel);
-    recibir_string(conexion_kernel, loggs);
+    //recibir_operacion(conexion_kernel);
+    //recibir_string(conexion_kernel, loggs);
 }
 
 void iniciar_consola(){

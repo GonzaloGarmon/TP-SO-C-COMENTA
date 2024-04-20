@@ -59,6 +59,6 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
         exit(2);
     }
     
-    recibir_operacion(conexion_cpu);
-    recibir_string(conexion_cpu, loggs);
+    //recibir_operacion(conexion_cpu);
+    //recibir_string(conexion_cpu, loggs);
 }
