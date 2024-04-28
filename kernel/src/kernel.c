@@ -256,9 +256,23 @@ t_pcb* elegir_pcb_segun_algoritmo(){
         pthread_mutex_unlock(&mutex_cola_ready);
         break;
     case RR:
+        while(1){
+            sem_wait(&sem_listos_para_ready);
+            pcb_ejecutar = list_remove(0);
+            enviar_proceso(pcb_ejecutar, puerto_cpu_dispatch);
+            pcb_ejecutar->estado = EXEC;
+            // no hace falta bloquearlo porque pude venir otro proceso, y se ingresa al final de la cola
+            //if(rafaga < quantum) // al ser fin de Q, tiene mas prioridad que cuandoi llega un nuevo proceso
+            log_info(logger,"PID: %d - Desalojado por fin de Quantum", pcb_ejecutar);
+            //agrego fin de cola
+            //if(llega un nuevo proceso en READY)
+            //agregarlo a la cola
+            pcb_destroy(pcb_ejecutar);
+        }
+
         break;
     case VRR:
-        break;
+        break; 
     default:
         break;
     }
