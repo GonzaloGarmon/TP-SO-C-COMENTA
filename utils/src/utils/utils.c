@@ -225,6 +225,16 @@ void agregar_entero_a_paquete(t_paquete *paquete, uint32_t numero){
 
 }
 
+
+
+void agregar_entero_uint8_a_paquete(t_paquete *paquete, uint8_t numero){
+
+	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(uint8_t));
+	memcpy(paquete->buffer->stream + paquete->buffer->size, &numero, sizeof(uint8_t));
+	paquete->buffer->size += sizeof(uint8_t);
+
+}
+
 void agregar_string_a_paquete(t_paquete *paquete, char* palabra){
 
 	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(char*));
@@ -233,7 +243,7 @@ void agregar_string_a_paquete(t_paquete *paquete, char* palabra){
 	
 }
 
-void enviar_entero (int conexion, int numero, int codop){
+void enviar_entero (int conexion, uint32_t numero, int codop){
 	t_paquete* paquete = crear_paquete_op(codop);
 
 	agregar_entero_a_paquete(paquete,numero);
@@ -257,13 +267,45 @@ t_paquete* crear_paquete_op(op_code codop)
 	return paquete;
 }
 
+void agregar_registros_a_paquete(t_paquete * paquete, t_registros_cpu * registros){
+
+	agregar_entero_uint8_a_paquete(paquete,registros->AX);
+	agregar_entero_uint8_a_paquete(paquete,registros->BX);
+	agregar_entero_uint8_a_paquete(paquete,registros->CX);
+	agregar_entero_uint8_a_paquete(paquete,registros->DX);
+	agregar_entero_a_paquete(paquete,registros->EAX);
+	agregar_entero_a_paquete(paquete,registros->EBX);
+	agregar_entero_a_paquete(paquete,registros->ECX);
+	agregar_entero_a_paquete(paquete,registros->EDX);
+
+}
+
+void agregar_entero_int_a_paquete(t_paquete *paquete, t_estado_proceso numero){
+	
+	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(t_estado_proceso));
+	memcpy(paquete->buffer->stream + paquete->buffer->size, &numero, sizeof(t_estado_proceso));
+	paquete->buffer->size += sizeof(t_estado_proceso);
+}
+
+
+
+void agregar_estado_a_paquete(t_paquete* paquete, t_pcb *pcb){
+
+	agregar_entero_int_a_paquete(paquete,pcb->estado = NEW);
+	agregar_entero_int_a_paquete(paquete,pcb->estado = READY);
+	agregar_entero_int_a_paquete(paquete,pcb->estado = EXEC);
+	agregar_entero_int_a_paquete(paquete,pcb->estado = BLOCK);
+	agregar_entero_int_a_paquete(paquete,pcb->estado = EXIT);
+}
+
 void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb){
 	agregar_entero_a_paquete(paquete, pcb->pc);
 	agregar_entero_a_paquete(paquete, pcb->pid);
-	//agregar_registros_a_paquete(paquete, pcb->registros);
-	//agregar_estado_a_paquete(paquete, pcb->estado);
+	agregar_registros_a_paquete(paquete, pcb->registros);
+	// agregar_estado_a_paquete(paquete, pcb->estado);
 	//agregar_quantum_a_paquete(paquete, pcb->quantum);
 }
+
 
 // Una vez serializado -> recibimos y leemos estas variables
 

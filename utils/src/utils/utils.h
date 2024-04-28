@@ -33,13 +33,13 @@ typedef enum{
 	EXEC,
 	BLOCK,
 	EXIT,
-}estado_proceso;
+}t_estado_proceso;
 typedef struct {
 	uint32_t pid;
 	uint32_t pc;
 	//FALTA LO DEL QUANTUM
 	t_registros_cpu* registros;
-	estado_proceso estado;
+	t_estado_proceso estado;
 }t_pcb;
 
 typedef enum
@@ -84,12 +84,17 @@ void liberar_conexion(int socket_cliente);
 t_config* iniciar_config(char *ruta);
 
 
+
 // Serializacion
 
 void agregar_entero_a_paquete(t_paquete *paquete, uint32_t numero);
+void agregar_entero_uint8_a_paquete(t_paquete *paquete, uint8_t numero);
+void agregar_entero_int_a_paquete(t_paquete *paquete, t_estado_proceso numero);
 void agregar_string_a_paquete(t_paquete *paquete, char* palabra);
 void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb);
-void enviar_entero (int conexion, int numero, int codop);
+void agregar_registros_a_paquete(t_paquete * paquete, t_registros_cpu * registros);
+void agregar_estado_a_paquete(t_paquete* paquete, t_pcb *pcb);
+void enviar_entero (int conexion, uint32_t numero, int codop);
 void enviar_string (int conexion, char* palabra, int codop);
 t_paquete* crear_paquete_op(op_code codop);
 
