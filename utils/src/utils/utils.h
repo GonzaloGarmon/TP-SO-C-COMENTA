@@ -40,6 +40,7 @@ typedef struct {
 	//FALTA LO DEL QUANTUM
 	t_registros_cpu* registros;
 	estado_proceso estado;
+	time_t tiempo_ingreso_ready;
 }t_pcb;
 
 typedef enum
