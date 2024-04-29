@@ -34,7 +34,7 @@ char* puerto_cpu_dispatch;
 
 char* algoritmo;
 t_algoritmo algoritmo_planificacion;
-char* quantum;
+int quantum;
 
 char* recursos;
 char* instancias_recursos;

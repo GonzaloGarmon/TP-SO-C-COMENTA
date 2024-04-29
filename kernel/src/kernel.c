@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     {
         log_error(log_kernel, "El algoritmo no es valido");
     }
-    quantum = config_get_string_value(config_kernel, "QUANTUM");
+    quantum = config_get_int_value(config_kernel, "QUANTUM");
 
     recursos = config_get_string_value(config_kernel, "RECURSOS");
     instancias_recursos = config_get_string_value(config_kernel, "INSTANCIAS_RECURSOS");
@@ -225,7 +225,7 @@ void planificar(){
     planificar_largo_plazo();
     planificar_corto_plazo();
 
-    if(algoritmo_planificacion == RR){
+    if(strcmp(algoritmo, "RR") == 0){
         planificar_rr();
     }
 }
@@ -253,7 +253,13 @@ void planificar_corto_plazo(){
 }
 
 void contador_quantum_RR(){
+    
+    while(1){
+        //HAY QUE VER COMO HACER PARA UTILIZAR LO DEL QUANTUM Y MANDARLE LA INTERRUPCION A CPU
+        //sleep(quantum/1000);
 
+
+    }
 }
 
 t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
@@ -287,7 +293,6 @@ void pcb_ready(){
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
     sem_wait(&sem_multiprogamacion);
     pcb->estado = READY;
-    pcb->tiempo_ingreso_ready = time(NULL);
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb);
     pthread_mutex_unlock(&mutex_cola_ready);
