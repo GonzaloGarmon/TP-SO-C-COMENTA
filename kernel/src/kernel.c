@@ -256,7 +256,11 @@ void contador_quantum_RR(){
     
     while(1){
         //HAY QUE VER COMO HACER PARA UTILIZAR LO DEL QUANTUM Y MANDARLE LA INTERRUPCION A CPU
-        //sleep(quantum/1000);
+        sleep(quantum / 1000);
+        if (strcmp(algoritmo, "RR") == 0)
+        {
+            //enviar_interrupcion(conexion_cpu_interrupt, interrupcion);
+        }
 
 
     }
