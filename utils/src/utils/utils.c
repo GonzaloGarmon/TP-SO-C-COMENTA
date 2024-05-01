@@ -124,12 +124,20 @@ int crear_conexion(char *ip, char* puerto)
 
 	// Ahora vamos a crear el socket.
 	int socket_cliente = socket(server_info->ai_family,server_info->ai_socktype,server_info->ai_protocol);
+	
+	if (socket_cliente == -1) {
+        perror("Error al crear el socket");
+        freeaddrinfo(server_info);
+        return -1;
+    }
 
-	// Ahora que tenemos el socket, vamos a conectarlo
-	if(connect(socket_cliente,server_info->ai_addr,server_info->ai_addrlen) == -1)
-	{
-		return -1;
-	}
+    // Ahora que tenemos el socket, vamos a conectarlo
+    if (connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen) == -1) {
+        perror("Error al conectar");
+        freeaddrinfo(server_info);
+        close(socket_cliente); // Cerrar el socket antes de retornar
+        return -1;
+    }
 
 	freeaddrinfo(server_info);
 
@@ -325,15 +333,23 @@ uint32_t leer_entero_uint32(char *buffer, int * desplazamiento)
 	return entero;
 }
 
-char* leer_string(char *buffer, int * desplazamiento)
-{
+char* leer_string(char* buffer, int* desplazamiento) {
+    int tamanio = leer_entero(buffer, desplazamiento);
 
-	int tamanio = leer_entero(buffer,desplazamiento);
+    if (*desplazamiento + tamanio > strlen(buffer)) {
+        return NULL;
+    }
 
-	char* palabra = malloc(tamanio);
-	memcpy(palabra, buffer + (*desplazamiento), tamanio);
-	(*desplazamiento) += tamanio;
-	return palabra;
+    char* palabra = malloc(tamanio + 1);
+    if (palabra == NULL) {
+        return NULL;
+    }
+
+    memcpy(palabra, buffer + *desplazamiento, tamanio);
+    palabra[tamanio] = '\0';
+    *desplazamiento += tamanio;
+
+    return palabra;
 }
 
 uint32_t recibir_entero_uint32(int socket, t_log* loggs){
