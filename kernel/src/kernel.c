@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     {
         log_error(log_kernel, "El algoritmo no es valido");
     }
-    quantum = config_get_string_value(config_kernel, "QUANTUM");
+    quantum = config_get_int_value(config_kernel, "QUANTUM");
 
     recursos = config_get_string_value(config_kernel, "RECURSOS");
     instancias_recursos = config_get_string_value(config_kernel, "INSTANCIAS_RECURSOS");
@@ -61,6 +61,8 @@ int main(int argc, char* argv[]) {
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
     
+    planificar();
+
     iniciar_consola();
 
 
@@ -73,9 +75,11 @@ int main(int argc, char* argv[]) {
 void iniciar_semaforos(){
     pthread_mutex_init(&mutex_cola_ready, NULL);
     pthread_mutex_init(&mutex_cola_new, NULL);
+    pthread_mutex_init(&mutex_cola_exec, NULL);
 
     sem_init(&sem_multiprogamacion, 0, grado_multiprogramacion);
     sem_init(&sem_listos_para_ready, 0, 0);
+    sem_init(&sem_listos_para_exec, 0, 0);
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
@@ -224,12 +228,49 @@ t_registros_cpu* inicializar_registros(){
     return registros;
 }
 
+void planificar(){
+    planificar_largo_plazo();
+    planificar_corto_plazo();
+
+    if(strcmp(algoritmo, "RR") == 0){
+        planificar_rr();
+    }
+}
+
+void planificar_rr(){
+
+    pthread_t hilo_manejo_quantum;
+    pthread_create(&hilo_manejo_quantum, NULL, (void *)contador_quantum_RR, NULL);
+    pthread_detach(hilo_manejo_quantum);
+
+}
+
 void planificar_largo_plazo(){
-     pthread_t hilo_ready;
+    pthread_t hilo_ready;
     
-    pthread_create(&hilo_ready, NULL, (void *)pcb_ready, log_kernel);
+    pthread_create(&hilo_ready, NULL, (void *)pcb_ready, NULL);
 
     pthread_detach(hilo_ready);
+}
+
+void planificar_corto_plazo(){
+    pthread_t hilo_corto_plazo;
+    pthread_create(&hilo_corto_plazo, NULL, (void *)exec_pcb, NULL);
+    pthread_detach(hilo_corto_plazo);
+}
+
+void contador_quantum_RR(){
+    
+    while(1){
+        //HAY QUE VER COMO HACER PARA UTILIZAR LO DEL QUANTUM Y MANDARLE LA INTERRUPCION A CPU
+        sleep(quantum / 1000);
+        if (strcmp(algoritmo, "RR") == 0)
+        {
+            //enviar_interrupcion(conexion_cpu_interrupt, interrupcion);
+        }
+
+
+    }
 }
 
 t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
@@ -241,6 +282,23 @@ t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
     return pcbDelProceso;
 }
 
+void exec_pcb()
+{
+    while (1)
+    {
+
+        sem_wait(&sem_listos_para_exec);
+        t_pcb* pcb_enviar = elegir_pcb_segun_algoritmo();
+        pcb_enviar->estado = EXEC;
+        pthread_mutex_lock(&mutex_cola_exec);
+        pcb_enviar = list_add(cola_exec, pcb_enviar);
+        pthread_mutex_unlock(&mutex_cola_exec);
+
+
+        //dispatch(); HAY QUE HACER LA FUNCION DE DISPATCH
+    }
+}
+
 void pcb_ready(){
     sem_wait(&sem_listos_para_ready);
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
@@ -249,7 +307,7 @@ void pcb_ready(){
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb);
     pthread_mutex_unlock(&mutex_cola_ready);
-    //sem_post(); para habilitar a que pase a ejecutar
+    sem_post(&sem_listos_para_exec);
 }
 
 t_pcb* elegir_pcb_segun_algoritmo(){
@@ -263,12 +321,16 @@ t_pcb* elegir_pcb_segun_algoritmo(){
         pthread_mutex_unlock(&mutex_cola_ready);
         break;
     case RR:
+        pthread_mutex_lock(&mutex_cola_ready);
+        pcb_ejecutar = list_remove(cola_ready,0);
+        pthread_mutex_lock(&mutex_cola_ready);
         break;
     case VRR:
-        break;
+        break; 
     default:
         break;
     }
+    
     return pcb_ejecutar;
 }
 
