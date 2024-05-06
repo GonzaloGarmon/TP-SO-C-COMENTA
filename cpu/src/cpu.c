@@ -64,25 +64,80 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
 }
 
 void ejecutar_ciclo_de_instruccion(){ //Incompleto
-    t_nombre_instruccion instruccion;
-    switch (instruccion)
-    {
-    case SUM:
-        
-        break;
-    case SET:
-        
-        break;
-    case SUB:
-        
-        break;
-    case JNZ:
-        
-        break;
-    case IO_GEN_SLEEP:
-        
-        break;
-    default:
-        break;
-    }
+    // t_instruccion *instruccion = fetch(contexto->pid, contexto->pc); // de donde sacar el contexto
+    // t_nombre_instruccion instruccion_nombre = decode(instruccion);
+    // execute(instruccion, contexto);
  }
+
+
+//pedir a la memoria la proxima instruccion a ejecutar
+// t_instruccion *fetch(uint32_t pid, uint32_t pc){
+//     t_instruccion instr;
+//     return instr;
+// }
+
+// void execute(t_instruccion *instruccion, t_pcb *contexto){
+
+//     switch(instruccion->nombre){
+//         case SET:
+//             funcSet(t_instruccion instruccion);
+//             break;
+//         case SUM:
+//             funSum(t_instruccion instruccion);
+//             break;
+//         case SUB:
+//             funcSub(t_instruccion instruccion);
+//             break;
+//         case JNZ:
+//             funcJnz(t_instruccion instruccion);
+//             break;
+//         case IO_GEN_SLEEP:
+//             funcIoGenSleep(t_instruccion instruccion); 
+//             break;
+//     }
+
+//     contexto->pc++;
+
+
+// }
+
+//t_nombre_instruccion decode(t_instruccion *instruccion){
+    // No se puede comparar al ser un enum
+    // if (strcmp(instruccion->nombre, "SET") == 0){
+    //     return SET;
+    // }
+    // else if (strcmp(instruccion->nombre, "SUM") == 0){
+    //     return SUM;
+    // }
+    // else if (strcmp(instruccion->nombre, "JNZ") == 0){
+    //     return JNZ;
+    // }
+    // else if (strcmp(instruccion->nombre, "SUB") == 0){
+    //     return SUB;
+    // }
+    // else if (strcmp(instruccion->nombre, "IO_GEN_SLEEP") == 0){
+    //     return IO_GEN_SLEEP;
+    // }
+//}
+
+// void funcSet(t_instruccion * instruccion){
+//     instruccion->parametro1 = instruccion->parametro2;
+// }
+
+// void funSum(t_instruccion * instruccion){
+//     instruccion->parametro1 = instruccion->parametro1 + instruccion->parametro2;
+// }
+
+// void funcSub(t_instruccion * instruccion){
+//     instruccion->parametro1 = instruccion->parametro1 - instruccion->parametro2;
+// }
+
+void funcJnz(t_instruccion * instruccion, t_pcb *contexto){
+    if(instruccion->parametro1 != 0){
+        contexto->pc = instruccion->parametro2;
+    }
+}
+
+void funcIoGenSleep(t_instruccion instruccion, uint32_t unidaes_de_trabajo){
+    //falta implementar
+} 
