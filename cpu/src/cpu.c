@@ -62,3 +62,27 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
     recibir_operacion(conexion_cpu);
     recibir_string(conexion_cpu, loggs);
 }
+
+void ejecutar_ciclo_de_instruccion(){ //Incompleto
+    t_nombre_instruccion instruccion;
+    switch (instruccion)
+    {
+    case SUM:
+        
+        break;
+    case SET:
+        
+        break;
+    case SUB:
+        
+        break;
+    case JNZ:
+        
+        break;
+    case IO_GEN_SLEEP:
+        
+        break;
+    default:
+        break;
+    }
+ }

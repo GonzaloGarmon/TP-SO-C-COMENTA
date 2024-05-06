@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
     socket_servidor_memoria_dispatch = iniciar_servidor(puerto_escucha, log_memoria);
 
     log_info(log_memoria, "Inicia el servidor de memoria");
-
+    
     pthread_t atiende_cliente_cpu, atiende_cliente_kernel, atiende_cliente_entradasalida;
 
     log_info(log_memoria, "Listo para recibir a CPU");

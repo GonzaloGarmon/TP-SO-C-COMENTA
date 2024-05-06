@@ -25,4 +25,12 @@ int conexion_cpu;
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL);
 void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
 
+typedef enum{ //solo estan las instrucciones necesarias para el checkpoint 2
+    SET,
+    SUB,
+    SUM,
+    JNZ,
+    IO_GEN_SLEEP
+}t_nombre_instruccion;
+
 #endif
