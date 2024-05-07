@@ -31,34 +31,4 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
 // void funcJnz(t_instruccion *&instruccion);
 // void funcIoGenSleep(t_instruccion *&instruccion);
 // t_nombre_instruccion decode(t_instruccion *instruccion, t_pcb *contexto);
-
-typedef enum{ //solo estan las instrucciones necesarias para el checkpoint 2
-    SET,
-    SUB,
-    SUM,
-    JNZ,
-    IO_GEN_SLEEP,
-    MOV_IN,
-    MOV_OUT,
-    RESIZE,
-    COPY_STRING,
-    WAIT,
-    SIGNAL,
-    IO_STDIN_READ,
-    IO_STDOUT_WRITE,
-    IO_FS_CREATE,
-    IO_FS_DELETE,
-    IO_FS_TRUNCATE,
-    IO_FS_WRITE,
-    IO_FS_READ,
-    EXIT_
-}t_nombre_instruccion;
-
-typedef struct{
-    t_nombre_instruccion nombre;
-    char parametro1[20];
-    char parametro2[20];
-}t_instruccion;
-
-
 #endif

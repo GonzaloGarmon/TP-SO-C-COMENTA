@@ -60,6 +60,32 @@ typedef struct
 	t_buffer* buffer;
 } t_paquete;
 
+typedef enum{
+    SET,
+    SUB,
+    SUM,
+    JNZ,
+    IO_GEN_SLEEP,
+    MOV_IN,
+    MOV_OUT,
+    RESIZE,
+    COPY_STRING,
+    WAIT,
+    SIGNAL,
+    IO_STDIN_READ,
+    IO_STDOUT_WRITE,
+    IO_FS_CREATE,
+    IO_FS_DELETE,
+    IO_FS_TRUNCATE,
+    IO_FS_WRITE,
+    IO_FS_READ,
+    EXIT_
+}t_nombre_instruccion;
+typedef struct{
+    t_nombre_instruccion nombre;
+    char* parametros[10];
+}t_instruccion;
+
 /**
 * @fn    decir_hola
 * @brief Imprime un saludo al nombre que se pase por parámetro por consola.

@@ -54,3 +54,31 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
     enviar_string(SOCKET_CLIENTE_ENTRADASALIDA, "salame con patas", MENSAJE);
 }
+
+//Chequear los tamanios maximos de todo.
+int longitud_maxima = 100;
+int parametros_maximos = 10;
+int instrucciones_maximas = 100;
+
+t_instruccion instrucciones[instrucciones_maximas];
+
+void cargar_instrucciones_desde_archivo(char nombre_archivo, t_instruccion instrucciones[instrucciones_maximas]) {
+    FILE* archivo = fopen(nombre_archivo, "r");
+    if (archivo == NULL) {
+        perror("Error al abrir el archivo");
+        exit(EXIT_FAILURE);
+    }
+
+    int indice_instruccion = 0;
+    char linea[instrucciones_maximas];
+
+    while (fgets(linea, longitud_maxima, archivo) != NULL && indice_instruccion < instrucciones_maximas) {
+        char *token = strtok(linea, " \t\n");
+        if (token != NULL) {
+            instrucciones[indice_instruccion].nombre = strdup(token);
+        }
+        indice_instruccion++;
+    }
+
+    fclose(archivo);
+}
