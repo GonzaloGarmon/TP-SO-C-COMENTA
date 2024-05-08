@@ -27,41 +27,34 @@ typedef struct{
 	uint32_t EDX;
 }t_registros_cpu;
 
-typedef enum{
+// typedef enum{
+// 	NEW,
+// 	READY,
+// 	EXEC,
+// 	BLOCK,
+// 	EXIT,
+// }t_estado_proceso;
+typedef struct {
+	uint32_t pid;
+	uint32_t pc;
+	int qq;
+	t_registros_cpu* registros;
+
+}t_pcb;
+
+typedef enum
+{
+	//ESTADOS
 	NEW,
 	READY,
 	EXEC,
 	BLOCK,
 	EXIT,
-}t_estado_proceso;
-typedef struct {
-	uint32_t pid;
-	uint32_t pc;
-	//FALTA LO DEL QUANTUM
-	t_registros_cpu* registros;
-	t_estado_proceso estado;
-}t_pcb;
-
-typedef enum
-{
+	//MENSAJES GENERICOS
 	MENSAJE,
-	PAQUETE
-}op_code;
-
-typedef struct
-{
-	int size;
-	void* stream;
-} t_buffer;
-
-typedef struct
-{
-	op_code codigo_operacion;
-	t_buffer* buffer;
-} t_paquete;
-
-typedef enum{
-    SET,
+	PAQUETE,
+	//INSTRUCCIONES
+	SET,
     SUB,
     SUM,
     JNZ,
@@ -80,9 +73,43 @@ typedef enum{
     IO_FS_WRITE,
     IO_FS_READ,
     EXIT_
-}t_nombre_instruccion;
+}op_code;
+
+typedef struct
+{
+	int size;
+	void* stream;
+} t_buffer;
+
+typedef struct
+{
+	op_code codigo_operacion;
+	t_buffer* buffer;
+} t_paquete;
+
+// typedef enum{
+//     SET,
+//     SUB,
+//     SUM,
+//     JNZ,
+//     IO_GEN_SLEEP,
+//     MOV_IN,
+//     MOV_OUT,
+//     RESIZE,
+//     COPY_STRING,
+//     WAIT,
+//     SIGNAL,
+//     IO_STDIN_READ,
+//     IO_STDOUT_WRITE,
+//     IO_FS_CREATE,
+//     IO_FS_DELETE,
+//     IO_FS_TRUNCATE,
+//     IO_FS_WRITE,
+//     IO_FS_READ,
+//     EXIT_
+// }t_nombre_instruccion;
 typedef struct{
-    t_nombre_instruccion nombre;
+    op_code nombre;
     char* parametros[10];
 }t_instruccion;
 
@@ -115,25 +142,27 @@ t_config* iniciar_config(char *ruta);
 
 void agregar_entero_a_paquete(t_paquete *paquete, uint32_t numero);
 void agregar_entero_uint8_a_paquete(t_paquete *paquete, uint8_t numero);
-void agregar_entero_int_a_paquete(t_paquete *paquete, t_estado_proceso numero);
+void agregar_entero_int_a_paquete(t_paquete *paquete, int numero);
 void agregar_string_a_paquete(t_paquete *paquete, char* palabra);
 void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb);
 void agregar_registros_a_paquete(t_paquete * paquete, t_registros_cpu * registros);
-void agregar_estado_a_paquete(t_paquete* paquete, t_pcb *pcb);
 void enviar_entero (int conexion, uint32_t numero, int codop);
 void enviar_string (int conexion, char* palabra, int codop);
+void enviar_pcb (int conexion, t_pcb* pcb, int codop);
 t_paquete* crear_paquete_op(op_code codop);
 
 
 // Una vez serializado -> recibimos y leemos estas variables
 
 int leer_entero(char *buffer, int * desplazamiento);
+uint8_t leer_entero_uint8(char *buffer, int * desplazamiento);
 uint32_t leer_entero_uint32(char *buffer, int * desplazamiento);
 char* leer_string(char *buffer, int * desplazamiento);
+t_registros_cpu * leer_registros(char* buffer, int* desp);
 
 uint32_t recibir_entero_uint32(int socket, t_log* loggs);
 char* recibir_string(int socket, t_log* loggs);
-
+t_pcb* recibir_pcb(int socket);
 
 
 #endif

@@ -267,6 +267,16 @@ void enviar_string (int conexion, char* palabra, int codop){
 	eliminar_paquete(paquete);
 }
 
+void enviar_pcb (int conexion, t_pcb* pcb, int codop){
+	t_paquete* paquete = crear_paquete_op(codop);
+
+	agregar_pcb_a_paquete(paquete,pcb);
+	enviar_paquete(paquete,conexion);
+	eliminar_paquete(paquete);
+}
+
+
+
 t_paquete* crear_paquete_op(op_code codop)
 {
 	t_paquete* paquete = malloc(sizeof(t_paquete));
@@ -288,34 +298,27 @@ void agregar_registros_a_paquete(t_paquete * paquete, t_registros_cpu * registro
 
 }
 
-void agregar_entero_int_a_paquete(t_paquete *paquete, t_estado_proceso numero){
+void agregar_entero_int_a_paquete(t_paquete *paquete, int numero){
 	
-	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(t_estado_proceso));
-	memcpy(paquete->buffer->stream + paquete->buffer->size, &numero, sizeof(t_estado_proceso));
-	paquete->buffer->size += sizeof(t_estado_proceso);
+	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + sizeof(int));
+	memcpy(paquete->buffer->stream + paquete->buffer->size, &numero, sizeof(int));
+	paquete->buffer->size += sizeof(int);
 }
 
 
 
-void agregar_estado_a_paquete(t_paquete* paquete, t_pcb *pcb){
 
-	agregar_entero_int_a_paquete(paquete,pcb->estado = NEW);
-	agregar_entero_int_a_paquete(paquete,pcb->estado = READY);
-	agregar_entero_int_a_paquete(paquete,pcb->estado = EXEC);
-	agregar_entero_int_a_paquete(paquete,pcb->estado = BLOCK);
-	agregar_entero_int_a_paquete(paquete,pcb->estado = EXIT);
-}
 
 void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb){
 	agregar_entero_a_paquete(paquete, pcb->pc);
 	agregar_entero_a_paquete(paquete, pcb->pid);
 	agregar_registros_a_paquete(paquete, pcb->registros);
-	// agregar_estado_a_paquete(paquete, pcb->estado);
-	//agregar_quantum_a_paquete(paquete, pcb->quantum);
+	agregar_entero_int_a_paquete(paquete,pcb->qq); 
 }
 
 
 // Una vez serializado -> recibimos y leemos estas variables
+
 
 int leer_entero(char *buffer, int * desplazamiento)
 {
@@ -328,6 +331,14 @@ int leer_entero(char *buffer, int * desplazamiento)
 uint32_t leer_entero_uint32(char *buffer, int * desplazamiento)
 {
 	uint32_t entero;
+	memcpy(&entero, buffer + (*desplazamiento), sizeof(uint32_t));
+	(*desplazamiento) += sizeof(uint32_t);
+	return entero;
+}
+
+uint8_t leer_entero_uint8(char *buffer, int * desplazamiento)
+{
+	uint8_t entero;
 	memcpy(&entero, buffer + (*desplazamiento), sizeof(uint32_t));
 	(*desplazamiento) += sizeof(uint32_t);
 	return entero;
@@ -351,6 +362,38 @@ char* leer_string(char* buffer, int* desplazamiento) {
 
     return palabra;
 }
+
+// t_registros_cpu * leer_registros(char* buffer, int* desp){
+
+// 	int tamanio = leer_entero(buffer,desp);
+// 	t_registros_cpu * retorno = malloc(tamanio);
+// 	leer_entero_uint8(buffer,desp);
+// 	memcpy(retorno->AX, buffer + (*desp), 8);
+// 	(*desp) += 8;
+// 	leer_entero_uint8(buffer,desp);
+// 	memcpy(retorno->BX, buffer + (*desp), 8);
+// 	(*desp) += 8;
+// 	leer_entero_uint8(buffer,desp);
+// 	memcpy(retorno->CX, buffer + (*desp), 8);
+// 	(*desp) += 8;
+// 	leer_entero_uint8(buffer,desp);
+// 	memcpy(retorno->DX, buffer + (*desp), 8);
+// 	(*desp) += 8;
+// 	leer_entero_uint32(buffer,desp);
+// 	memcpy(retorno->EAX, buffer + (*desp), 8);
+// 	(*desp) += 32;
+// 	leer_entero_uint32(buffer,desp);
+// 	memcpy(retorno->EBX, buffer + (*desp), 8);
+// 	(*desp) += 32;
+// 	leer_entero_uint32(buffer,desp);
+// 	memcpy(retorno->ECX, buffer + (*desp), 8);
+// 	(*desp) += 32;
+// 	leer_entero_uint32(buffer,desp);
+// 	memcpy(retorno->EDX, buffer + (*desp), 8);
+// 	(*desp) += 32;
+
+
+// }
 
 uint32_t recibir_entero_uint32(int socket, t_log* loggs){
 
@@ -380,7 +423,24 @@ char* recibir_string(int socket,t_log* loggs){
 	return nuevo_string;
 }
 
+t_pcb* recibir_pcb(int socket){
 
+	t_pcb* nuevo_pcb = malloc(sizeof(t_pcb));
+
+	int size = 0;
+	char* buffer;
+	int desp = 0;
+		
+	buffer = recibir_buffer(&size, socket);
+
+	nuevo_pcb->pid = leer_entero_uint32(buffer,&desp);
+	nuevo_pcb->pc = leer_entero_uint32(buffer,&desp);
+	nuevo_pcb->qq = leer_entero(buffer,&desp);
+	// nuevo_pcb->registros = leer_registros(buffer,&desp);
+
+	free(buffer);
+	return nuevo_pcb;
+}
 
 
 

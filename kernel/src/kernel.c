@@ -186,7 +186,7 @@ void iniciar_proceso(){
     //creamos PCB
     t_registros_cpu* registros = inicializar_registros();
     t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
-    pcb_nuevo->estado = NEW;
+    pcb_nuevo->qq = 2000;
     pcb_nuevo->pid = generador_pid++;
     pcb_nuevo->pc = 0;
     pcb_nuevo ->registros = registros;
