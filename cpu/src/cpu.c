@@ -133,8 +133,8 @@ void ejecutar_ciclo_de_instruccion(){ //Incompleto
 // }
 
 void funcJnz(t_instruccion * instruccion, t_pcb *contexto){
-    if(instruccion->parametro1 != 0){
-        contexto->pc = instruccion->parametro2;
+    if(instruccion->parametros[1] != 0){
+        contexto->pc = instruccion->parametros[2];
     }
 }
 
