@@ -180,14 +180,14 @@ t_paquete* crear_paquete(void)
 	return paquete;
 }
 
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
+void agregar_a_paquete(t_paquete* paquete, void* valor, uint32_t tamanio)
 {
 	paquete->buffer->stream = realloc(paquete->buffer->stream, paquete->buffer->size + tamanio + sizeof(int));
 
-	memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(int));
-	memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(int), valor, tamanio);
+	memcpy(paquete->buffer->stream + paquete->buffer->size, &tamanio, sizeof(uint32_t));
+	memcpy(paquete->buffer->stream + paquete->buffer->size + sizeof(uint32_t), valor, tamanio);
 
-	paquete->buffer->size += tamanio + sizeof(int);
+	paquete->buffer->size += tamanio + sizeof(uint32_t);
 }
 
 void enviar_paquete(t_paquete* paquete, int socket_cliente)
@@ -275,6 +275,14 @@ void enviar_pcb (int conexion, t_pcb* pcb, int codop){
 	eliminar_paquete(paquete);
 }
 
+void enviar_instruccion (int conexion, t_instruccion* nueva_instruccion, int codop){
+	t_paquete* paquete = crear_paquete_op(codop);
+
+	agregar_instruccion_a_paquete(paquete,nueva_instruccion);
+	enviar_paquete(paquete,conexion);
+	eliminar_paquete(paquete);
+}
+
 
 
 t_paquete* crear_paquete_op(op_code codop)
@@ -314,6 +322,19 @@ void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb){
 	agregar_entero_a_paquete(paquete, pcb->pid);
 	agregar_registros_a_paquete(paquete, pcb->registros);
 	agregar_entero_int_a_paquete(paquete,pcb->qq); 
+}
+
+
+
+void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion * instruccion_nueva){
+	
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros1);
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros2);
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros3);
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros4);
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros5);
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros6);
+
 }
 
 
@@ -423,6 +444,27 @@ char* recibir_string(int socket,t_log* loggs){
 	return nuevo_string;
 }
 
+t_instruccion* recibir_instruccion(int socket){
+	
+	t_instruccion* nueva_instruccion = malloc(sizeof(t_instruccion));
+
+	int size = 0;
+	char* buffer;
+	int desp = 0;
+		
+	buffer = recibir_buffer(&size, socket);
+
+	nueva_instruccion->parametros1  = leer_string(buffer, &desp);
+	nueva_instruccion->parametros2  = leer_string(buffer, &desp);
+	nueva_instruccion->parametros3  = leer_string(buffer, &desp);
+	nueva_instruccion->parametros4  = leer_string(buffer, &desp);
+	nueva_instruccion->parametros5  = leer_string(buffer, &desp);
+	nueva_instruccion->parametros6  = leer_string(buffer, &desp);
+	
+	free(buffer);
+	return nueva_instruccion;
+}
+
 t_pcb* recibir_pcb(int socket){
 
 	t_pcb* nuevo_pcb = malloc(sizeof(t_pcb));
@@ -436,7 +478,14 @@ t_pcb* recibir_pcb(int socket){
 	nuevo_pcb->pid = leer_entero_uint32(buffer,&desp);
 	nuevo_pcb->pc = leer_entero_uint32(buffer,&desp);
 	nuevo_pcb->qq = leer_entero(buffer,&desp);
-	// nuevo_pcb->registros = leer_registros(buffer,&desp);
+	nuevo_pcb->registros->AX = leer_entero_uint8(buffer,&desp);
+	nuevo_pcb->registros->BX = leer_entero_uint8(buffer,&desp);
+	nuevo_pcb->registros->CX = leer_entero_uint8(buffer,&desp);
+	nuevo_pcb->registros->DX = leer_entero_uint8(buffer,&desp);
+	nuevo_pcb->registros->EAX = leer_entero_uint32(buffer,&desp);
+	nuevo_pcb->registros->EBX = leer_entero_uint32(buffer,&desp);
+	nuevo_pcb->registros->ECX = leer_entero_uint32(buffer,&desp);
+	nuevo_pcb->registros->EDX = leer_entero_uint32(buffer,&desp);
 
 	free(buffer);
 	return nuevo_pcb;

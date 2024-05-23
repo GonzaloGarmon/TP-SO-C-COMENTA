@@ -134,7 +134,7 @@ int crear_conexion(char *ip, char* puerto);
 void enviar_mensaje(char* mensaje, int socket_cliente);
 void crear_buffer(t_paquete* paquete);
 t_paquete* crear_paquete(void);
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio);
+void agregar_a_paquete(t_paquete* paquete, void* valor, uint32_t tamanio);
 void enviar_paquete(t_paquete* paquete, int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
 void liberar_conexion(int socket_cliente);
@@ -150,9 +150,11 @@ void agregar_entero_int_a_paquete(t_paquete *paquete, int numero);
 void agregar_string_a_paquete(t_paquete *paquete, char* palabra);
 void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb);
 void agregar_registros_a_paquete(t_paquete * paquete, t_registros_cpu * registros);
+void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion * instruccion_nueva);
 void enviar_entero (int conexion, uint32_t numero, int codop);
 void enviar_string (int conexion, char* palabra, int codop);
 void enviar_pcb (int conexion, t_pcb* pcb, int codop);
+void enviar_instruccion (int conexion, t_instruccion* nueva_instruccion, int codop);
 t_paquete* crear_paquete_op(op_code codop);
 
 
@@ -167,6 +169,7 @@ t_registros_cpu * leer_registros(char* buffer, int* desp);
 uint32_t recibir_entero_uint32(int socket, t_log* loggs);
 char* recibir_string(int socket, t_log* loggs);
 t_pcb* recibir_pcb(int socket);
+t_instruccion* recibir_instruccion(int socket);
 
 
 #endif
