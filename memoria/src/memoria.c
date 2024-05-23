@@ -60,9 +60,9 @@ int longitud_maxima = 100;
 int parametros_maximos = 10;
 int instrucciones_maximas = 100;
 
-t_instruccion instrucciones[instrucciones_maximas];
+t_instruccion *instrucciones[instrucciones_maximas];
 
-void cargar_instrucciones_desde_archivo(char nombre_archivo, t_instruccion instrucciones[instrucciones_maximas]) {
+void* cargar_instrucciones_desde_archivo(char nombre_archivo, t_instruccion* instrucciones[instrucciones_maximas]) {
     FILE* archivo = fopen(nombre_archivo, "r");
     if (archivo == NULL) {
         perror("Error al abrir el archivo");
@@ -81,4 +81,5 @@ void cargar_instrucciones_desde_archivo(char nombre_archivo, t_instruccion instr
     }
 
     fclose(archivo);
+    return instrucciones;
 }
