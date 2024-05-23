@@ -109,8 +109,12 @@ typedef struct
 //     EXIT_
 // }t_nombre_instruccion;
 typedef struct{
-    op_code nombre;
-    char* parametros[10];
+    char* parametros1;
+	char* parametros2;
+	char* parametros3;
+	char* parametros4;
+	char* parametros5;
+	char* parametros6;
 }t_instruccion;
 
 /**

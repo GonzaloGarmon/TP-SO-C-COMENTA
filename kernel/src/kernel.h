@@ -68,4 +68,5 @@ void planificar_corto_plazo();
 void planificar_rr();
 void contador_quantum_RR();
 void exec_pcb();
+void dispatch(t_pcb* pcb_enviar);
 #endif

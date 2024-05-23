@@ -289,13 +289,8 @@ void exec_pcb()
 
         sem_wait(&sem_listos_para_exec);
         t_pcb* pcb_enviar = elegir_pcb_segun_algoritmo();
-        pcb_enviar->estado = EXEC;
-        pthread_mutex_lock(&mutex_cola_exec);
-        pcb_enviar = list_add(cola_exec, pcb_enviar);
-        pthread_mutex_unlock(&mutex_cola_exec);
 
-
-        //dispatch(); HAY QUE HACER LA FUNCION DE DISPATCH
+        dispatch(pcb_enviar);
     }
 }
 
@@ -334,3 +329,16 @@ t_pcb* elegir_pcb_segun_algoritmo(){
     return pcb_ejecutar;
 }
 
+
+void dispatch(t_pcb* pcb_enviar){
+
+        //pcb_enviar->estado = EXEC;
+
+        //ENVIAR CONTEXTO DE EJECUCION A CPU
+        enviar_pcb(puerto_cpu_dispatch, pcb_enviar,EXEC);
+
+
+        pthread_mutex_lock(&mutex_cola_exec);
+        pcb_enviar = list_add(cola_exec, pcb_enviar);
+        pthread_mutex_unlock(&mutex_cola_exec);
+}
