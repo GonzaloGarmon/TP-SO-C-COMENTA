@@ -182,11 +182,15 @@ void iniciar_proceso(){
     scanf("%s", path);
 
     //ACA HAY QUE AVISARLE A MEMORIA QUE SE CREA UN PROCESO DE ESE PATH, DEBERIA DEVOLVER ALGUNA INFO?
+    t_paquete* paquete = crear_paquete_op(INICIO_NUEVO_PROCESO);
+    agregar_string_a_paquete(paquete,path);
+    enviar_paquete(paquete,puerto_memoria);
+    eliminar_paquete(paquete);
 
     //creamos PCB
     t_registros_cpu* registros = inicializar_registros();
     t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
-    pcb_nuevo->qq = 2000;
+    pcb_nuevo->qq = quantum;
     pcb_nuevo->pid = generador_pid++;
     pcb_nuevo->pc = 0;
     pcb_nuevo ->registros = registros;
@@ -331,7 +335,7 @@ t_pcb* elegir_pcb_segun_algoritmo(){
 
 void dispatch(t_pcb* pcb_enviar){
 
-        //pcb_enviar->estado = EXEC;
+        
 
         //ENVIAR CONTEXTO DE EJECUCION A CPU
         enviar_pcb(puerto_cpu_dispatch, pcb_enviar,EXEC);

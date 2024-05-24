@@ -51,13 +51,9 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
     t_instruccion* instrucciones[instrucciones_maximas];
     cargar_instrucciones_desde_archivo(path_instrucciones, instrucciones);
 
-    t_paquete* paquete = crear_paquete_op(PAQUETE);
-    for (int i = 0; i < instrucciones_maximas && instrucciones[i] != NULL; i++) {
-        agregar_instruccion_a_paquete(paquete, instrucciones[i]);
-    }
+    //PRIMERO DEBERIA OBTENER EL PROGRAM COUNTER Y EL PROCESS ID PARA SABER QUE INSTRUCCION DEVOLVER
 
-    enviar_paquete(paquete, SOCKET_CLIENTE_CPU);
-    eliminar_paquete(paquete);
+    //enviar_instruccion(socket_cliente_cpu, instrucciones[pc],)
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){

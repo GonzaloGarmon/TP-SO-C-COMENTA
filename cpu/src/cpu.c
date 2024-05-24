@@ -88,7 +88,7 @@ t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc){
 
 }
 
-void execute(op_code instruccion_nombre, t_pcb *contexto, t_instruccion* instruccion) {
+void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
     switch (instruccion_nombre) {
         case SET:
             funcSet(instruccion);
