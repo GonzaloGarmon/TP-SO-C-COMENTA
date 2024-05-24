@@ -298,7 +298,6 @@ void pcb_ready(){
     sem_wait(&sem_listos_para_ready);
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
     sem_wait(&sem_multiprogamacion);
-    pcb->estado = READY;
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb);
     pthread_mutex_unlock(&mutex_cola_ready);

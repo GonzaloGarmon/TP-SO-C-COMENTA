@@ -26,14 +26,16 @@ int conexion_cpu;
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL);
 void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
 
-void funcSet(t_instruccion *instruccion, t_pcb *contexto)
-//void funcSum(t_instruccion *&instruccion);
-//void funcSub(t_instruccion *&instruccion);
-void funcJnz(t_instruccion *instruccion, t_pcb *contexto)
-void funcIoGenSleep(t_instruccion *instruccion, uint32_t unidades_de_trabajo) {
-    uint32_t duration = unidades_de_trabajo;
-    sleep(duration);
-}
+void funcSet(t_instruccion *instruccion);
+void funcSum(t_instruccion *instruccion);
+void funcSub(t_instruccion *instruccion);
+void funcJnz(t_instruccion *instruccion);
+void funcIoGenSleep(t_instruccion *instruccion);
 
-op_code decode(t_instruccion *instruccion) 
+op_code decode(t_instruccion *instruccion);
+t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc); 
+void execute(op_code instruccion_nombre, t_pcb *contexto, t_instruccion* instruccion);
+uint8_t obtener_valor_registro_XX(char* parametro);
+uint32_t obtener_valor_registro_XXX(char* parametro);
+t_instruccion* fetch(uint32_t pid, uint32_t pc);
 #endif
