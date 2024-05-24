@@ -29,6 +29,5 @@ void establecer_conexion_kernel(char * ip_kernel, char* puerto_kernel, t_config*
 void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
 
 void inicializar_interfaz_generica(InterfazGenerica *interfazGen, const char *nombre, int tiempo);
-void io_gen_sleep(InterfazGenerica *interfazGen, int unidades);
 
 #endif

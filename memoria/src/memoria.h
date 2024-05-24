@@ -24,4 +24,7 @@ int socket_cliente_entradasalida;
 void recibir_cpu(int SOCKET_CLIENTE_CPU);
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL);
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA);
+
+void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* instrucciones[instrucciones_maximas]);
+
 #endif

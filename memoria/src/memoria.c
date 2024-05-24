@@ -48,7 +48,16 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
 }
 
 void recibir_cpu(int SOCKET_CLIENTE_CPU){
-    enviar_string(SOCKET_CLIENTE_CPU, "salame con patas", MENSAJE);
+    t_instruccion* instrucciones[instrucciones_maximas];
+    cargar_instrucciones_desde_archivo(path_instrucciones, instrucciones);
+
+    t_paquete* paquete = crear_paquete_op(PAQUETE);
+    for (int i = 0; i < instrucciones_maximas && instrucciones[i] != NULL; i++) {
+        agregar_instruccion_a_paquete(paquete, instrucciones[i]);
+    }
+
+    enviar_paquete(paquete, SOCKET_CLIENTE_CPU);
+    eliminar_paquete(paquete);
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
@@ -63,7 +72,7 @@ int instrucciones_maximas = 100;
 t_instruccion *instrucciones[instrucciones_maximas];
 //t_instruccion ins a enviar = instrucciones[pid];
 
-void* cargar_instrucciones_desde_archivo(char nombre_archivo, t_instruccion* instrucciones[instrucciones_maximas]) {
+void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* instrucciones[instrucciones_maximas]) {
     FILE* archivo = fopen(nombre_archivo, "r");
     if (archivo == NULL) {
         perror("Error al abrir el archivo");
@@ -71,13 +80,40 @@ void* cargar_instrucciones_desde_archivo(char nombre_archivo, t_instruccion* ins
     }
 
     int indice_instruccion = 0;
-    char linea[instrucciones_maximas];
+    char linea[longitud_maxima];
 
     while (fgets(linea, longitud_maxima, archivo) != NULL && indice_instruccion < instrucciones_maximas) {
-        char *token = strtok(linea, " \t\n");
-        if (token != NULL) {
-            instrucciones[indice_instruccion].nombre = strdup(token);
+        t_instruccion* instruccion = malloc(sizeof(t_instruccion));
+        char* token = strtok(linea, " \t\n");
+        int param_count = 0;
+
+        while (token != NULL && param_count < parametros_maximos) {
+            switch (param_count) {
+                case 0:
+                    instruccion->parametros1 = strdup(token);
+                    break;
+                case 1:
+                    instruccion->parametros2 = strdup(token);
+                    break;
+                case 2:
+                    instruccion->parametros3 = strdup(token);
+                    break;
+                case 3:
+                    instruccion->parametros4 = strdup(token);
+                    break;
+                case 4:
+                    instruccion->parametros5 = strdup(token);
+                    break;
+                case 5:
+                    instruccion->parametros6 = strdup(token);
+                    break;
+                default:
+                    break;
+            }
+            token = strtok(NULL, " \t\n");
+            param_count++;
         }
+        instrucciones[indice_instruccion] = instruccion;
         indice_instruccion++;
     }
 

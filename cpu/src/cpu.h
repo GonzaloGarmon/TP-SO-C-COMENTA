@@ -25,10 +25,15 @@ int conexion_cpu;
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL);
 void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
-// void funcSet(t_instruccion *&instruccion);
-// void funcSum(t_instruccion *&instruccion);
-// void funcSub(t_instruccion *&instruccion);
-// void funcJnz(t_instruccion *&instruccion);
-// void funcIoGenSleep(t_instruccion *&instruccion);
-// t_nombre_instruccion decode(t_instruccion *instruccion, t_pcb *contexto);
+
+void funcSet(t_instruccion *instruccion, t_pcb *contexto)
+//void funcSum(t_instruccion *&instruccion);
+//void funcSub(t_instruccion *&instruccion);
+void funcJnz(t_instruccion *instruccion, t_pcb *contexto)
+void funcIoGenSleep(t_instruccion *instruccion, uint32_t unidades_de_trabajo) {
+    uint32_t duration = unidades_de_trabajo;
+    sleep(duration);
+}
+
+op_code decode(t_instruccion *instruccion) 
 #endif

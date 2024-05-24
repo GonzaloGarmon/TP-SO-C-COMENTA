@@ -71,58 +71,76 @@ void ejecutar_ciclo_de_instruccion(){ //Incompleto
 
 
 //pedir a la memoria la proxima instruccion a ejecutar
-// t_instruccion *fetch(uint32_t pid, uint32_t pc){
-//     t_instruccion instr;
-//     return instr;
-// }
-
-// void execute(t_instruccion *instruccion, t_pcb *contexto){
-
-//     switch(instruccion->nombre){
-//         case SET:
-//             funcSet(t_instruccion instruccion);
-//             break;
-//         case SUM:
-//             funSum(t_instruccion instruccion);
-//             break;
-//         case SUB:
-//             funcSub(t_instruccion instruccion);
-//             break;
-//         case JNZ:
-//             funcJnz(t_instruccion instruccion);
-//             break;
-//         case IO_GEN_SLEEP:
-//             funcIoGenSleep(t_instruccion instruccion); 
-//             break;
-//     }
-
-//     contexto->pc++;
-
-
-// }
-
-//t_nombre_instruccion decode(t_instruccion *instruccion){
-    // No se puede comparar al ser un enum
-    // if (strcmp(instruccion->nombre, "SET") == 0){
-    //     return SET;
-    // }
-    // else if (strcmp(instruccion->nombre, "SUM") == 0){
-    //     return SUM;
-    // }
-    // else if (strcmp(instruccion->nombre, "JNZ") == 0){
-    //     return JNZ;
-    // }
-    // else if (strcmp(instruccion->nombre, "SUB") == 0){
-    //     return SUB;
-    // }
-    // else if (strcmp(instruccion->nombre, "IO_GEN_SLEEP") == 0){
-    //     return IO_GEN_SLEEP;
-    // }
+//t_instruccion *fetch(uint32_t pid, uint32_t pc){
+//    t_instruccion *instr = pedir_instruccion_memoria(pid, pc);
+//   return instr;
 //}
 
-// void funcSet(t_instruccion * instruccion){
-//     instruccion->parametro1 = instruccion->parametro2;
+void execute(t_instruccion *instruccion, t_pcb *contexto) {
+    switch (decode(instruccion)) {
+        case SET:
+            funcSet(instruccion, contexto);
+            break;
+        case SUM:
+            funcSum(instruccion, contexto);
+            break;
+        case SUB:
+            funcSub(instruccion, contexto);
+            break;
+        case JNZ:
+            funcJnz(instruccion, contexto);
+            break;
+        case IO_GEN_SLEEP:
+            funcIoGenSleep(instruccion);
+            break;
+        default:
+            printf("Instrucción desconocida\n");
+            break;
+    }
+
+    contexto->pc++;
+}
+
 // }
+
+op_code decode(t_instruccion *instruccion) {
+    if (strcmp(instruccion->nombre, "SET") == 0) {
+        return SET;
+    } else if (strcmp(instruccion->nombre, "SUM") == 0) {
+        return SUM;
+    } else if (strcmp(instruccion->nombre, "SUB") == 0) {
+        return SUB;
+    } else if (strcmp(instruccion->nombre, "JNZ") == 0) {
+        return JNZ;
+    } else if (strcmp(instruccion->nombre, "IO_GEN_SLEEP") == 0) {
+        return IO_GEN_SLEEP;
+    }
+    // Agregar otras instrucciones según sea necesario
+    return -1; // Código de operación no válido
+}
+
+
+void funcSet(t_instruccion *instruccion, t_pcb *contexto) {
+    if (strcmp(instruccion->parametros1, "AX") == 0) {
+        contexto->registros->AX = atoi(instruccion->parametros2);
+    } else if (strcmp(instruccion->parametros1, "BX") == 0) {
+        contexto->registros->BX = atoi(instruccion->parametros2);
+    } else if (strcmp(instruccion->parametros1, "CX") == 0) {
+        contexto->registros->CX = atoi(instruccion->parametros2);
+    } else if (strcmp(instruccion->parametros1, "DX") == 0) {
+        contexto->registros->DX = atoi(instruccion->parametros2);
+    } else if (strcmp(instruccion->parametros1, "EAX") == 0) {
+        contexto->registros->EAX = atoi(instruccion->parametros2);
+    } else if (strcmp(instruccion->parametros1, "EBX") == 0) {
+        contexto->registros->EBX = atoi(instruccion->parametros2);
+    } else if (strcmp(instruccion->parametros1, "ECX") == 0) {
+        contexto->registros->ECX = atoi(instruccion->parametros2);
+    } else if (strcmp(instruccion->parametros1, "EDX") == 0) {
+        contexto->registros->EDX = atoi(instruccion->parametros2);
+    } else {
+        printf("Registro desconocido: %s\n", instruccion->parametros1);
+    }
+}
 
 // void funSum(t_instruccion * instruccion){
 //     instruccion->parametro1 = instruccion->parametro1 + instruccion->parametro2;
@@ -132,12 +150,32 @@ void ejecutar_ciclo_de_instruccion(){ //Incompleto
 //     instruccion->parametro1 = instruccion->parametro1 - instruccion->parametro2;
 // }
 
-void funcJnz(t_instruccion * instruccion, t_pcb *contexto){
-    if(instruccion->parametros[1] != 0){
-        contexto->pc = instruccion->parametros[2];
+void funcJnz(t_instruccion *instruccion, t_pcb *contexto) {
+    uint32_t reg_value;
+    if (strcmp(instruccion->parametros1, "AX") == 0) {
+        reg_value = contexto->registros->AX;
+    } else if (strcmp(instruccion->parametros1, "BX") == 0) {
+        reg_value = contexto->registros->BX;
+    } else if (strcmp(instruccion->parametros1, "CX") == 0) {
+        reg_value = contexto->registros->CX;
+    } else if (strcmp(instruccion->parametros1, "DX") == 0) {
+        reg_value = contexto->registros->DX;
+    } else if (strcmp(instruccion->parametros1, "EAX") == 0) {
+        reg_value = contexto->registros->EAX;
+    } else if (strcmp(instruccion->parametros1, "EBX") == 0) {
+        reg_value = contexto->registros->EBX;
+    } else if (strcmp(instruccion->parametros1, "ECX") == 0) {
+        reg_value = contexto->registros->ECX;
+    } else if (strcmp(instruccion->parametros1, "EDX") == 0) {
+        reg_value = contexto->registros->EDX;
+    } else {
+        printf("Registro desconocido: %s\n", instruccion->parametros1);
+        return;
+    }
+
+    if (reg_value != 0) {
+        contexto->pc = atoi(instruccion->parametros2);
     }
 }
 
-void funcIoGenSleep(t_instruccion instruccion, uint32_t unidaes_de_trabajo){
-    //falta implementar
-} 
+
