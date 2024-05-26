@@ -37,9 +37,10 @@ int main(int argc, char* argv[]) {
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
 
-    while(1){
+    while(1){ //Para que no finalice el modulo luego de los handshakes
         socket_cliente = esperar_cliente(socket_servidor_memoria_dispatch);
-       // pthread_create();
+       //pthread_create();
+       //pthread_detach();
     }
 
     log_info(log_memoria, "Finalizo conexion con clientes");
