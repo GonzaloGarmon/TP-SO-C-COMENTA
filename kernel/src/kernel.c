@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
 
     log_info(log_kernel, "INICIA EL MODULO DE KERNEL");
 
-    config_kernel = iniciar_config("./config/kernel.config");
+    config_kernel = iniciar_config("/home/utnso/tp-2024-1c-GoC/kernel/config/kernel.config");
         
     puerto_escucha = config_get_string_value(config_kernel, "PUERTO_ESCUCHA");
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");

@@ -59,14 +59,16 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
         exit(2);
     }
     
+    //log_trace(loggs, "Todavía no recibí Op");
     recibir_operacion(conexion_cpu);
+    //log_trace(loggs, "Recibí Op");
     recibir_string(conexion_cpu, loggs);
 }
 
 void ejecutar_ciclo_de_instruccion(){
     t_instruccion* instruccion = fetch(contexto->pid, contexto->pc); // de donde sacar el contexto
     op_code instruccion_nombre = decode(instruccion);
-    execute(instruccion_nombre, contexto, instruccion);
+    execute(instruccion_nombre, instruccion);
  }
 
 //pedir a la memoria la proxima instruccion a ejecutar

@@ -37,6 +37,11 @@ int main(int argc, char* argv[]) {
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
 
+    while(1){
+        socket_cliente = esperar_cliente(socket_servidor_memoria_dispatch);
+       // pthread_create();
+    }
+
     log_info(log_memoria, "Finalizo conexion con clientes");
 
     return 0;
@@ -65,7 +70,7 @@ int longitud_maxima = 100;
 int parametros_maximos = 10;
 int instrucciones_maximas = 100;
 
-t_instruccion *instrucciones[instrucciones_maximas];
+//t_instruccion *instrucciones[instrucciones_maximas];
 //t_instruccion ins a enviar = instrucciones[pid];
 
 void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* instrucciones[instrucciones_maximas]) {
