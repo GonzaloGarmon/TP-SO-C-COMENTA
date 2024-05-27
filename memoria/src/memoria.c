@@ -59,7 +59,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
 
     //PRIMERO DEBERIA OBTENER EL PROGRAM COUNTER Y EL PROCESS ID PARA SABER QUE INSTRUCCION DEVOLVER
 
-    //enviar_instruccion(socket_cliente_cpu, instrucciones[pc],)
+    //enviar_instruccion(socket_cliente_cpu, instrucciones[pc],READY);
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){

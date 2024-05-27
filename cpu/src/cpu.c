@@ -62,7 +62,8 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
     //log_trace(loggs, "Todavía no recibí Op");
     recibir_operacion(conexion_cpu);
     //log_trace(loggs, "Recibí Op");
-    recibir_string(conexion_cpu, loggs);
+    recibir_instruccion(conexion_cpu);
+    
 }
 
 void ejecutar_ciclo_de_instruccion(){
