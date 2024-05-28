@@ -26,12 +26,12 @@ int main(int argc, char* argv[]) {
 
     log_info(log_cpu, "INICIO SERVIDOR");
 
+    pthread_t atiende_cliente_kernel;
     log_info(log_cpu, "Listo para recibir a kernel");
     socket_cliente_kernel = esperar_cliente(socket_servidor_cpu_dispatch);
-
-    pthread_t atiende_cliente_kernel;
+   
     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) (intptr_t) socket_cliente_kernel);
-    pthread_detach(atiende_cliente_kernel);
+    pthread_join(atiende_cliente_kernel, NULL);
     
     log_info(log_cpu, "Finalizo conexion con cliente");
 
@@ -42,7 +42,11 @@ int main(int argc, char* argv[]) {
 
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
-    enviar_string(SOCKET_CLIENTE_KERNEL, "recibido kernel", MENSAJE);
+    enviar_string(socket_cliente_kernel, "hola desde cpu", MENSAJE);
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        int op_code = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+    }
 }
 
 void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* loggs){
@@ -62,7 +66,7 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
     //log_trace(loggs, "Todavía no recibí Op");
     recibir_operacion(conexion_cpu);
     //log_trace(loggs, "Recibí Op");
-    recibir_instruccion(conexion_cpu);
+    recibir_string(conexion_cpu, loggs);
     
 }
 

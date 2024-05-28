@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
 
     // uso interfaz generica
     inicializar_interfaz_generica(&interfazGen, "Interfaz Generica 1", tiempo_unidad_trabajo); //tiempo de unidad de trabajo sacado de config
-    funcIoGenSleep(&interfazGen, 5); //5 interfaces genericas esperando, el dato se debe pedir a Kernel
+    //funcIoGenSleep(&interfazGen, 5); //5 interfaces genericas esperando, el dato se debe pedir a Kernel
 
     log_info(log_entradasalida, "Finalizo conexion con servidores");
 

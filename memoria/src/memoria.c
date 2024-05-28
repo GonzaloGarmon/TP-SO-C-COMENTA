@@ -24,6 +24,7 @@ int main(int argc, char* argv[]) {
 
     log_info(log_memoria, "Listo para recibir a CPU");
     socket_cliente_cpu = esperar_cliente(socket_servidor_memoria_dispatch);
+    
     pthread_create(&atiende_cliente_cpu, NULL, (void *)recibir_cpu, (void *) (intptr_t) socket_cliente_cpu);
     pthread_detach(atiende_cliente_cpu);
     
@@ -34,14 +35,9 @@ int main(int argc, char* argv[]) {
 
     log_info(log_memoria, "Listo para recibir a EntradaSalida");
     socket_cliente_entradasalida = esperar_cliente(socket_servidor_memoria_dispatch);
+    
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
-    pthread_detach(atiende_cliente_entradasalida);
-
-    while(1){ //Para que no finalice el modulo luego de los handshakes
-        socket_cliente = esperar_cliente(socket_servidor_memoria_dispatch);
-       //pthread_create();
-       //pthread_detach();
-    }
+    pthread_join(atiende_cliente_entradasalida, NULL);
 
     log_info(log_memoria, "Finalizo conexion con clientes");
 
@@ -50,20 +46,34 @@ int main(int argc, char* argv[]) {
 
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
-    enviar_string(SOCKET_CLIENTE_KERNEL, "salame con patas", MENSAJE);
+    enviar_string(socket_cliente_kernel, "hola desde memoria", MENSAJE);
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        int op_code = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+    }
 }
 
 void recibir_cpu(int SOCKET_CLIENTE_CPU){
-    t_instruccion* instrucciones[instrucciones_maximas];
-    cargar_instrucciones_desde_archivo(path_instrucciones, instrucciones);
-
+    enviar_string(socket_cliente_cpu,"hola desde memoria", MENSAJE);
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        int op_code = recibir_operacion(SOCKET_CLIENTE_CPU);
+    }
+    //t_instruccion* instrucciones[instrucciones_maximas];
+    //cargar_instrucciones_desde_archivo(path_instrucciones, instrucciones);
+    
     //PRIMERO DEBERIA OBTENER EL PROGRAM COUNTER Y EL PROCESS ID PARA SABER QUE INSTRUCCION DEVOLVER
 
     //enviar_instruccion(socket_cliente_cpu, instrucciones[pc],READY);
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
-    enviar_string(SOCKET_CLIENTE_ENTRADASALIDA, "salame con patas", MENSAJE);
+    enviar_string(socket_cliente_entradasalida, "hola desde memoria", MENSAJE);
+    //enviar_string(SOCKET_CLIENTE_ENTRADASALIDA, "salame con patas", MENSAJE);
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        int op_code = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
+    }
 }
 
 //Chequear los tamanios maximos de todo.

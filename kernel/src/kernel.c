@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
     log_info(log_kernel, "Listo para recibir a EntradaSalida");
 
     socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
-
+     
     pthread_t atiende_cliente_entradasalida;
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
@@ -83,9 +83,12 @@ void iniciar_semaforos(){
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
-    enviar_string(SOCKET_CLIENTE_ENTRADASALIDA, "recibido entradasalida", MENSAJE); 
+    enviar_string(socket_cliente_entradasalida, "hola desde kernel", MENSAJE);
     //Se deben enviar la cantidad de unidades de trabakp necesarias, crear una nueva funcion
-
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        int op_code = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
+    }
 }
 
 void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config* config, t_log* loggs){
