@@ -6,21 +6,9 @@ int main(int argc, char* argv[]) {
 
     log_info(log_cpu, "INICIA EL MODULO DE CPU");
 
-    config_cpu = iniciar_config("/home/utnso/tp-2024-1c-GoC/cpu/config/cpu.config");
+    leer_config();
 
-    ip_memoria = config_get_string_value(config_cpu, "IP_MEMORIA");
-    puerto_memoria = config_get_string_value(config_cpu, "PUERTO_MEMORIA");
-    puerto_escucha_dispatch = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_DISPATCH");
-    puerto_escucha_interrupt = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_INTERRUPT");
-    cantidad_entradas_tlb = config_get_int_value(config_cpu, "CANTIDAD_ENTRADAS_TLB");
-    algoritmo_tlb = config_get_string_value(config_cpu, "ALGORITMO_TLB");
-
-    log_info(log_cpu, "levanto la configuracion del cpu");
-
-    establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
-
-    log_info(log_cpu, "Finalizo conexion con servidor");
-
+    generar_conexiones();
 
     socket_servidor_cpu_dispatch = iniciar_servidor(puerto_escucha_dispatch, log_cpu);
 
@@ -34,12 +22,36 @@ int main(int argc, char* argv[]) {
     pthread_join(atiende_cliente_kernel, NULL);
     
     log_info(log_cpu, "Finalizo conexion con cliente");
-
+    terminar_programa();
     
 
     return 0;
 }
 
+void leer_config(){
+    config_cpu = iniciar_config("/home/utnso/tp-2024-1c-GoC/cpu/config/cpu.config");
+
+    ip_memoria = config_get_string_value(config_cpu, "IP_MEMORIA");
+    puerto_memoria = config_get_string_value(config_cpu, "PUERTO_MEMORIA");
+    puerto_escucha_dispatch = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_DISPATCH");
+    puerto_escucha_interrupt = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_INTERRUPT");
+    cantidad_entradas_tlb = config_get_int_value(config_cpu, "CANTIDAD_ENTRADAS_TLB");
+    algoritmo_tlb = config_get_string_value(config_cpu, "ALGORITMO_TLB");
+
+    log_info(log_cpu, "levanto la configuracion del cpu");
+}
+
+void generar_conexiones(){
+    establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
+}
+
+void terminar_programa(){
+    log_destroy(log_cpu);
+    config_destroy(config_cpu);
+    liberar_conexion(socket_servidor_cpu_dispatch);
+    liberar_conexion(socket_servidor_cpu_interrupt);
+    liberar_conexion(socket_cliente_kernel);
+}
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
     enviar_string(socket_cliente_kernel, "hola desde cpu", MENSAJE);

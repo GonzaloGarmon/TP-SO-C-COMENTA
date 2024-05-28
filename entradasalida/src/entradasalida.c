@@ -6,6 +6,26 @@ int main(int argc, char* argv[]) {
 
     log_info(log_entradasalida, "INICIA EL MODULO DE ENTRADASALIDA");
 
+    leer_config();
+
+    generar_conexiones();
+
+
+    // uso interfaz generica
+    inicializar_interfaz_generica(&interfazGen, "Interfaz Generica 1", tiempo_unidad_trabajo); //tiempo de unidad de trabajo sacado de config
+    //funcIoGenSleep(&interfazGen, 5); //5 interfaces genericas esperando, el dato se debe pedir a Kernel
+
+    log_info(log_entradasalida, "Finalizo conexion con servidores");
+
+    finalizar_programa();
+    return 0;
+}
+
+/*
+------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
+*/
+
+void leer_config(){
     config_entradasalida = iniciar_config("/home/utnso/tp-2024-1c-GoC/entradasalida/config/entrada.config");
 
     tipo_interfaz = config_get_string_value(config_entradasalida, "TIPO_INTERFAZ");
@@ -17,18 +37,12 @@ int main(int argc, char* argv[]) {
     path_base_dialfs = config_get_string_value(config_entradasalida, "PATH_BASE_DIALFS");
     block_size = config_get_int_value(config_entradasalida, "BLOCK_SIZE");
     block_count = config_get_int_value(config_entradasalida, "BLOCK_COUNT");
+}
 
+void generar_conexiones(){
     establecer_conexion_memoria(ip_memoria, puerto_memoria, config_entradasalida, log_entradasalida);
 
     establecer_conexion_kernel(ip_kernel, puerto_kernel, config_entradasalida, log_entradasalida);
-
-    // uso interfaz generica
-    inicializar_interfaz_generica(&interfazGen, "Interfaz Generica 1", tiempo_unidad_trabajo); //tiempo de unidad de trabajo sacado de config
-    //funcIoGenSleep(&interfazGen, 5); //5 interfaces genericas esperando, el dato se debe pedir a Kernel
-
-    log_info(log_entradasalida, "Finalizo conexion con servidores");
-
-    return 0;
 }
 
 void establecer_conexion_kernel(char * ip_kernel, char* puerto_kernel, t_config* config, t_log* loggs){
@@ -64,6 +78,15 @@ void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_conf
     recibir_operacion(conexion_entradasalida);
     recibir_string(conexion_entradasalida, loggs);
 }
+
+void finalizar_programa(){
+    log_destroy(log_entradasalida);
+    config_destroy(config_entradasalida);
+}
+
+/*
+------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
+*/
 
 // iniciar interfaz genérica
 void inicializar_interfaz_generica(InterfazGenerica *interfazGen, const char *nombre, int tiempo) {

@@ -6,6 +6,41 @@ int main(int argc, char* argv[]) {
 
     log_info(log_kernel, "INICIA EL MODULO DE KERNEL");
 
+    leer_config();
+    
+    iniciar_semaforos();
+
+    generar_conexiones();
+
+
+    socket_servidor_kernel_dispatch = iniciar_servidor(puerto_escucha, log_kernel);
+
+    log_info(log_kernel, "INICIO SERVIDOR");
+
+    log_info(log_kernel, "Listo para recibir a EntradaSalida");
+
+    socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
+     
+    pthread_t atiende_cliente_entradasalida;
+    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
+    pthread_detach(atiende_cliente_entradasalida);
+    
+    planificar();
+
+    iniciar_consola();
+
+    
+    log_info(log_kernel, "Finalizo conexion con cliente");
+    finalizar_programa();
+
+    return 0;
+}
+
+/*
+------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
+*/
+
+void leer_config(){
     config_kernel = iniciar_config("/home/utnso/tp-2024-1c-GoC/kernel/config/kernel.config");
         
     puerto_escucha = config_get_string_value(config_kernel, "PUERTO_ESCUCHA");
@@ -39,37 +74,15 @@ int main(int argc, char* argv[]) {
     grado_multiprogramacion = config_get_int_value(config_kernel, "GRADO_MULTIPROGRAMACION");
 
     log_info(log_kernel, "levanto la configuracion del kernel");
+}
 
-    iniciar_semaforos();
+void generar_conexiones(){
 
     establecer_conexion_cpu(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
     
     establecer_conexion_memoria(ip_memoria, puerto_memoria, config_kernel, log_kernel);
 
-    log_info(log_kernel, "Finalizo conexion con servidores");
-
-
-    socket_servidor_kernel_dispatch = iniciar_servidor(puerto_escucha, log_kernel);
-
-    log_info(log_kernel, "INICIO SERVIDOR");
-
-    log_info(log_kernel, "Listo para recibir a EntradaSalida");
-
-    socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
-     
-    pthread_t atiende_cliente_entradasalida;
-    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
-    pthread_detach(atiende_cliente_entradasalida);
-    
-    planificar();
-
-    iniciar_consola();
-
-
-    log_info(log_kernel, "Finalizo conexion con cliente");//nunca finalizamos la conexion usar liberar_conexion
-
-
-    return 0;
+    log_info(log_kernel, "Se generaron correctamente las conexiones");
 }
 
 void iniciar_semaforos(){
@@ -133,6 +146,17 @@ void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria_dispatch
     recibir_string(conexion_kernel, loggs);
 }
 
+void finalizar_programa(){
+    liberar_conexion(socket_servidor_kernel_dispatch);
+    liberar_conexion(socket_servidor_kernel_interrupt);
+    liberar_conexion(socket_cliente_entradasalida);
+    
+    log_destroy(log_kernel);
+    config_destroy(config_kernel);
+}
+/*
+------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
+*/
 void iniciar_consola(){
     int eleccion;
     printf("Operaciones disponibles para realizar:\n");

@@ -21,7 +21,11 @@ int socket_servidor_cpu_interrupt;
 int socket_cliente_kernel;
 int conexion_cpu;
 
+void leer_config();
 
+void generar_conexiones();
+
+void terminar_programa();
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL);
 void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);

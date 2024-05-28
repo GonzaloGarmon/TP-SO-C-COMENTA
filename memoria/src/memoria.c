@@ -6,15 +6,7 @@ int main(int argc, char* argv[]) {
 
     log_info(log_memoria, "INICIA EL MODULO DE MEMORIA");
 
-    config_memoria = iniciar_config("/home/utnso/tp-2024-1c-GoC/memoria/config/memoria.config");
-
-    puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
-    tam_memoria = config_get_int_value(config_memoria, "TAM_MEMORIA");
-    tam_pagina = config_get_int_value(config_memoria, "TAM_PAGINA");
-    path_instrucciones = config_get_string_value(config_memoria, "PATH_INSTRUCCIONES");
-    retardo_respuesta = config_get_int_value(config_memoria, "RETARDO_RESPUESTA");
-    
-    log_info(log_memoria, "levanto la configuracion de memoria");
+    leer_config();
 
     socket_servidor_memoria_dispatch = iniciar_servidor(puerto_escucha, log_memoria);
 
@@ -40,10 +32,28 @@ int main(int argc, char* argv[]) {
     pthread_join(atiende_cliente_entradasalida, NULL);
 
     log_info(log_memoria, "Finalizo conexion con clientes");
-
+    finalizar_programa();
     return 0;
 }
 
+void leer_config(){
+    config_memoria = iniciar_config("/home/utnso/tp-2024-1c-GoC/memoria/config/memoria.config");
+
+    puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
+    tam_memoria = config_get_int_value(config_memoria, "TAM_MEMORIA");
+    tam_pagina = config_get_int_value(config_memoria, "TAM_PAGINA");
+    path_instrucciones = config_get_string_value(config_memoria, "PATH_INSTRUCCIONES");
+    retardo_respuesta = config_get_int_value(config_memoria, "RETARDO_RESPUESTA");
+}
+
+void finalizar_programa(){
+    liberar_conexion(socket_servidor_memoria_dispatch);
+    liberar_conexion(socket_cliente_cpu);
+    liberar_conexion(socket_cliente_entradasalida);
+    liberar_conexion(socket_cliente_kernel);
+    log_destroy(log_memoria);
+    config_destroy(config_memoria);
+}
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
     enviar_string(socket_cliente_kernel, "hola desde memoria", MENSAJE);

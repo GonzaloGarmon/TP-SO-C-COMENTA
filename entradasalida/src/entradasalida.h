@@ -25,6 +25,10 @@ int block_count;
 
 int conexion_entradasalida;
 
+void leer_config();
+void generar_conexiones();
+void finalizar_programa();
+
 void establecer_conexion_kernel(char * ip_kernel, char* puerto_kernel, t_config* config, t_log* logger);
 void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
 

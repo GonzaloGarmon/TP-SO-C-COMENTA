@@ -47,7 +47,16 @@ int socket_cliente_entradasalida;
 int conexion_kernel;
 int generador_pid;
 
+/*
+------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
+*/
+void leer_config();
+void generar_conexiones();
 void iniciar_semaforos();
+void finalizar_programa();
+/*
+------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
+*/
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA);
 void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
 void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* logger);

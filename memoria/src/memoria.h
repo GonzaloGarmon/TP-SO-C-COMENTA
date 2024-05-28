@@ -21,6 +21,9 @@ int socket_cliente_cpu;
 int socket_cliente_entradasalida;
 int socket_cliente;
 
+void leer_config();
+void finalizar_programa();
+
 void recibir_cpu(int SOCKET_CLIENTE_CPU);
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL);
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA);
