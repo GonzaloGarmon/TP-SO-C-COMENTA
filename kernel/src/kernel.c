@@ -24,6 +24,14 @@ int main(int argc, char* argv[]) {
     pthread_t atiende_cliente_entradasalida;
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
+
+    pthread_t cpu_dispatch;
+    pthread_create(&cpu_dispatch, NULL, (void *)recibir_cpu_dispatch, (void *) (intptr_t) conexion_kernel_cpu_dispatch);
+    pthread_detach(cpu_dispatch);
+
+    pthread_t cpu_interrupt;
+    pthread_create(&cpu_interrupt, NULL, (void *)recibir_cpu_interrupt, (void *) (intptr_t) conexion_kernel_cpu_interrupt);
+    pthread_detach(cpu_interrupt);
     
     planificar();
 
@@ -78,7 +86,9 @@ void leer_config(){
 
 void generar_conexiones(){
 
-    establecer_conexion_cpu(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
+    establecer_conexion_cpu_dispatch(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
+
+    establecer_conexion_cpu_interrupt(ip_cpu, puerto_cpu_interrupt, config_kernel, log_kernel);
     
     establecer_conexion_memoria(ip_memoria, puerto_memoria, config_kernel, log_kernel);
 
@@ -93,6 +103,10 @@ void iniciar_semaforos(){
     sem_init(&sem_multiprogamacion, 0, grado_multiprogramacion);
     sem_init(&sem_listos_para_ready, 0, 0);
     sem_init(&sem_listos_para_exec, 0, 0);
+    cola_new = list_create();
+    cola_ready = list_create();
+    cola_exec = list_create();
+    generador_pid = 0;
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
@@ -104,17 +118,31 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
     }
 }
 
-void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config* config, t_log* loggs){
+void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        int op_code = recibir_operacion(conexion_kernel_cpu_dispatch);
+    }
+}
+
+void recibir_cpu_interrupt(int conexion_kernel_cpu_interrupt){
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        int op_code = recibir_operacion(conexion_kernel_cpu_interrupt);
+    }
+}
+
+void establecer_conexion_cpu_dispatch(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* loggs){
 
     log_trace(loggs, "Inicio como cliente");
 
-    log_trace(loggs,"Lei la IP %s , el Puerto CPU %s ", ip_cpu, puerto_cpu_dispatch);
+    log_trace(loggs,"Lei la IP %s , el Puerto CPU %s ", ip_cpu, puerto_cpu);
 
-    log_info(loggs, "Verifico si la conex:kernel es distinto de -1");
-    log_trace(loggs, "Es de numero %d", conexion_kernel);
+    //log_info(loggs, "Verifico si la conex:kernel es distinto de -1");
+    //log_trace(loggs, "Es de numero %d", conexion_kernel);
 
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
-    if((conexion_kernel = crear_conexion(ip_cpu, puerto_cpu_dispatch)) == -1){
+    if((conexion_kernel_cpu_dispatch = crear_conexion(ip_cpu, puerto_cpu)) == -1){
         log_trace(loggs, "Error al conectar con CPU. El servidor no esta activo");
 
         exit(2);
@@ -122,9 +150,33 @@ void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config*
 
     log_info(loggs, "Paso el chequeo");
 
-    recibir_operacion(conexion_kernel);
+    recibir_operacion(conexion_kernel_cpu_dispatch);
     log_info(loggs, "Paso recibir operacion");
-    recibir_string(conexion_kernel, loggs);
+    recibir_string(conexion_kernel_cpu_dispatch, loggs);
+    log_info(loggs, "Paso recibir string");
+}
+
+void establecer_conexion_cpu_interrupt(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* loggs){
+
+    log_trace(loggs, "Inicio como cliente");
+
+    log_trace(loggs,"Lei la IP %s , el Puerto CPU %s ", ip_cpu, puerto_cpu);
+
+    //log_info(loggs, "Verifico si la conex:kernel es distinto de -1");
+    //log_trace(loggs, "Es de numero %d", conexion_kernel);
+
+    // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
+    if((conexion_kernel_cpu_interrupt = crear_conexion(ip_cpu, puerto_cpu)) == -1){
+        log_trace(loggs, "Error al conectar con CPU. El servidor no esta activo");
+
+        exit(2);
+    }
+
+    log_info(loggs, "Paso el chequeo");
+
+    recibir_operacion(conexion_kernel_cpu_interrupt);
+    log_info(loggs, "Paso recibir operacion");
+    recibir_string(conexion_kernel_cpu_interrupt, loggs);
     log_info(loggs, "Paso recibir string");
 }
 
@@ -136,14 +188,14 @@ void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria_dispatch
     log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_memoria, puerto_memoria_dispatch);
 
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
-    if((conexion_kernel = crear_conexion(ip_memoria, puerto_memoria_dispatch)) == -1){
+    if((conexion_kernel_memoria = crear_conexion(ip_memoria, puerto_memoria_dispatch)) == -1){
         log_trace(loggs, "Error al conectar con Memoria. El servidor no esta activo");
 
         exit(2);
     }
-
-    recibir_operacion(conexion_kernel);
-    recibir_string(conexion_kernel, loggs);
+    
+    recibir_operacion(conexion_kernel_memoria);
+    recibir_string(conexion_kernel_memoria, loggs);
 }
 
 void finalizar_programa(){
@@ -195,6 +247,8 @@ void iniciar_consola(){
         iniciar_consola();
         break;
     }
+
+    iniciar_consola();
 }
 
 
@@ -211,16 +265,17 @@ void iniciar_proceso(){
     //ACA HAY QUE AVISARLE A MEMORIA QUE SE CREA UN PROCESO DE ESE PATH, DEBERIA DEVOLVER ALGUNA INFO?
     t_paquete* paquete = crear_paquete_op(INICIO_NUEVO_PROCESO);
     agregar_string_a_paquete(paquete,path);
-    enviar_paquete(paquete,puerto_memoria);
+    enviar_paquete(paquete,conexion_kernel_memoria);
     eliminar_paquete(paquete);
-
+    generador_pid++;
     //creamos PCB
     t_registros_cpu* registros = inicializar_registros();
     t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
     pcb_nuevo->qq = quantum;
-    pcb_nuevo->pid = generador_pid++;
+    pcb_nuevo->pid = generador_pid;
     pcb_nuevo->pc = 0;
     pcb_nuevo ->registros = registros;
+    
     pthread_mutex_lock(&mutex_cola_new);
     list_add(cola_new, pcb_nuevo);
     pthread_mutex_unlock(&mutex_cola_new);
@@ -247,14 +302,14 @@ void listar_procesos_estado(){
 t_registros_cpu* inicializar_registros(){
     t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
 
-    registros->AX = malloc(sizeof(uint8_t));
-    registros->BX = malloc(sizeof(uint8_t));
-    registros->CX = malloc(sizeof(uint8_t));
-    registros->DX = malloc(sizeof(uint8_t));
-    registros->EAX = malloc(sizeof(uint32_t));
-    registros->EBX = malloc(sizeof(uint32_t));
-    registros->ECX = malloc(sizeof(uint32_t));
-    registros->EDX = malloc(sizeof(uint32_t));
+    registros->AX = 0;
+    registros->BX = 0;
+    registros->CX = 0;
+    registros->DX = 0;
+    registros->EAX = 0;
+    registros->EBX = 0;
+    registros->ECX = 0;
+    registros->EDX = 0;
 
     return registros;
 }
@@ -363,9 +418,11 @@ t_pcb* elegir_pcb_segun_algoritmo(){
 void dispatch(t_pcb* pcb_enviar){
 
         
-
+        log_trace(log_kernel, "envio pcb de pid: %d", pcb_enviar->pid);
+        log_trace(log_kernel, "envio pcb de pc: %d", pcb_enviar->pc);
+        log_trace(log_kernel, "envio pcb de qq: %d", pcb_enviar->qq);
         //ENVIAR CONTEXTO DE EJECUCION A CPU
-        enviar_pcb(puerto_cpu_dispatch, pcb_enviar,EXEC);
+        enviar_pcb(conexion_kernel_cpu_dispatch, pcb_enviar,EXEC);
 
 
         pthread_mutex_lock(&mutex_cola_exec);

@@ -318,10 +318,11 @@ void agregar_entero_int_a_paquete(t_paquete *paquete, int numero){
 
 
 void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb){
-	agregar_entero_a_paquete(paquete, pcb->pc);
 	agregar_entero_a_paquete(paquete, pcb->pid);
-	agregar_registros_a_paquete(paquete, pcb->registros);
+	agregar_entero_a_paquete(paquete, pcb->pc);
 	agregar_entero_int_a_paquete(paquete,pcb->qq); 
+	agregar_registros_a_paquete(paquete, pcb->registros);
+	
 }
 
 
@@ -360,8 +361,8 @@ uint32_t leer_entero_uint32(char *buffer, int * desplazamiento)
 uint8_t leer_entero_uint8(char *buffer, int * desplazamiento)
 {
 	uint8_t entero;
-	memcpy(&entero, buffer + (*desplazamiento), sizeof(uint32_t));
-	(*desplazamiento) += sizeof(uint32_t);
+	memcpy(&entero, buffer + (*desplazamiento), sizeof(uint8_t));
+	(*desplazamiento) += sizeof(uint8_t);
 	return entero;
 }
 
@@ -468,7 +469,8 @@ t_instruccion* recibir_instruccion(int socket){
 t_pcb* recibir_pcb(int socket){
 
 	t_pcb* nuevo_pcb = malloc(sizeof(t_pcb));
-
+	t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
+	nuevo_pcb->registros = registros;
 	int size = 0;
 	char* buffer;
 	int desp = 0;

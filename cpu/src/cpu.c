@@ -12,15 +12,25 @@ int main(int argc, char* argv[]) {
 
     socket_servidor_cpu_dispatch = iniciar_servidor(puerto_escucha_dispatch, log_cpu);
 
-    log_info(log_cpu, "INICIO SERVIDOR");
+    log_info(log_cpu, "INICIO SERVIDOR DISPATCH");
 
-    pthread_t atiende_cliente_kernel;
-    log_info(log_cpu, "Listo para recibir a kernel");
-    socket_cliente_kernel = esperar_cliente(socket_servidor_cpu_dispatch);
+    pthread_t atiende_cliente_kernel_dispatch;
+    log_info(log_cpu, "Listo para recibir a kernel dispatch");
+    socket_cliente_kernel_dispatch = esperar_cliente(socket_servidor_cpu_dispatch);
    
-    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) (intptr_t) socket_cliente_kernel);
-    pthread_join(atiende_cliente_kernel, NULL);
-    
+    pthread_create(&atiende_cliente_kernel_dispatch, NULL, (void *)recibir_kernel_dispatch, (void *) (intptr_t) socket_cliente_kernel_dispatch);
+    pthread_detach(atiende_cliente_kernel_dispatch);
+
+    socket_servidor_cpu_interrupt = iniciar_servidor(puerto_escucha_interrupt, log_cpu);
+    log_info(log_cpu, "INICIO SERVIDOR INTERRUPT");
+
+    pthread_t atiende_cliente_kernel_interrupt;
+    log_info(log_cpu, "Listo para recibir a kernel interrupt");
+    socket_cliente_kernel_interrupt = esperar_cliente(socket_servidor_cpu_interrupt);
+   
+    pthread_create(&atiende_cliente_kernel_interrupt, NULL, (void *)recibir_kernel_interrupt, (void *) (intptr_t) socket_cliente_kernel_interrupt);
+    pthread_join(atiende_cliente_kernel_interrupt, NULL);
+
     log_info(log_cpu, "Finalizo conexion con cliente");
     terminar_programa();
     
@@ -50,14 +60,38 @@ void terminar_programa(){
     config_destroy(config_cpu);
     liberar_conexion(socket_servidor_cpu_dispatch);
     liberar_conexion(socket_servidor_cpu_interrupt);
-    liberar_conexion(socket_cliente_kernel);
+    liberar_conexion(socket_cliente_kernel_dispatch);
+    liberar_conexion(socket_cliente_kernel_interrupt);
 }
 
-void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
-    enviar_string(socket_cliente_kernel, "hola desde cpu", MENSAJE);
+void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
+    enviar_string(SOCKET_CLIENTE_KERNEL_DISPATCH, "hola desde cpu dispatch", MENSAJE);
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        int op_code = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+        op_code codigo = recibir_operacion(SOCKET_CLIENTE_KERNEL_DISPATCH);
+        switch (codigo)
+        {
+        case EXEC:
+            log_trace(log_cpu, "llego contexto de ejecucion");
+            contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
+            log_trace(log_cpu, "recibo pcb de pid: %d", contexto->pid);
+            log_trace(log_cpu, "recibo pcb de pc: %d", contexto->pc);
+            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->qq);
+            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->registros->AX);
+            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->registros->EBX);
+            break;
+        
+        default:
+            break;
+        }
+    }
+}
+
+void recibir_kernel_interrupt(int SOCKET_CLIENTE_KERNEL_INTERRUPT){
+    enviar_string(SOCKET_CLIENTE_KERNEL_INTERRUPT, "hola desde cpu interrupt", MENSAJE);
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        int op_code = recibir_operacion(SOCKET_CLIENTE_KERNEL_INTERRUPT);
     }
 }
 
@@ -348,5 +382,5 @@ void funcIoGenSleep(t_instruccion *instruccion) {
     t_paquete* paquete = crear_paquete_op(EJECUTAR_IO_GEN_SLEEP);
     agregar_string_a_paquete(paquete, instruccion->parametros2);
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3));
-    enviar_paquete(paquete,socket_cliente_kernel);
+    enviar_paquete(paquete,socket_cliente_kernel_dispatch);
 };
