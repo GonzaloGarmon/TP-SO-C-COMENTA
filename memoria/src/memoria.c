@@ -59,7 +59,16 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
     enviar_string(socket_cliente_kernel, "hola desde memoria", MENSAJE);
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        int op_code = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+        op_code codigo = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+        switch (codigo)
+        {
+        case INICIO_NUEVO_PROCESO:
+            
+            break;
+        
+        default:
+            break;
+        }
     }
 }
 

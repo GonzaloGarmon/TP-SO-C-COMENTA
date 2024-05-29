@@ -24,6 +24,14 @@ int main(int argc, char* argv[]) {
     pthread_t atiende_cliente_entradasalida;
     pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
     pthread_detach(atiende_cliente_entradasalida);
+
+    pthread_t cpu_dispatch;
+    pthread_create(&cpu_dispatch, NULL, (void *)recibir_cpu_dispatch, (void *) (intptr_t) conexion_kernel_cpu_dispatch);
+    pthread_detach(cpu_dispatch);
+
+    pthread_t cpu_interrupt;
+    pthread_create(&cpu_interrupt, NULL, (void *)recibir_cpu_interrupt, (void *) (intptr_t) conexion_kernel_cpu_interrupt);
+    pthread_detach(cpu_interrupt);
     
     planificar();
 
@@ -95,6 +103,10 @@ void iniciar_semaforos(){
     sem_init(&sem_multiprogamacion, 0, grado_multiprogramacion);
     sem_init(&sem_listos_para_ready, 0, 0);
     sem_init(&sem_listos_para_exec, 0, 0);
+    cola_new = list_create();
+    cola_ready = list_create();
+    cola_exec = list_create();
+    generador_pid = 0;
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
@@ -103,6 +115,20 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
     int noFinalizar = 0;
     while(noFinalizar != -1){
         int op_code = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
+    }
+}
+
+void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        int op_code = recibir_operacion(conexion_kernel_cpu_dispatch);
+    }
+}
+
+void recibir_cpu_interrupt(int conexion_kernel_cpu_interrupt){
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        int op_code = recibir_operacion(conexion_kernel_cpu_interrupt);
     }
 }
 
@@ -167,7 +193,7 @@ void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria_dispatch
 
         exit(2);
     }
-
+    
     recibir_operacion(conexion_kernel_memoria);
     recibir_string(conexion_kernel_memoria, loggs);
 }
@@ -221,6 +247,8 @@ void iniciar_consola(){
         iniciar_consola();
         break;
     }
+
+    iniciar_consola();
 }
 
 
@@ -237,7 +265,7 @@ void iniciar_proceso(){
     //ACA HAY QUE AVISARLE A MEMORIA QUE SE CREA UN PROCESO DE ESE PATH, DEBERIA DEVOLVER ALGUNA INFO?
     t_paquete* paquete = crear_paquete_op(INICIO_NUEVO_PROCESO);
     agregar_string_a_paquete(paquete,path);
-    enviar_paquete(paquete,puerto_memoria);
+    enviar_paquete(paquete,conexion_kernel_memoria);
     eliminar_paquete(paquete);
 
     //creamos PCB
@@ -273,14 +301,14 @@ void listar_procesos_estado(){
 t_registros_cpu* inicializar_registros(){
     t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
 
-    registros->AX = malloc(sizeof(uint8_t));
-    registros->BX = malloc(sizeof(uint8_t));
-    registros->CX = malloc(sizeof(uint8_t));
-    registros->DX = malloc(sizeof(uint8_t));
-    registros->EAX = malloc(sizeof(uint32_t));
-    registros->EBX = malloc(sizeof(uint32_t));
-    registros->ECX = malloc(sizeof(uint32_t));
-    registros->EDX = malloc(sizeof(uint32_t));
+    registros->AX = 0;
+    registros->BX = 0;
+    registros->CX = 0;
+    registros->DX = 0;
+    registros->EAX = 0;
+    registros->EBX = 0;
+    registros->ECX = 0;
+    registros->EDX = 0;
 
     return registros;
 }
@@ -391,7 +419,7 @@ void dispatch(t_pcb* pcb_enviar){
         
 
         //ENVIAR CONTEXTO DE EJECUCION A CPU
-        enviar_pcb(puerto_cpu_dispatch, pcb_enviar,EXEC);
+        enviar_pcb(conexion_kernel_cpu_dispatch, pcb_enviar,EXEC);
 
 
         pthread_mutex_lock(&mutex_cola_exec);

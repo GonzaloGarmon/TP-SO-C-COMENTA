@@ -47,7 +47,7 @@ int socket_cliente_entradasalida;
 int conexion_kernel_cpu_dispatch;
 int conexion_kernel_cpu_interrupt;
 int conexion_kernel_memoria;
-int generador_pid;
+uint32_t generador_pid;
 
 /*
 ------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
@@ -81,4 +81,6 @@ void planificar_rr();
 void contador_quantum_RR();
 void exec_pcb();
 void dispatch(t_pcb* pcb_enviar);
+void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch);
+void recibir_cpu_interrupt(int conexion_kernel_cpu_interrupt);
 #endif

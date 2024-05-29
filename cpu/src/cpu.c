@@ -68,7 +68,18 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
     enviar_string(SOCKET_CLIENTE_KERNEL_DISPATCH, "hola desde cpu dispatch", MENSAJE);
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        int op_code = recibir_operacion(SOCKET_CLIENTE_KERNEL_DISPATCH);
+        op_code codigo = recibir_operacion(SOCKET_CLIENTE_KERNEL_DISPATCH);
+        switch (codigo)
+        {
+        case EXEC:
+            log_info(log_cpu, "llego contexto de ejecucion");
+            contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
+            log_info(log_cpu, "lo lei bien!");
+            break;
+        
+        default:
+            break;
+        }
     }
 }
 
