@@ -267,14 +267,15 @@ void iniciar_proceso(){
     agregar_string_a_paquete(paquete,path);
     enviar_paquete(paquete,conexion_kernel_memoria);
     eliminar_paquete(paquete);
-
+    generador_pid++;
     //creamos PCB
     t_registros_cpu* registros = inicializar_registros();
     t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
     pcb_nuevo->qq = quantum;
-    pcb_nuevo->pid = generador_pid++;
+    pcb_nuevo->pid = generador_pid;
     pcb_nuevo->pc = 0;
     pcb_nuevo ->registros = registros;
+    
     pthread_mutex_lock(&mutex_cola_new);
     list_add(cola_new, pcb_nuevo);
     pthread_mutex_unlock(&mutex_cola_new);
@@ -417,7 +418,9 @@ t_pcb* elegir_pcb_segun_algoritmo(){
 void dispatch(t_pcb* pcb_enviar){
 
         
-
+        log_trace(log_kernel, "envio pcb de pid: %d", pcb_enviar->pid);
+        log_trace(log_kernel, "envio pcb de pc: %d", pcb_enviar->pc);
+        log_trace(log_kernel, "envio pcb de qq: %d", pcb_enviar->qq);
         //ENVIAR CONTEXTO DE EJECUCION A CPU
         enviar_pcb(conexion_kernel_cpu_dispatch, pcb_enviar,EXEC);
 

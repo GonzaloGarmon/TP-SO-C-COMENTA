@@ -72,9 +72,13 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
         switch (codigo)
         {
         case EXEC:
-            log_info(log_cpu, "llego contexto de ejecucion");
+            log_trace(log_cpu, "llego contexto de ejecucion");
             contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
-            log_info(log_cpu, "lo lei bien!");
+            log_trace(log_cpu, "recibo pcb de pid: %d", contexto->pid);
+            log_trace(log_cpu, "recibo pcb de pc: %d", contexto->pc);
+            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->qq);
+            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->registros->AX);
+            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->registros->EBX);
             break;
         
         default:

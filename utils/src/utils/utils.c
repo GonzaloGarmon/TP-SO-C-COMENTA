@@ -295,14 +295,14 @@ t_paquete* crear_paquete_op(op_code codop)
 
 void agregar_registros_a_paquete(t_paquete * paquete, t_registros_cpu * registros){
 
-	agregar_entero_uint8_a_paquete(paquete,&(registros->AX));
-	agregar_entero_uint8_a_paquete(paquete,&(registros->BX));
-	agregar_entero_uint8_a_paquete(paquete,&(registros->CX));
-	agregar_entero_uint8_a_paquete(paquete,&(registros->DX));
-	agregar_entero_a_paquete(paquete,&(registros->EAX));
-	agregar_entero_a_paquete(paquete,&(registros->EBX));
-	agregar_entero_a_paquete(paquete,&(registros->ECX));
-	agregar_entero_a_paquete(paquete,&(registros->EDX));
+	agregar_entero_uint8_a_paquete(paquete,registros->AX);
+	agregar_entero_uint8_a_paquete(paquete,registros->BX);
+	agregar_entero_uint8_a_paquete(paquete,registros->CX);
+	agregar_entero_uint8_a_paquete(paquete,registros->DX);
+	agregar_entero_a_paquete(paquete,registros->EAX);
+	agregar_entero_a_paquete(paquete,registros->EBX);
+	agregar_entero_a_paquete(paquete,registros->ECX);
+	agregar_entero_a_paquete(paquete,registros->EDX);
 
 }
 
