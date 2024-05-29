@@ -18,7 +18,8 @@ char* algoritmo_tlb;
 
 int socket_servidor_cpu_dispatch;
 int socket_servidor_cpu_interrupt;
-int socket_cliente_kernel;
+int socket_cliente_kernel_dispatch;
+int socket_cliente_kernel_interrupt;
 int conexion_cpu;
 
 void leer_config();
@@ -27,7 +28,8 @@ void generar_conexiones();
 
 void terminar_programa();
 
-void recibir_kernel(int SOCKET_CLIENTE_KERNEL);
+void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL);
+void recibir_kernel_interrupt(int SOCKET_CLIENTE_KERNEL_INTERRUPT);
 void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
 
 void funcSet(t_instruccion *instruccion);

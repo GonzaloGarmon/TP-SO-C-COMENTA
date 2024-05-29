@@ -44,7 +44,9 @@ int grado_multiprogramacion;
 int socket_servidor_kernel_dispatch;
 int socket_servidor_kernel_interrupt;
 int socket_cliente_entradasalida;
-int conexion_kernel;
+int conexion_kernel_cpu_dispatch;
+int conexion_kernel_cpu_interrupt;
+int conexion_kernel_memoria;
 int generador_pid;
 
 /*
@@ -59,7 +61,8 @@ void finalizar_programa();
 */
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA);
 void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
-void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* logger);
+void establecer_conexion_cpu_dispatch(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* logger);
+void establecer_conexion_cpu_interrupt(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* logger);
 void iniciar_consola();
 void ejecutar_script();
 void iniciar_proceso();

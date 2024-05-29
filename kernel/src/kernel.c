@@ -78,7 +78,9 @@ void leer_config(){
 
 void generar_conexiones(){
 
-    establecer_conexion_cpu(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
+    establecer_conexion_cpu_dispatch(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
+
+    establecer_conexion_cpu_interrupt(ip_cpu, puerto_cpu_interrupt, config_kernel, log_kernel);
     
     establecer_conexion_memoria(ip_memoria, puerto_memoria, config_kernel, log_kernel);
 
@@ -104,17 +106,17 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
     }
 }
 
-void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config* config, t_log* loggs){
+void establecer_conexion_cpu_dispatch(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* loggs){
 
     log_trace(loggs, "Inicio como cliente");
 
-    log_trace(loggs,"Lei la IP %s , el Puerto CPU %s ", ip_cpu, puerto_cpu_dispatch);
+    log_trace(loggs,"Lei la IP %s , el Puerto CPU %s ", ip_cpu, puerto_cpu);
 
-    log_info(loggs, "Verifico si la conex:kernel es distinto de -1");
-    log_trace(loggs, "Es de numero %d", conexion_kernel);
+    //log_info(loggs, "Verifico si la conex:kernel es distinto de -1");
+    //log_trace(loggs, "Es de numero %d", conexion_kernel);
 
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
-    if((conexion_kernel = crear_conexion(ip_cpu, puerto_cpu_dispatch)) == -1){
+    if((conexion_kernel_cpu_dispatch = crear_conexion(ip_cpu, puerto_cpu)) == -1){
         log_trace(loggs, "Error al conectar con CPU. El servidor no esta activo");
 
         exit(2);
@@ -122,9 +124,33 @@ void establecer_conexion_cpu(char * ip_cpu, char* puerto_cpu_dispatch, t_config*
 
     log_info(loggs, "Paso el chequeo");
 
-    recibir_operacion(conexion_kernel);
+    recibir_operacion(conexion_kernel_cpu_dispatch);
     log_info(loggs, "Paso recibir operacion");
-    recibir_string(conexion_kernel, loggs);
+    recibir_string(conexion_kernel_cpu_dispatch, loggs);
+    log_info(loggs, "Paso recibir string");
+}
+
+void establecer_conexion_cpu_interrupt(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* loggs){
+
+    log_trace(loggs, "Inicio como cliente");
+
+    log_trace(loggs,"Lei la IP %s , el Puerto CPU %s ", ip_cpu, puerto_cpu);
+
+    //log_info(loggs, "Verifico si la conex:kernel es distinto de -1");
+    //log_trace(loggs, "Es de numero %d", conexion_kernel);
+
+    // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
+    if((conexion_kernel_cpu_interrupt = crear_conexion(ip_cpu, puerto_cpu)) == -1){
+        log_trace(loggs, "Error al conectar con CPU. El servidor no esta activo");
+
+        exit(2);
+    }
+
+    log_info(loggs, "Paso el chequeo");
+
+    recibir_operacion(conexion_kernel_cpu_interrupt);
+    log_info(loggs, "Paso recibir operacion");
+    recibir_string(conexion_kernel_cpu_interrupt, loggs);
     log_info(loggs, "Paso recibir string");
 }
 
@@ -136,14 +162,14 @@ void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria_dispatch
     log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_memoria, puerto_memoria_dispatch);
 
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
-    if((conexion_kernel = crear_conexion(ip_memoria, puerto_memoria_dispatch)) == -1){
+    if((conexion_kernel_memoria = crear_conexion(ip_memoria, puerto_memoria_dispatch)) == -1){
         log_trace(loggs, "Error al conectar con Memoria. El servidor no esta activo");
 
         exit(2);
     }
 
-    recibir_operacion(conexion_kernel);
-    recibir_string(conexion_kernel, loggs);
+    recibir_operacion(conexion_kernel_memoria);
+    recibir_string(conexion_kernel_memoria, loggs);
 }
 
 void finalizar_programa(){
