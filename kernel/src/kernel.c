@@ -121,7 +121,18 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
 void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        int op_code = recibir_operacion(conexion_kernel_cpu_dispatch);
+        op_code codigo = recibir_operacion(conexion_kernel_cpu_dispatch);
+        switch (codigo)
+        {
+        case TERMINO_PROCESO:
+            t_pcb* pcb_finaliza = malloc(sizeof(t_pcb));
+            pcb_finaliza = recibir_pcb(conexion_kernel_cpu_dispatch);
+            log_trace(log_kernel,"recibi un pcb por finalizacion de proceso");
+            break;
+        
+        default:
+            break;
+        }
     }
 }
 

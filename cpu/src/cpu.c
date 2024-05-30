@@ -130,7 +130,7 @@ t_instruccion* fetch(uint32_t pid, uint32_t pc){
     pedir_instruccion_memoria(pid, pc);
     t_instruccion* instruccion = malloc(sizeof(t_instruccion));
     int codigo = recibir_operacion(conexion_memoria);
-    log_trace(log_cpu, "pedi instruccion Y el codigo es %d", codigo);
+    log_trace(log_cpu, "pedi instruccion");
     instruccion = recibir_instruccion(conexion_memoria);
     log_trace(log_cpu, "recibi instruccion");
   return instruccion;
@@ -165,6 +165,10 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
             break;
         case EXIT:
             seguir_ejecutando = 0;
+            t_paquete* paquete = crear_paquete_op(TERMINO_PROCESO);
+            agregar_pcb_a_paquete(paquete,contexto);
+            enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+            eliminar_paquete(paquete);
         default:
             printf("Instrucción desconocida\n");
             break;
