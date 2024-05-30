@@ -21,6 +21,7 @@ int socket_servidor_cpu_interrupt;
 int socket_cliente_kernel_dispatch;
 int socket_cliente_kernel_interrupt;
 int conexion_memoria;
+int seguir_ejecutando;
 
 void leer_config();
 
