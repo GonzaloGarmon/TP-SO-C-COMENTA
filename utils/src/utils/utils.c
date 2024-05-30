@@ -329,13 +329,48 @@ void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb){
 
 void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion * instruccion_nueva){
 	
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros1);
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros2);
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros3);
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros4);
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros5);
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros6);
 
+	if(instruccion_nueva->parametros1 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros1,strlen(instruccion_nueva->parametros1)+1);
+	}else{
+		instruccion_nueva->parametros1 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros1,strlen(instruccion_nueva->parametros1)+1);
+	}
+
+	if(instruccion_nueva->parametros2 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+	}else{
+		instruccion_nueva->parametros2 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+	}
+
+	if(instruccion_nueva->parametros3 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+	}else{
+		instruccion_nueva->parametros3 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+	}
+
+	if(instruccion_nueva->parametros4 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
+	}else{
+		instruccion_nueva->parametros4 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
+	}
+
+	if(instruccion_nueva->parametros5 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros5,strlen(instruccion_nueva->parametros5)+1);
+	}else{
+		instruccion_nueva->parametros5 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros5,strlen(instruccion_nueva->parametros5)+1);
+	}
+
+	if(instruccion_nueva->parametros6 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros6,strlen(instruccion_nueva->parametros6)+1);
+	}else{
+		instruccion_nueva->parametros6 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros6,strlen(instruccion_nueva->parametros6)+1);
+	}
 }
 
 
