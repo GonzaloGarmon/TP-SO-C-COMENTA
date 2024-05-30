@@ -23,7 +23,8 @@ char* path_base_dialfs;
 int block_size;
 int block_count;
 
-int conexion_entradasalida;
+int conexion_entradasalida_kernel;
+int conexion_entradasalida_memoria;
 
 void leer_config();
 void generar_conexiones();

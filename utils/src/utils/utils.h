@@ -155,6 +155,6 @@ uint32_t recibir_entero_uint32(int socket, t_log* loggs);
 char* recibir_string(int socket, t_log* loggs);
 t_pcb* recibir_pcb(int socket);
 t_instruccion* recibir_instruccion(int socket);
-
+t_list* recibir_doble_entero(int socket);
 
 #endif

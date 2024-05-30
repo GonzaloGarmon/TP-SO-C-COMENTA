@@ -493,7 +493,20 @@ t_pcb* recibir_pcb(int socket){
 	return nuevo_pcb;
 }
 
+t_list* recibir_doble_entero(int socket){
+	int size = 0;
+	char* buffer;
+	int desp = 0;
+	t_list* devolver = list_create();
+	buffer = recibir_buffer(&size, socket);
+	u_int32_t entero_nuevo1 = leer_entero_uint32(buffer, &desp);
+	u_int32_t entero_nuevo2 = leer_entero_uint32(buffer, &desp);
+	list_add(devolver, entero_nuevo1);
+	list_add(devolver, entero_nuevo2);
+	free(buffer);
 
+	return devolver;
+}
 
 
 

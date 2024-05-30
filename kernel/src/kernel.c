@@ -263,10 +263,8 @@ void iniciar_proceso(){
     scanf("%s", path);
 
     //ACA HAY QUE AVISARLE A MEMORIA QUE SE CREA UN PROCESO DE ESE PATH, DEBERIA DEVOLVER ALGUNA INFO?
-    t_paquete* paquete = crear_paquete_op(INICIO_NUEVO_PROCESO);
-    agregar_string_a_paquete(paquete,path);
-    enviar_paquete(paquete,conexion_kernel_memoria);
-    eliminar_paquete(paquete);
+    enviar_string(conexion_kernel_memoria,path,INICIO_NUEVO_PROCESO);
+    
     generador_pid++;
     //creamos PCB
     t_registros_cpu* registros = inicializar_registros();

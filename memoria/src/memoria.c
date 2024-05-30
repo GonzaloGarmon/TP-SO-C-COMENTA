@@ -63,7 +63,15 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
         switch (codigo)
         {
         case INICIO_NUEVO_PROCESO:
+            char* path = recibir_string(SOCKET_CLIENTE_KERNEL, log_memoria);
             
+            int longitud = strlen(path) + strlen(path_instrucciones) + 1;
+            char* path_completo = malloc(longitud*sizeof(char));
+            strcpy(path_completo, path_instrucciones);
+            strcat(path_completo, path);
+            cargar_instrucciones_desde_archivo(path_completo, instrucciones);
+            free(path_completo);
+            //se deben crear las estructuras administrativas necesarias para el proceso al que corresponde ese path
             break;
         
         default:
@@ -76,15 +84,25 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
     enviar_string(socket_cliente_cpu,"hola desde memoria", MENSAJE);
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        int op_code = recibir_operacion(SOCKET_CLIENTE_CPU);
-    }
-    //t_instruccion* instrucciones[instrucciones_maximas];
-    //cargar_instrucciones_desde_archivo(path_instrucciones, instrucciones);
-    
-    //PRIMERO DEBERIA OBTENER EL PROGRAM COUNTER Y EL PROCESS ID PARA SABER QUE INSTRUCCION DEVOLVER
+        op_code codigo = recibir_operacion(SOCKET_CLIENTE_CPU);
 
-    //enviar_instruccion(socket_cliente_cpu, instrucciones[pc],READY);
+        switch (codigo)
+        {
+        case PEDIR_INSTRUCCION_MEMORIA:
+
+            t_list* enteros = recibir_doble_entero(SOCKET_CLIENTE_CPU);
+            //RECIBO PID Y PC PRIMERO HAY QUE IDENTIFICAR QUE INSTRUCCIONES CORRESPONDE A PID
+            //LUEGO HACER INSTRUCCIONES[PC], DEJO ESTO PARA PODER CONTINUAR CON LA EJECUCION
+            //PERO TODAVIA FALTA VER COMO HACER LO DE IDENTIFICAR
+            uint32_t ins = list_get(enteros,1);
+            enviar_instruccion(SOCKET_CLIENTE_CPU, instrucciones[ins],READY);
+            break;
+        default:
+            break;
+        }
+    }
 }
+ 
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
     enviar_string(socket_cliente_entradasalida, "hola desde memoria", MENSAJE);
@@ -95,10 +113,6 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
     }
 }
 
-//Chequear los tamanios maximos de todo.
-int longitud_maxima = 100;
-int parametros_maximos = 10;
-int instrucciones_maximas = 100;
 
 //t_instruccion *instrucciones[instrucciones_maximas];
 //t_instruccion ins a enviar = instrucciones[pid];

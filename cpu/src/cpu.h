@@ -20,7 +20,7 @@ int socket_servidor_cpu_dispatch;
 int socket_servidor_cpu_interrupt;
 int socket_cliente_kernel_dispatch;
 int socket_cliente_kernel_interrupt;
-int conexion_cpu;
+int conexion_memoria;
 
 void leer_config();
 

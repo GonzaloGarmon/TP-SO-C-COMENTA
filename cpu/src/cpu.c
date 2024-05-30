@@ -74,11 +74,7 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
         case EXEC:
             log_trace(log_cpu, "llego contexto de ejecucion");
             contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
-            log_trace(log_cpu, "recibo pcb de pid: %d", contexto->pid);
-            log_trace(log_cpu, "recibo pcb de pc: %d", contexto->pc);
-            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->qq);
-            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->registros->AX);
-            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->registros->EBX);
+            ejecutar_ciclo_de_instruccion();
             break;
         
         default:
@@ -103,21 +99,21 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
     log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_memoria, puerto_memoria);
 
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
-    if((conexion_cpu = crear_conexion(ip_memoria, puerto_memoria)) == -1){
+    if((conexion_memoria = crear_conexion(ip_memoria, puerto_memoria)) == -1){
         log_trace(loggs, "Error al conectar con Memoria. El servidor no esta activo");
 
         exit(2);
     }
     
     //log_trace(loggs, "Todavía no recibí Op");
-    recibir_operacion(conexion_cpu);
+    recibir_operacion(conexion_memoria);
     //log_trace(loggs, "Recibí Op");
-    recibir_string(conexion_cpu, loggs);
+    recibir_string(conexion_memoria, loggs);
     
 }
 
 void ejecutar_ciclo_de_instruccion(){
-    t_instruccion* instruccion = fetch(contexto->pid, contexto->pc); // de donde sacar el contexto
+    t_instruccion* instruccion = fetch(contexto->pid, contexto->pc);
     op_code instruccion_nombre = decode(instruccion);
     execute(instruccion_nombre, instruccion);
  }
@@ -127,7 +123,10 @@ void ejecutar_ciclo_de_instruccion(){
 t_instruccion* fetch(uint32_t pid, uint32_t pc){
     pedir_instruccion_memoria(pid, pc);
     t_instruccion* instruccion = malloc(sizeof(t_instruccion));
-    instruccion = recibir_instruccion(puerto_memoria);
+    int codigo = recibir_operacion(conexion_memoria);
+    log_trace(log_cpu, "pedi instruccion Y el codigo es %d", codigo);
+    instruccion = recibir_instruccion(conexion_memoria);
+    log_trace(log_cpu, "recibi instruccion");
   return instruccion;
 }
 
@@ -136,7 +135,7 @@ t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc){
     agregar_entero_a_paquete(paquete,pid);
     agregar_entero_a_paquete(paquete,pc);
     
-    enviar_paquete(paquete,puerto_memoria);
+    enviar_paquete(paquete,conexion_memoria);
     eliminar_paquete(paquete);
 
 }

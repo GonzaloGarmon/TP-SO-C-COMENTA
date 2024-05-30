@@ -52,14 +52,14 @@ void establecer_conexion_kernel(char * ip_kernel, char* puerto_kernel, t_config*
     log_trace(loggs,"Lei la IP %s , el Puerto Kernel %s ", ip_kernel, puerto_kernel);
 
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
-    if((conexion_entradasalida = crear_conexion(ip_kernel, puerto_kernel)) == -1){
+    if((conexion_entradasalida_kernel = crear_conexion(ip_kernel, puerto_kernel)) == -1){
         log_trace(loggs, "Error al conectar con Kernel. El servidor no esta activo");
 
         exit(2);
     }
 
-    recibir_operacion(conexion_entradasalida);
-    recibir_string(conexion_entradasalida, loggs);
+    recibir_operacion(conexion_entradasalida_kernel);
+    recibir_string(conexion_entradasalida_kernel, loggs);
 }
 
 void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* loggs){
@@ -69,14 +69,14 @@ void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_conf
     log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_memoria, puerto_memoria);
 
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
-    if((conexion_entradasalida = crear_conexion(ip_memoria, puerto_memoria)) == -1){
+    if((conexion_entradasalida_memoria = crear_conexion(ip_memoria, puerto_memoria)) == -1){
         log_trace(loggs, "Error al conectar con Memoria. El servidor no esta activo");
 
         exit(2);
     }
 
-    recibir_operacion(conexion_entradasalida);
-    recibir_string(conexion_entradasalida, loggs);
+    recibir_operacion(conexion_entradasalida_memoria);
+    recibir_string(conexion_entradasalida_memoria, loggs);
 }
 
 void finalizar_programa(){
