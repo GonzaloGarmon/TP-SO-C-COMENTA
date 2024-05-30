@@ -129,7 +129,12 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             pcb_finaliza = recibir_pcb(conexion_kernel_cpu_dispatch);
             log_trace(log_kernel,"recibi un pcb por finalizacion de proceso");
             break;
-        
+        case EJECUTAR_WAIT:
+            char* recurso_wait = recibir_string(conexion_kernel_cpu_dispatch,log_kernel);
+            break;
+        case EJECUTAR_SIGNAL:
+            char* recurso_signal = recibir_string(conexion_kernel_cpu_dispatch, log_kernel);
+            break;
         default:
             break;
         }

@@ -75,7 +75,8 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
             log_trace(log_cpu, "llego contexto de ejecucion");
             contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
             ejecutar_ciclo_de_instruccion();
-            log_trace(log_cpu, "ejecute correctamente un ciclo de instruccion");
+            log_trace(log_cpu, "ejecute correctamente el ciclo de instruccion");
+            devolver_contexto();
             break;
         
         default:
@@ -163,12 +164,15 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
         case IO_GEN_SLEEP:
             funcIoGenSleep(instruccion);
             break;
+        case WAIT:
+            funcWait(instruccion);
+            break;
+        case SIGNAL:
+            funcSignal(instruccion);
+            break;
         case EXIT:
             seguir_ejecutando = 0;
-            t_paquete* paquete = crear_paquete_op(TERMINO_PROCESO);
-            agregar_pcb_a_paquete(paquete,contexto);
-            enviar_paquete(paquete, socket_cliente_kernel_dispatch);
-            eliminar_paquete(paquete);
+            motivo_devolucion = TERMINO_PROCESO;
         default:
             printf("Instrucción desconocida\n");
             break;
@@ -424,4 +428,29 @@ void funcIoGenSleep(t_instruccion *instruccion) {
     agregar_string_a_paquete(paquete, instruccion->parametros2);
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3));
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
-};
+}
+
+void funcSignal(t_instruccion *instruccion){
+    t_paquete* paquete = crear_paquete_op(EJECUTAR_SIGNAL);
+    agregar_string_a_paquete(paquete,instruccion->parametros2);
+
+    enviar_paquete(paquete,socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
+    seguir_ejecutando = 0;
+}
+
+void funcWait(t_instruccion *instruccion){
+    t_paquete* paquete = crear_paquete_op(EJECUTAR_WAIT);
+    agregar_string_a_paquete(paquete,instruccion->parametros2);
+
+    enviar_paquete(paquete,socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
+    seguir_ejecutando = 0;
+}
+
+void devolver_contexto(){
+    t_paquete* paquete = crear_paquete_op(motivo_devolucion);
+    agregar_pcb_a_paquete(paquete,contexto);
+    enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
+}
