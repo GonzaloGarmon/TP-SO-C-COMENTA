@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     
     log_info(log_memoria, "Listo para recibir a Kernel");
     socket_cliente_kernel = esperar_cliente(socket_servidor_memoria_dispatch);
+
     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) (intptr_t) socket_cliente_kernel);
     pthread_detach(atiende_cliente_kernel);
 
@@ -97,7 +98,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
 
 //Chequear los tamanios maximos de todo.
 int longitud_maxima = 100;
-int parametros_maximos = 10;
+int parametros_maximos = 6;
 int instrucciones_maximas = 100;
 
 //t_instruccion *instrucciones[instrucciones_maximas];
