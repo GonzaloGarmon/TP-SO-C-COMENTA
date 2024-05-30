@@ -13,7 +13,11 @@ int tam_pagina;
 char* path_instrucciones;
 int retardo_respuesta;
 
-
+//Chequear los tamanios maximos de todo.
+int longitud_maxima = 100;
+int parametros_maximos = 6;
+int instrucciones_maximas = 100;
+t_instruccion* instrucciones[100];
 int socket_servidor_memoria_dispatch;
 int socket_servidor_memoria_interrupt;
 int socket_cliente_kernel;

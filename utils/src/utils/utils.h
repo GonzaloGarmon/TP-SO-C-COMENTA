@@ -49,7 +49,7 @@ typedef enum
 	READY,
 	EXEC,
 	BLOCK,
-	EXIT,
+	EXIT_,
 	//MENSAJES GENERICOS
 	MENSAJE,
 	PAQUETE,
@@ -72,12 +72,16 @@ typedef enum
     IO_FS_TRUNCATE,
     IO_FS_WRITE,
     IO_FS_READ,
-    EXIT_,
+    EXIT,
 	//SOLICITUDES DE CPU A OTROS
 	PEDIR_INSTRUCCION_MEMORIA,
 	EJECUTAR_IO_GEN_SLEEP,
 	//SOLICITUDES DE KERNEL A OTROS
 	INICIO_NUEVO_PROCESO,
+	//MOTIVOS DE DESALOJO
+	TERMINO_PROCESO,
+	INTERRUPCION,
+	ERROR,
 }op_code;
 
 typedef struct
@@ -155,6 +159,6 @@ uint32_t recibir_entero_uint32(int socket, t_log* loggs);
 char* recibir_string(int socket, t_log* loggs);
 t_pcb* recibir_pcb(int socket);
 t_instruccion* recibir_instruccion(int socket);
-
+t_list* recibir_doble_entero(int socket);
 
 #endif

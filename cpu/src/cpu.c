@@ -74,11 +74,8 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
         case EXEC:
             log_trace(log_cpu, "llego contexto de ejecucion");
             contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
-            log_trace(log_cpu, "recibo pcb de pid: %d", contexto->pid);
-            log_trace(log_cpu, "recibo pcb de pc: %d", contexto->pc);
-            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->qq);
-            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->registros->AX);
-            log_trace(log_cpu, "recibo pcb de qq: %d", contexto->registros->EBX);
+            ejecutar_ciclo_de_instruccion();
+            log_trace(log_cpu, "ejecute correctamente un ciclo de instruccion");
             break;
         
         default:
@@ -103,23 +100,28 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
     log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_memoria, puerto_memoria);
 
     // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
-    if((conexion_cpu = crear_conexion(ip_memoria, puerto_memoria)) == -1){
+    if((conexion_memoria = crear_conexion(ip_memoria, puerto_memoria)) == -1){
         log_trace(loggs, "Error al conectar con Memoria. El servidor no esta activo");
 
         exit(2);
     }
     
     //log_trace(loggs, "Todavía no recibí Op");
-    recibir_operacion(conexion_cpu);
+    recibir_operacion(conexion_memoria);
     //log_trace(loggs, "Recibí Op");
-    recibir_string(conexion_cpu, loggs);
+    recibir_string(conexion_memoria, loggs);
     
 }
 
 void ejecutar_ciclo_de_instruccion(){
-    t_instruccion* instruccion = fetch(contexto->pid, contexto->pc); // de donde sacar el contexto
+    seguir_ejecutando = 1;
+    while(seguir_ejecutando){
+    t_instruccion* instruccion = fetch(contexto->pid, contexto->pc);
     op_code instruccion_nombre = decode(instruccion);
+    contexto->pc++;
     execute(instruccion_nombre, instruccion);
+    }
+
  }
 
 //pedir a la memoria la proxima instruccion a ejecutar
@@ -127,7 +129,10 @@ void ejecutar_ciclo_de_instruccion(){
 t_instruccion* fetch(uint32_t pid, uint32_t pc){
     pedir_instruccion_memoria(pid, pc);
     t_instruccion* instruccion = malloc(sizeof(t_instruccion));
-    instruccion = recibir_instruccion(puerto_memoria);
+    int codigo = recibir_operacion(conexion_memoria);
+    log_trace(log_cpu, "pedi instruccion");
+    instruccion = recibir_instruccion(conexion_memoria);
+    log_trace(log_cpu, "recibi instruccion");
   return instruccion;
 }
 
@@ -136,7 +141,7 @@ t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc){
     agregar_entero_a_paquete(paquete,pid);
     agregar_entero_a_paquete(paquete,pc);
     
-    enviar_paquete(paquete,puerto_memoria);
+    enviar_paquete(paquete,conexion_memoria);
     eliminar_paquete(paquete);
 
 }
@@ -158,25 +163,59 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
         case IO_GEN_SLEEP:
             funcIoGenSleep(instruccion);
             break;
+        case EXIT:
+            seguir_ejecutando = 0;
+            t_paquete* paquete = crear_paquete_op(TERMINO_PROCESO);
+            agregar_pcb_a_paquete(paquete,contexto);
+            enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+            eliminar_paquete(paquete);
         default:
             printf("Instrucción desconocida\n");
             break;
     }
 
-    contexto->pc++;
+    
 }
 
 op_code decode(t_instruccion *instruccion) {
     if (strcmp(instruccion->parametros1, "SET") == 0) {
         return SET;
+    } else if (strcmp(instruccion->parametros1, "MOV_IN") == 0) {
+        return MOV_IN;
+    } else if (strcmp(instruccion->parametros1, "MOV_OUT") == 0) {
+        return MOV_OUT;
     } else if (strcmp(instruccion->parametros1, "SUM") == 0) {
         return SUM;
     } else if (strcmp(instruccion->parametros1, "SUB") == 0) {
         return SUB;
     } else if (strcmp(instruccion->parametros1, "JNZ") == 0) {
         return JNZ;
+    } else if (strcmp(instruccion->parametros1, "RESIZE") == 0) {
+        return RESIZE;
+    } else if (strcmp(instruccion->parametros1, "COPY_STRING") == 0) {
+        return COPY_STRING;
+    } else if (strcmp(instruccion->parametros1, "WAIT") == 0) {
+        return WAIT;
+    } else if (strcmp(instruccion->parametros1, "SIGNAL") == 0) {
+        return SIGNAL;
     } else if (strcmp(instruccion->parametros1, "IO_GEN_SLEEP") == 0) {
         return IO_GEN_SLEEP;
+    } else if (strcmp(instruccion->parametros1, "IO_STDIN_READ") == 0) {
+        return IO_STDIN_READ;
+    } else if (strcmp(instruccion->parametros1, "IO_STDOUT_WRITE") == 0) {
+        return IO_STDOUT_WRITE;
+    } else if (strcmp(instruccion->parametros1, "IO_FS_CREATE") == 0) {
+        return IO_FS_CREATE;
+    } else if (strcmp(instruccion->parametros1, "IO_FS_DELETE") == 0) {
+        return IO_FS_DELETE;
+    } else if (strcmp(instruccion->parametros1, "IO_FS_TRUNCATE") == 0) {
+        return IO_FS_TRUNCATE;
+    } else if (strcmp(instruccion->parametros1, "IO_FS_WRITE") == 0) {
+        return IO_FS_WRITE;
+    } else if (strcmp(instruccion->parametros1, "IO_FS_READ") == 0) {
+        return IO_FS_READ;
+    } else if (strcmp(instruccion->parametros1, "EXIT") == 0) {
+        return EXIT;
     }
     // Agregar otras instrucciones según sea necesario
     return -1; // Código de operación no válido
@@ -200,6 +239,8 @@ void funcSet(t_instruccion* instruccion) {
         contexto->registros->ECX = atoi(instruccion->parametros3);
     } else if (strcmp(instruccion->parametros2, "EDX") == 0) {
         contexto->registros->EDX = atoi(instruccion->parametros3);
+    } else if (strcmp(instruccion->parametros2, "PC") == 0) {
+        contexto->pc = atoi(instruccion->parametros3);
     } else {
         printf("Registro desconocido: %s\n", instruccion->parametros1);
     }

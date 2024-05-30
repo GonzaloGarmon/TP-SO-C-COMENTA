@@ -329,13 +329,48 @@ void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb){
 
 void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion * instruccion_nueva){
 	
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros1);
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros2);
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros3);
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros4);
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros5);
-	agregar_string_a_paquete(paquete,instruccion_nueva->parametros6);
 
+	if(instruccion_nueva->parametros1 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros1,strlen(instruccion_nueva->parametros1)+1);
+	}else{
+		instruccion_nueva->parametros1 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros1,strlen(instruccion_nueva->parametros1)+1);
+	}
+
+	if(instruccion_nueva->parametros2 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+	}else{
+		instruccion_nueva->parametros2 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+	}
+
+	if(instruccion_nueva->parametros3 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+	}else{
+		instruccion_nueva->parametros3 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+	}
+
+	if(instruccion_nueva->parametros4 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
+	}else{
+		instruccion_nueva->parametros4 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
+	}
+
+	if(instruccion_nueva->parametros5 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros5,strlen(instruccion_nueva->parametros5)+1);
+	}else{
+		instruccion_nueva->parametros5 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros5,strlen(instruccion_nueva->parametros5)+1);
+	}
+
+	if(instruccion_nueva->parametros6 != NULL){
+		agregar_a_paquete(paquete,instruccion_nueva->parametros6,strlen(instruccion_nueva->parametros6)+1);
+	}else{
+		instruccion_nueva->parametros6 = "";
+		agregar_a_paquete(paquete,instruccion_nueva->parametros6,strlen(instruccion_nueva->parametros6)+1);
+	}
 }
 
 
@@ -493,7 +528,20 @@ t_pcb* recibir_pcb(int socket){
 	return nuevo_pcb;
 }
 
+t_list* recibir_doble_entero(int socket){
+	int size = 0;
+	char* buffer;
+	int desp = 0;
+	t_list* devolver = list_create();
+	buffer = recibir_buffer(&size, socket);
+	u_int32_t entero_nuevo1 = leer_entero_uint32(buffer, &desp);
+	u_int32_t entero_nuevo2 = leer_entero_uint32(buffer, &desp);
+	list_add(devolver, entero_nuevo1);
+	list_add(devolver, entero_nuevo2);
+	free(buffer);
 
+	return devolver;
+}
 
 
 
