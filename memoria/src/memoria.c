@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     
     log_info(log_memoria, "Listo para recibir a Kernel");
     socket_cliente_kernel = esperar_cliente(socket_servidor_memoria_dispatch);
+
     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) (intptr_t) socket_cliente_kernel);
     pthread_detach(atiende_cliente_kernel);
 
