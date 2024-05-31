@@ -36,10 +36,11 @@ char* algoritmo;
 t_algoritmo algoritmo_planificacion;
 int quantum;
 
-char* recursos;
-char* instancias_recursos;
+char** recursos;
+int* instancias_recursos;
+int cantidad_recursos;
 int grado_multiprogramacion;
-
+t_list** lista_recurso;
 
 int socket_servidor_kernel_dispatch;
 int socket_servidor_kernel_interrupt;
@@ -56,6 +57,7 @@ void leer_config();
 void generar_conexiones();
 void iniciar_semaforos();
 void finalizar_programa();
+int* convertirArrayDeNumeros(char** caracteres);
 /*
 ------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
 */
@@ -83,4 +85,8 @@ void exec_pcb();
 void dispatch(t_pcb* pcb_enviar);
 void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch);
 void recibir_cpu_interrupt(int conexion_kernel_cpu_interrupt);
+int existe_recurso(char* recurso);
+void actualizar_pcb(t_pcb* pcb_wait);
+void actualizar_pcb_con_cambiar_lista(t_pcb* pcb_wait, t_list* lista_bloq_recurso);
+void desbloquear_proceso(t_list* lista_recurso_liberar);
 #endif

@@ -77,8 +77,8 @@ void leer_config(){
     }
     quantum = config_get_int_value(config_kernel, "QUANTUM");
 
-    recursos = config_get_string_value(config_kernel, "RECURSOS");
-    instancias_recursos = config_get_string_value(config_kernel, "INSTANCIAS_RECURSOS");
+    recursos = config_get_array_value(config_kernel, "RECURSOS");
+    instancias_recursos = convertirArrayDeNumeros(config_get_array_value(config_kernel, "INSTANCIAS_RECURSOS"));
     grado_multiprogramacion = config_get_int_value(config_kernel, "GRADO_MULTIPROGRAMACION");
 
     log_info(log_kernel, "levanto la configuracion del kernel");
@@ -107,6 +107,24 @@ void iniciar_semaforos(){
     cola_ready = list_create();
     cola_exec = list_create();
     generador_pid = 0;
+
+    lista_recurso = (t_list**)malloc(cantidad_recursos * sizeof(t_list*));
+
+    for (int i = 0; i < cantidad_recursos; i++) {
+        lista_recurso[i] = list_create();
+    }
+}
+
+int* convertirArrayDeNumeros(char** caracteres){
+    int size = string_array_size(caracteres);
+    cantidad_recursos = size;
+    int* intArray = (int*)malloc(size * sizeof(int));
+
+        for (int i = 0; i < size; ++i) {
+            intArray[i] = atoi(caracteres[i]);
+        }
+        
+    return intArray;
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
@@ -128,12 +146,55 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             t_pcb* pcb_finaliza = malloc(sizeof(t_pcb));
             pcb_finaliza = recibir_pcb(conexion_kernel_cpu_dispatch);
             log_trace(log_kernel,"recibi un pcb por finalizacion de proceso");
+            //falta finalizar el proceso
             break;
         case EJECUTAR_WAIT:
-            char* recurso_wait = recibir_string(conexion_kernel_cpu_dispatch,log_kernel);
+            t_pcb* pcb_wait;
+            char* recurso_wait;
+            recibir_string_mas_pcb(conexion_kernel_cpu_dispatch,&pcb_wait,&recurso_wait);
+            
+            if(existe_recurso(recurso_wait)){
+
+                for(int i = 0; i < cantidad_recursos; i++) {
+                    if(strcmp(recursos[i],recurso_wait) == 0) {
+                        
+                        if(instancias_recursos[i]-1>0){
+                            instancias_recursos[i]--;
+                            actualizar_pcb(pcb_wait);
+                            
+                            enviar_pcb(conexion_kernel_cpu_dispatch,pcb_wait,EXEC);
+                        }else{
+                            
+                            actualizar_pcb_con_cambiar_lista(pcb_wait, lista_recurso[i]);
+                            //avisar que un proceso se bloqueo por lo tanto otro puede ser enviado a cpu
+                            
+                        }
+
+                    }
+                }
+
+            }else{
+                //finalizar proceso mandandolo a exit
+            }
             break;
         case EJECUTAR_SIGNAL:
-            char* recurso_signal = recibir_string(conexion_kernel_cpu_dispatch, log_kernel);
+            t_pcb* pcb_signal;
+            char* recurso_signal;
+            recibir_string_mas_pcb(conexion_kernel_cpu_dispatch,&pcb_signal,&recurso_signal);
+            if(existe_recurso(recurso_signal)){
+
+                for(int i = 0; i < cantidad_recursos; i++) {
+                    if(strcmp(recursos[i],recurso_wait) == 0) {
+                        instancias_recursos[i]++;
+                        desbloquear_proceso(lista_recurso[i]);
+                        actualizar_pcb(pcb_signal);
+                        
+                    }
+                }                
+            enviar_pcb(conexion_kernel_cpu_dispatch,pcb_signal,EXEC);    
+            }else{
+                //finalizar proceso mandandolo a exit
+            }
             break;
         default:
             break;
@@ -442,4 +503,60 @@ void dispatch(t_pcb* pcb_enviar){
         pthread_mutex_lock(&mutex_cola_exec);
         pcb_enviar = list_add(cola_exec, pcb_enviar);
         pthread_mutex_unlock(&mutex_cola_exec);
+}
+
+int existe_recurso(char* recurso){
+
+        for(int i = 0; i < cantidad_recursos; i++) {
+        if(strcmp(recursos[i],recurso) == 0) {
+           return 1;
+         }
+        }
+    
+    return 0;
+}
+
+void actualizar_pcb(t_pcb* pcb_wait){
+
+    bool encontrar_pcb(t_pcb* pcb){
+        return pcb->pid == pcb_wait->pid;
+    };
+    
+
+    pthread_mutex_lock(&mutex_cola_exec);
+    t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
+    pcb_encontrado->pc = pcb_wait->pc;
+    pcb_encontrado->pid = pcb_wait->pid;
+    pcb_encontrado->qq = pcb_wait->qq;
+    pcb_encontrado->registros = pcb_wait->registros;
+    pthread_mutex_unlock(&mutex_cola_exec);
+}
+
+void actualizar_pcb_con_cambiar_lista(t_pcb* pcb_wait, t_list* lista_bloq_recurso){
+    
+    bool encontrar_pcb(t_pcb* pcb){
+        return pcb->pid == pcb_wait->pid;
+        };
+    
+
+    pthread_mutex_lock(&mutex_cola_exec);
+    t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
+    pcb_encontrado->pc = pcb_wait->pc;
+    pcb_encontrado->pid = pcb_wait->pid;
+    pcb_encontrado->qq = pcb_wait->qq;
+    pcb_encontrado->registros = pcb_wait->registros;
+    list_remove_element(cola_exec,pcb_encontrado);
+    pthread_mutex_unlock(&mutex_cola_exec);
+
+    list_add(lista_bloq_recurso,pcb_encontrado);
+}
+
+void desbloquear_proceso(t_list* lista_recurso_liberar){
+    if (!list_is_empty(lista_recurso_liberar)){
+        t_pcb* pcb_desbloqueado = list_get(lista_recurso_liberar,0);
+        pthread_mutex_lock(&mutex_cola_ready);
+        list_add(lista_recurso_liberar,pcb_desbloqueado);
+        pthread_mutex_unlock(&mutex_cola_ready);
+        sem_post(&sem_listos_para_ready);
+    }
 }

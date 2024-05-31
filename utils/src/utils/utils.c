@@ -543,6 +543,32 @@ t_list* recibir_doble_entero(int socket){
 	return devolver;
 }
 
+void recibir_string_mas_pcb(int conexion_kernel_cpu_dispatch,t_pcb** pcb_wait,char** recurso_wait){
+    *pcb_wait = malloc(sizeof(t_pcb));
+    t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
+    (*pcb_wait)->registros = registros;
+    int size = 0;
+	char* buffer;
+	int desp = 0;
+    	
+	buffer = recibir_buffer(&size,conexion_kernel_cpu_dispatch);
+	*recurso_wait = leer_string(buffer, &desp);
+
+	(*pcb_wait)->pid = leer_entero_uint32(buffer,&desp);
+	(*pcb_wait)->pc = leer_entero_uint32(buffer,&desp);
+	(*pcb_wait)->qq = leer_entero(buffer,&desp);
+	(*pcb_wait)->registros->AX = leer_entero_uint8(buffer,&desp);
+	(*pcb_wait)->registros->BX = leer_entero_uint8(buffer,&desp);
+	(*pcb_wait)->registros->CX = leer_entero_uint8(buffer,&desp);
+	(*pcb_wait)->registros->DX = leer_entero_uint8(buffer,&desp);
+	(*pcb_wait)->registros->EAX = leer_entero_uint32(buffer,&desp);
+	(*pcb_wait)->registros->EBX = leer_entero_uint32(buffer,&desp);
+	(*pcb_wait)->registros->ECX = leer_entero_uint32(buffer,&desp);
+	(*pcb_wait)->registros->EDX = leer_entero_uint32(buffer,&desp);
+
+	free(buffer);
+}
+
 
 
 

@@ -84,6 +84,7 @@ typedef enum
 	TERMINO_PROCESO,
 	INTERRUPCION,
 	ERROR,
+	LLAMADA_POR_INSTRUCCION,
 }op_code;
 
 typedef struct
@@ -162,5 +163,5 @@ char* recibir_string(int socket, t_log* loggs);
 t_pcb* recibir_pcb(int socket);
 t_instruccion* recibir_instruccion(int socket);
 t_list* recibir_doble_entero(int socket);
-
+void recibir_string_mas_pcb(int conexion_kernel_cpu_dispatch,t_pcb** pcb_wait,char** recurso_wait);
 #endif

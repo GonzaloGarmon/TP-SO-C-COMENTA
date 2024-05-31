@@ -76,7 +76,7 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
             contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
             ejecutar_ciclo_de_instruccion();
             log_trace(log_cpu, "ejecute correctamente el ciclo de instruccion");
-            devolver_contexto();
+            
             break;
         
         default:
@@ -173,6 +173,7 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
         case EXIT:
             seguir_ejecutando = 0;
             motivo_devolucion = TERMINO_PROCESO;
+            devolver_contexto();
         default:
             printf("Instrucción desconocida\n");
             break;
@@ -432,20 +433,21 @@ void funcIoGenSleep(t_instruccion *instruccion) {
 
 void funcSignal(t_instruccion *instruccion){
     t_paquete* paquete = crear_paquete_op(EJECUTAR_SIGNAL);
-    agregar_string_a_paquete(paquete,instruccion->parametros2);
-
+    
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
+    agregar_pcb_a_paquete(paquete,contexto);
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
-    eliminar_paquete(paquete);
     seguir_ejecutando = 0;
 }
 
 void funcWait(t_instruccion *instruccion){
     t_paquete* paquete = crear_paquete_op(EJECUTAR_WAIT);
-    agregar_string_a_paquete(paquete,instruccion->parametros2);
-
+    
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
+    agregar_pcb_a_paquete(paquete,contexto);
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
-    eliminar_paquete(paquete);
     seguir_ejecutando = 0;
+   
 }
 
 void devolver_contexto(){
