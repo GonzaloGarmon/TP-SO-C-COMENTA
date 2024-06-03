@@ -99,13 +99,16 @@ void iniciar_semaforos(){
     pthread_mutex_init(&mutex_cola_ready, NULL);
     pthread_mutex_init(&mutex_cola_new, NULL);
     pthread_mutex_init(&mutex_cola_exec, NULL);
+    pthread_mutex_init(&mutex_cola_exit, NULL);
 
     sem_init(&sem_multiprogamacion, 0, grado_multiprogramacion);
     sem_init(&sem_listos_para_ready, 0, 0);
     sem_init(&sem_listos_para_exec, 0, 0);
+    sem_init(&sem_listos_para_exit, 0, 0);
     cola_new = list_create();
     cola_ready = list_create();
     cola_exec = list_create();
+    cola_exit = list_create();
     generador_pid = 0;
 
     lista_recurso = (t_list**)malloc(cantidad_recursos * sizeof(t_list*));
@@ -146,7 +149,10 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             t_pcb* pcb_finaliza = malloc(sizeof(t_pcb));
             pcb_finaliza = recibir_pcb(conexion_kernel_cpu_dispatch);
             log_trace(log_kernel,"recibi un pcb por finalizacion de proceso");
-            //falta finalizar el proceso
+            pthread_mutex_lock(&mutex_cola_exit);
+            list_add(cola_exit,pcb_finaliza);
+            pthread_mutex_unlock(&mutex_cola_exit);
+            sem_post(&sem_listos_para_exit);
             break;
         case EJECUTAR_WAIT:
             t_pcb* pcb_wait;
@@ -166,7 +172,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                         }else{
                             
                             actualizar_pcb_con_cambiar_lista(pcb_wait, lista_recurso[i]);
-                            //avisar que un proceso se bloqueo por lo tanto otro puede ser enviado a cpu
+                            sem_post(&sem_listos_para_exec);
                             
                         }
 
@@ -174,7 +180,10 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 }
 
             }else{
-                //finalizar proceso mandandolo a exit
+                pthread_mutex_lock(&mutex_cola_exit);
+                list_add(cola_exit,pcb_wait);
+                pthread_mutex_unlock(&mutex_cola_exit);
+                sem_post(&sem_listos_para_exit);
             }
             break;
         case EJECUTAR_SIGNAL:
@@ -193,7 +202,10 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 }                
             enviar_pcb(conexion_kernel_cpu_dispatch,pcb_signal,EXEC);    
             }else{
-                //finalizar proceso mandandolo a exit
+                pthread_mutex_lock(&mutex_cola_exit);
+                list_add(cola_exit,pcb_signal);
+                pthread_mutex_unlock(&mutex_cola_exit);
+                sem_post(&sem_listos_para_exit);
             }
             break;
         default:
@@ -308,7 +320,10 @@ void iniciar_consola(){
         iniciar_proceso();
         break;
     case 3:
-        finalizar_proceso();
+        uint32_t pid;
+        printf("\n ingrese el pid del proceso que desea finalizar: ");
+        scanf("%d", &pid);
+        finalizar_proceso(pid);
         break;
     case 4:
         iniciar_planificacion();
@@ -339,11 +354,11 @@ void iniciar_proceso(){
     printf("Por favor ingrese el path: ");
     scanf("%s", path);
 
-    //ACA HAY QUE AVISARLE A MEMORIA QUE SE CREA UN PROCESO DE ESE PATH, DEBERIA DEVOLVER ALGUNA INFO?
+    
     enviar_string(conexion_kernel_memoria,path,INICIO_NUEVO_PROCESO);
     
     generador_pid++;
-    //creamos PCB
+    
     t_registros_cpu* registros = inicializar_registros();
     t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
     pcb_nuevo->qq = quantum;
@@ -408,10 +423,13 @@ void planificar_rr(){
 
 void planificar_largo_plazo(){
     pthread_t hilo_ready;
+    pthread_t hilo_exit;
     
     pthread_create(&hilo_ready, NULL, (void *)pcb_ready, NULL);
+    pthread_create(&hilo_exit, NULL, (void *)pcb_exit, NULL);
 
     pthread_detach(hilo_ready);
+    pthread_detach(hilo_exit);
 }
 
 void planificar_corto_plazo(){
@@ -441,6 +459,17 @@ t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
     pcbDelProceso = list_remove(list, 0);
     pthread_mutex_unlock(mutex);
     return pcbDelProceso;
+}
+
+void pcb_exit(){
+    sem_wait(&sem_listos_para_exit);
+    pthread_mutex_lock(&mutex_cola_exit);
+    t_pcb* pcb_finaliza = list_remove(cola_exit,0);
+    pthread_mutex_unlock(&mutex_cola_exit);
+
+    enviar_string(conexion_kernel_memoria,pcb_finaliza->pid,FINALIZO_PROCESO);
+    sem_post(&sem_multiprogamacion);
+
 }
 
 void exec_pcb()
@@ -553,7 +582,9 @@ void actualizar_pcb_con_cambiar_lista(t_pcb* pcb_wait, t_list* lista_bloq_recurs
 
 void desbloquear_proceso(t_list* lista_recurso_liberar){
     if (!list_is_empty(lista_recurso_liberar)){
+        
         t_pcb* pcb_desbloqueado = list_get(lista_recurso_liberar,0);
+        pcb_desbloqueado->pc = pcb_desbloqueado->pc - 1;
         pthread_mutex_lock(&mutex_cola_ready);
         list_add(lista_recurso_liberar,pcb_desbloqueado);
         pthread_mutex_unlock(&mutex_cola_ready);

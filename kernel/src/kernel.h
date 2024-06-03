@@ -17,13 +17,16 @@ t_config* config_kernel;
 t_list* cola_new;
 t_list* cola_ready;
 t_list* cola_exec;
+t_list* cola_exit;
 
 pthread_mutex_t mutex_cola_new;
 pthread_mutex_t mutex_cola_ready;
 pthread_mutex_t mutex_cola_exec;
+pthread_mutex_t mutex_cola_exit;
 sem_t sem_listos_para_ready;
 sem_t sem_multiprogamacion;
 sem_t sem_listos_para_exec;
+sem_t sem_listos_para_exit;
 
 char* puerto_escucha;
 char* ip_memoria;
@@ -82,6 +85,7 @@ void planificar_corto_plazo();
 void planificar_rr();
 void contador_quantum_RR();
 void exec_pcb();
+void pcb_exit();
 void dispatch(t_pcb* pcb_enviar);
 void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch);
 void recibir_cpu_interrupt(int conexion_kernel_cpu_interrupt);
