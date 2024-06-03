@@ -75,7 +75,8 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
             log_trace(log_cpu, "llego contexto de ejecucion");
             contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
             ejecutar_ciclo_de_instruccion();
-            log_trace(log_cpu, "ejecute correctamente un ciclo de instruccion");
+            log_trace(log_cpu, "ejecute correctamente el ciclo de instruccion");
+            
             break;
         
         default:
@@ -163,8 +164,15 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
         case IO_GEN_SLEEP:
             funcIoGenSleep(instruccion);
             break;
+        case WAIT:
+            funcWait(instruccion);
+            break;
+        case SIGNAL:
+            funcSignal(instruccion);
+            break;
         case EXIT:
             funcExit(instruccion);
+        break;
         /*case MOV_IN:
             funcMovIn(instruccion);
             break;
@@ -453,7 +461,27 @@ void funcIoGenSleep(t_instruccion *instruccion) {
     agregar_string_a_paquete(paquete, instruccion->parametros2);
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3));
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
-};
+
+}
+
+void funcSignal(t_instruccion *instruccion){
+    t_paquete* paquete = crear_paquete_op(EJECUTAR_SIGNAL);
+    
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
+    agregar_pcb_a_paquete(paquete,contexto);
+    enviar_paquete(paquete,socket_cliente_kernel_dispatch);
+    seguir_ejecutando = 0;
+}
+
+void funcWait(t_instruccion *instruccion){
+    t_paquete* paquete = crear_paquete_op(EJECUTAR_WAIT);
+    
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
+    agregar_pcb_a_paquete(paquete,contexto);
+    enviar_paquete(paquete,socket_cliente_kernel_dispatch);
+    seguir_ejecutando = 0;
+   
+}
 
 void funcExit(t_instruccion *instruccion) {
     seguir_ejecutando = 0;
@@ -529,6 +557,3 @@ void funcIoFsRead(t_instruccion* instruccion) {
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
-
-
-

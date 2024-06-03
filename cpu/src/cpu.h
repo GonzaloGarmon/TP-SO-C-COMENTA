@@ -37,6 +37,8 @@ void funcSet(t_instruccion *instruccion);
 void funcSum(t_instruccion *instruccion);
 void funcSub(t_instruccion *instruccion);
 void funcJnz(t_instruccion *instruccion);
+void funcWait(t_instruccion *instruccion);
+void funcSignal(t_instruccion *instruccion);
 void funcIoGenSleep(t_instruccion *instruccion);
 void funcIoStdinRead(t_instruccion *instruccion);
 void funcIoStdOutWrite(t_instruccion *instruccion);
@@ -46,10 +48,12 @@ void funcIoFsTruncate(t_instruccion *instruccion);
 void funcIoFsRead(t_instruccion *instruccion);
 void funcIoFsWrite(t_instruccion *instruccion);
 
+
 op_code decode(t_instruccion *instruccion);
 t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc); 
 void execute(op_code instruccion_nombre, t_instruccion* instruccion);
 uint8_t obtener_valor_registro_XX(char* parametro);
 uint32_t obtener_valor_registro_XXX(char* parametro);
 t_instruccion* fetch(uint32_t pid, uint32_t pc);
+void devolver_contexto();
 #endif
