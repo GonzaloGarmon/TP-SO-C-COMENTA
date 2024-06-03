@@ -25,6 +25,9 @@ typedef struct{
 	uint32_t EBX;
 	uint32_t ECX;
 	uint32_t EDX;
+	//agrego 2 registros que faltaban del struct
+	uint32_t SI;
+	uint32_t DI;
 }t_registros_cpu;
 
 // typedef enum{
