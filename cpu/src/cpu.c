@@ -172,7 +172,6 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
             break;
         case EXIT:
             seguir_ejecutando = 0;
-            motivo_devolucion = TERMINO_PROCESO;
             devolver_contexto();
         default:
             printf("Instrucción desconocida\n");
@@ -451,7 +450,7 @@ void funcWait(t_instruccion *instruccion){
 }
 
 void devolver_contexto(){
-    t_paquete* paquete = crear_paquete_op(motivo_devolucion);
+    t_paquete* paquete = crear_paquete_op(TERMINO_PROCESO);
     agregar_pcb_a_paquete(paquete,contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);

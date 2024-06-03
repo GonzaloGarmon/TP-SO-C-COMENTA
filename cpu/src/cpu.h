@@ -22,7 +22,6 @@ int socket_cliente_kernel_dispatch;
 int socket_cliente_kernel_interrupt;
 int conexion_memoria;
 int seguir_ejecutando;
-op_code motivo_devolucion;
 
 void leer_config();
 
