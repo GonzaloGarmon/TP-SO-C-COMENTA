@@ -164,11 +164,40 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
             funcIoGenSleep(instruccion);
             break;
         case EXIT:
-            seguir_ejecutando = 0;
-            t_paquete* paquete = crear_paquete_op(TERMINO_PROCESO);
-            agregar_pcb_a_paquete(paquete,contexto);
-            enviar_paquete(paquete, socket_cliente_kernel_dispatch);
-            eliminar_paquete(paquete);
+            funcExit(instruccion);
+        /*case MOV_IN:
+            funcMovIn(instruccion);
+            break;
+        case MOV_OUT:
+            funcMovOut(instruccion);
+            break;
+        case RESIZE:
+            funcResize(instruccion);
+            break;
+        case COPY_STRING:
+            funcCopyString(instruccion);
+            break;
+        */
+        case IO_STDIN_READ:
+            funcIoStdinRead(instruccion);
+            break;
+        case IO_STDOUT_WRITE:
+            funcIoStdOutWrite(instruccion);
+        case IO_FS_CREATE:
+            funcIoFsCreate(instruccion);
+            break;
+        case IO_FS_DELETE:
+            funcIoFsDelete(instruccion);
+            break;
+        case IO_FS_TRUNCATE:
+            funcIoFsTruncate(instruccion);
+            break;
+        case IO_FS_WRITE:
+            funcIoFsWrite(instruccion);
+            break;
+        case IO_FS_READ:
+            funcIoFsRead(instruccion);
+            break;
         default:
             printf("Instrucción desconocida\n");
             break;
@@ -417,11 +446,89 @@ void funcJnz(t_instruccion *instruccion) {
     }
 }
 
-
+//-----SOLO SE ENVIAN LA SOLICITUD AL KERNEL -> EL KERNEL SERA EL ENCARGADO DE REALIZAR DICHA ACCION-----
 void funcIoGenSleep(t_instruccion *instruccion) {
     
-    t_paquete* paquete = crear_paquete_op(EJECUTAR_IO_GEN_SLEEP);
+    t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_GEN_SLEEP);
     agregar_string_a_paquete(paquete, instruccion->parametros2);
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3));
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
 };
+
+void funcExit(t_instruccion *instruccion) {
+    seguir_ejecutando = 0;
+    t_paquete *paquete = crear_paquete_op(TERMINO_PROCESO);
+    agregar_pcb_a_paquete(paquete,contexto);
+    enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
+}
+
+void funcIoStdinRead(t_instruccion *instruccion) {
+
+    t_paquete *paquete = crear_paquete_op(IO_STDIN_READ);
+    agregar_string_a_paquete(paquete, instruccion->parametros2); //interfaz
+    agregar_entero_a_paquete(paquete, instruccion->parametros3); //regDir
+    agregar_entero_a_paquete(paquete, instruccion->parametros4); //regtam
+    enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
+}
+
+void funcIoStdOutWrite(t_instruccion *instruccion) {
+
+    t_paquete *paquete = crear_paquete_op(IO_STDOUT_WRITE);
+    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros2)); // Interfaz
+    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3)); // regDir
+    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros4)); // regTam
+    enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+}
+
+void funcIoFsCreate(t_instruccion *instruccion) {
+
+    t_paquete *paquete = crear_paquete_op(IO_FS_CREATE);  
+    agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
+    agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
+    enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
+}
+
+void funcIoFsDelete(t_instruccion *instruccion) {
+
+    t_paquete *paquete = crear_paquete_op(IO_FS_DELETE);
+    agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
+    agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
+    enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
+}
+
+void funcIoFsTruncate(t_instruccion *instruccion) {
+    
+    t_paquete* paquete = crear_paquete_op(IO_FS_TRUNCATE);
+    agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
+    agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
+    agregar_entero_int_a_paquete(paquete, atoi(instruccion->parametros4)); // tam
+    enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
+}
+
+void funcIoFsWrite(t_instruccion* instruccion) {
+    t_paquete* paquete = crear_paquete_op(IO_FS_WRITE);
+    agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
+    agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
+    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros4)); // tam
+    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros5)); // Puntero Arch
+    enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
+}
+
+void funcIoFsRead(t_instruccion* instruccion) {
+    t_paquete* paquete = crear_paquete_op(IO_FS_READ);
+    agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
+    agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
+    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros4)); // tam
+    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros5)); // Puntero Arch
+    enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
+}
+
+
+
