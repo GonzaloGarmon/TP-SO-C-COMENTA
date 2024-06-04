@@ -45,6 +45,19 @@ typedef struct {
 
 }t_pcb;
 
+typedef enum {
+	SUCCESS,
+	INVALID_RESOURCE,
+	INVALID_INTERFACE,
+	OUT_OF_MEMORY,
+	INTERRUPTED_BY_USER,
+}motivo_exit;
+
+typedef struct {
+	t_pcb* pcb;
+	motivo_exit motivo;
+}t_pcb_exit;
+
 typedef enum
 {
 	//ESTADOS

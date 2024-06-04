@@ -71,7 +71,7 @@ void establecer_conexion_cpu_interrupt(char * ip_cpu, char* puerto_cpu, t_config
 void iniciar_consola();
 void ejecutar_script();
 void iniciar_proceso();
-void finalizar_proceso();
+void finalizar_proceso(uint32_t pid);
 void iniciar_planificacion();
 void detener_planificacion();
 void listar_procesos_estado();
@@ -93,4 +93,8 @@ int existe_recurso(char* recurso);
 void actualizar_pcb(t_pcb* pcb_wait);
 void actualizar_pcb_con_cambiar_lista(t_pcb* pcb_wait, t_list* lista_bloq_recurso);
 void desbloquear_proceso(t_list* lista_recurso_liberar);
+void actualizar_pcb_envia_exit(t_pcb* pcb_wait);
+bool esta_en_esta_lista(t_list* lista, uint32_t pid_encontrar);
+void sacar_de_lista_mover_exit(t_list* lista,pthread_mutex_t mutex_lista, uint32_t pid);
+void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid);
 #endif
