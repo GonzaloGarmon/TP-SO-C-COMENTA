@@ -340,6 +340,11 @@ void iniciar_consola(){
         break;
     case 6:
         listar_procesos_estado();
+    case 7:
+        int grado;
+        printf("\n ingrese el grado de multiprogramacion que quiere tener: ");
+        scanf("%d", &grado);
+        grado_multiprogramacion = grado;
         break;
     default:
         printf("Opción no valida intente de nuevo!\n");
@@ -441,7 +446,7 @@ void planificar(){
     switch (algoritmo_planificacion)
     {
     case RR:
-        //planificar_rr();
+        planificar_rr();
         break;
     case VRR:
         break;
@@ -452,9 +457,9 @@ void planificar(){
 
 void planificar_rr(){
 
-    //pthread_t hilo_manejo_quantum;
-    //pthread_create(&hilo_manejo_quantum, NULL, (void *)contador_quantum_RR, NULL);
-    //pthread_detach(hilo_manejo_quantum);
+    pthread_t hilo_manejo_quantum;
+    pthread_create(&hilo_manejo_quantum, NULL, (void *)contador_quantum_RR, NULL);
+    pthread_detach(hilo_manejo_quantum);
 
 }
 
@@ -476,6 +481,7 @@ void planificar_corto_plazo(){
 }
 
 void contador_quantum_RR(){
+    while(1){
         sem_wait(&sem_empezar_quantum);
         //HAY QUE VER COMO HACER PARA UTILIZAR LO DEL QUANTUM Y MANDARLE LA INTERRUPCION A CPU
         sleep(quantum / 1000);
@@ -483,14 +489,14 @@ void contador_quantum_RR(){
         {
             enviar_interrupcion();
         }
-
+    }
 
     
 }
 
 void enviar_interrupcion(){
     t_paquete* paquete = crear_paquete_op(FIN_QUANTUM_RR);
-    enviar_paquete(paquete,socket_servidor_kernel_interrupt);
+    enviar_paquete(paquete,conexion_kernel_cpu_interrupt);
     eliminar_paquete(paquete);
 }
 
@@ -504,41 +510,53 @@ t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
 }
 
 void pcb_exit(){
-    
+    while(1){
     sem_wait(&sem_listos_para_exit);
-    log_trace(log_kernel,"llego uno a exit");
+    
     pthread_mutex_lock(&mutex_cola_exit);
     t_pcb_exit* pcb_finaliza = list_remove(cola_exit,0);
     pthread_mutex_unlock(&mutex_cola_exit);
     t_paquete* paquete = crear_paquete_op(FINALIZO_PROCESO);
     agregar_entero_a_paquete(paquete,pcb_finaliza->pcb->pid);
     enviar_paquete(paquete,conexion_kernel_memoria);
-    sem_post(&sem_multiprogamacion);
-    
-    
+    eliminar_paquete(paquete);
+    //sem_post(&sem_multiprogamacion);
+    free(pcb_finaliza);   
+    }
 }
 
 void exec_pcb()
 {
-
+    while(1){
     sem_wait(&sem_listos_para_exec);
     t_pcb* pcb_enviar = elegir_pcb_segun_algoritmo();
 
     dispatch(pcb_enviar);
     
-    
+    }
 }
 
 void pcb_ready(){
-    
+ while(1){
+    if (proceso_activos() < grado_multiprogramacion){
     sem_wait(&sem_listos_para_ready);
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
-    sem_wait(&sem_multiprogamacion);
+    //sem_wait(&sem_multiprogamacion);
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb);
     pthread_mutex_unlock(&mutex_cola_ready);
     sem_post(&sem_listos_para_exec);
-    
+    }
+ }
+}
+
+int proceso_activos(){
+    int procesos = 0;
+    procesos = list_size(cola_exec) + list_size(cola_exit) + list_size(cola_ready);
+     for(int i = 0; i < cantidad_recursos; i++){
+        procesos = procesos + list_size(lista_recurso[i]);
+     }
+    return procesos;
 }
 
 t_pcb* elegir_pcb_segun_algoritmo(){

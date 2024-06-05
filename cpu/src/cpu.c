@@ -53,6 +53,7 @@ void leer_config(){
 
 void generar_conexiones(){
     establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
+    sem_init(&sem_fin_de_ciclo, 0, 0);
 }
 
 void terminar_programa(){
@@ -75,6 +76,7 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
             log_trace(log_cpu, "llego contexto de ejecucion");
             contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
             ejecutar_ciclo_de_instruccion();
+            sem_post(&sem_fin_de_ciclo);
             log_trace(log_cpu, "ejecute correctamente el ciclo de instruccion");
             
             break;
@@ -93,7 +95,13 @@ void recibir_kernel_interrupt(int SOCKET_CLIENTE_KERNEL_INTERRUPT){
         switch (codigo)
         {
         case FIN_QUANTUM_RR:
-            log_trace(log_cpu,"recibi fin de quantum");
+            if (seguir_ejecutando){
+                seguir_ejecutando = 0;
+                sem_wait(&sem_fin_de_ciclo);
+            }else{
+                
+            }
+            
             break;
         
         default:
