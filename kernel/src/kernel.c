@@ -528,11 +528,12 @@ void pcb_exit(){
 void exec_pcb()
 {
     while(1){
-    sem_wait(&sem_listos_para_exec);
-    t_pcb* pcb_enviar = elegir_pcb_segun_algoritmo();
+        if(!list_is_empty(cola_ready)){
+        sem_wait(&sem_listos_para_exec);
+        t_pcb* pcb_enviar = elegir_pcb_segun_algoritmo();
 
-    dispatch(pcb_enviar);
-    
+        dispatch(pcb_enviar);
+        }
     }
 }
 
@@ -657,15 +658,13 @@ void actualizar_pcb_envia_exit(t_pcb* pcb_wait){
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
     list_remove_element(cola_exec,pcb_encontrado);
-    pcb_encontrado->pc = pcb_wait->pc;
-    pcb_encontrado->pid = pcb_wait->pid;
-    pcb_encontrado->qq = pcb_wait->qq;
-    pcb_encontrado->registros = pcb_wait->registros;
+    free(pcb_encontrado);
     pthread_mutex_unlock(&mutex_cola_exec);
-
+    
     t_pcb_exit* pcb_exit_ok = malloc(sizeof(t_pcb_exit));
-    pcb_exit_ok->pcb = pcb_encontrado;
+    pcb_exit_ok->pcb = pcb_wait;
     pcb_exit_ok->motivo = SUCCESS;
+    
     pthread_mutex_lock(&mutex_cola_exit);
     list_add(cola_exit,pcb_exit_ok);
     pthread_mutex_unlock(&mutex_cola_exit);
