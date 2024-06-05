@@ -104,6 +104,8 @@ void iniciar_semaforos(){
     sem_init(&sem_listos_para_ready, 0, 0);
     sem_init(&sem_listos_para_exec, 0, 0);
     sem_init(&sem_listos_para_exit, 0, 0);
+    sem_init(&sem_empezar_quantum, 0, 0);
+    sem_init(&sem_iniciar_consola, 0, 0);
     cola_new = list_create();
     cola_ready = list_create();
     cola_exec = list_create();
@@ -303,6 +305,7 @@ void finalizar_programa(){
 ------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
 */
 void iniciar_consola(){
+    
     int eleccion;
     printf("Operaciones disponibles para realizar:\n");
     printf("1. Ejecutar Script de Operaciones\n");
@@ -322,7 +325,6 @@ void iniciar_consola(){
         break;
     case 2:
         iniciar_proceso();
-        
         break;
     case 3:
         uint32_t pid;
@@ -344,7 +346,7 @@ void iniciar_consola(){
         iniciar_consola();
         break;
     }
-
+    
     iniciar_consola();
 }
 
@@ -436,16 +438,23 @@ void planificar(){
     planificar_largo_plazo();
     planificar_corto_plazo();
 
-    if(strcmp(algoritmo, "RR") == 0){
-        planificar_rr();
+    switch (algoritmo_planificacion)
+    {
+    case RR:
+        //planificar_rr();
+        break;
+    case VRR:
+        break;
+    default:
+        break;
     }
 }
 
 void planificar_rr(){
 
-    pthread_t hilo_manejo_quantum;
-    pthread_create(&hilo_manejo_quantum, NULL, (void *)contador_quantum_RR, NULL);
-    pthread_detach(hilo_manejo_quantum);
+    //pthread_t hilo_manejo_quantum;
+    //pthread_create(&hilo_manejo_quantum, NULL, (void *)contador_quantum_RR, NULL);
+    //pthread_detach(hilo_manejo_quantum);
 
 }
 
@@ -467,17 +476,22 @@ void planificar_corto_plazo(){
 }
 
 void contador_quantum_RR(){
-    
-    while(1){
+        sem_wait(&sem_empezar_quantum);
         //HAY QUE VER COMO HACER PARA UTILIZAR LO DEL QUANTUM Y MANDARLE LA INTERRUPCION A CPU
         sleep(quantum / 1000);
         if (strcmp(algoritmo, "RR") == 0)
         {
-            //enviar_interrupcion(conexion_cpu_interrupt, interrupcion);
+            enviar_interrupcion();
         }
 
 
-    }
+    
+}
+
+void enviar_interrupcion(){
+    t_paquete* paquete = crear_paquete_op(FIN_QUANTUM_RR);
+    enviar_paquete(paquete,socket_servidor_kernel_interrupt);
+    eliminar_paquete(paquete);
 }
 
 t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
@@ -490,6 +504,7 @@ t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
 }
 
 void pcb_exit(){
+    
     sem_wait(&sem_listos_para_exit);
     log_trace(log_kernel,"llego uno a exit");
     pthread_mutex_lock(&mutex_cola_exit);
@@ -499,6 +514,7 @@ void pcb_exit(){
     agregar_entero_a_paquete(paquete,pcb_finaliza->pcb->pid);
     enviar_paquete(paquete,conexion_kernel_memoria);
     sem_post(&sem_multiprogamacion);
+    
     
 }
 
@@ -510,9 +526,11 @@ void exec_pcb()
 
     dispatch(pcb_enviar);
     
+    
 }
 
 void pcb_ready(){
+    
     sem_wait(&sem_listos_para_ready);
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
     sem_wait(&sem_multiprogamacion);
@@ -520,22 +538,19 @@ void pcb_ready(){
     list_add(cola_ready,pcb);
     pthread_mutex_unlock(&mutex_cola_ready);
     sem_post(&sem_listos_para_exec);
+    
 }
 
 t_pcb* elegir_pcb_segun_algoritmo(){
-    t_pcb* pcb_ejecutar = malloc(sizeof(t_pcb));
+    t_pcb* pcb_ejecutar;
 
     switch (algoritmo_planificacion)
     {
+    case RR:
     case FIFO:
         pthread_mutex_lock(&mutex_cola_ready);
         pcb_ejecutar = list_remove(cola_ready,0);
         pthread_mutex_unlock(&mutex_cola_ready);
-        break;
-    case RR:
-        pthread_mutex_lock(&mutex_cola_ready);
-        pcb_ejecutar = list_remove(cola_ready,0);
-        pthread_mutex_lock(&mutex_cola_ready);
         break;
     case VRR:
         break; 
@@ -560,6 +575,8 @@ void dispatch(t_pcb* pcb_enviar){
         pthread_mutex_lock(&mutex_cola_exec);
         list_add(cola_exec, pcb_enviar);
         pthread_mutex_unlock(&mutex_cola_exec);
+        sem_post(&sem_empezar_quantum);
+        
 }
 
 int existe_recurso(char* recurso){
@@ -582,10 +599,12 @@ void actualizar_pcb(t_pcb* pcb_wait){
 
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    pcb_encontrado->pc = pcb_wait->pc;
-    pcb_encontrado->pid = pcb_wait->pid;
-    pcb_encontrado->qq = pcb_wait->qq;
-    pcb_encontrado->registros = pcb_wait->registros;
+    t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
+    pcb_nuevo->pc = pcb_wait->pc;
+    pcb_nuevo->pid = pcb_wait->pid;
+    pcb_nuevo->qq = pcb_wait->qq;
+    pcb_nuevo->registros = pcb_wait->registros;
+    list_replace_by_condition(cola_exec, (void*) encontrar_pcb, pcb_nuevo);
     pthread_mutex_unlock(&mutex_cola_exec);
 }
 
@@ -598,14 +617,16 @@ void actualizar_pcb_con_cambiar_lista(t_pcb* pcb_wait, t_list* lista_bloq_recurs
 
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    pcb_encontrado->pc = pcb_wait->pc;
-    pcb_encontrado->pid = pcb_wait->pid;
-    pcb_encontrado->qq = pcb_wait->qq;
-    pcb_encontrado->registros = pcb_wait->registros;
     list_remove_element(cola_exec,pcb_encontrado);
+    free(pcb_encontrado);
+    t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
+    pcb_nuevo->pc = pcb_wait->pc;
+    pcb_nuevo->pid = pcb_wait->pid;
+    pcb_nuevo->qq = pcb_wait->qq;
+    pcb_nuevo->registros = pcb_wait->registros;
     pthread_mutex_unlock(&mutex_cola_exec);
 
-    list_add(lista_bloq_recurso,pcb_encontrado);
+    list_add(lista_bloq_recurso,pcb_nuevo);
 }
 
 void actualizar_pcb_envia_exit(t_pcb* pcb_wait){

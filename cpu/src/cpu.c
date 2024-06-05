@@ -89,7 +89,16 @@ void recibir_kernel_interrupt(int SOCKET_CLIENTE_KERNEL_INTERRUPT){
     enviar_string(SOCKET_CLIENTE_KERNEL_INTERRUPT, "hola desde cpu interrupt", MENSAJE);
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        int op_code = recibir_operacion(SOCKET_CLIENTE_KERNEL_INTERRUPT);
+        op_code codigo = recibir_operacion(SOCKET_CLIENTE_KERNEL_INTERRUPT);
+        switch (codigo)
+        {
+        case FIN_QUANTUM_RR:
+            log_trace(log_cpu,"recibi fin de quantum");
+            break;
+        
+        default:
+            break;
+        }
     }
 }
 
