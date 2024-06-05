@@ -74,7 +74,9 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             free(path_completo);
             //se deben crear las estructuras administrativas necesarias para el proceso al que corresponde ese path
             break;
-        
+        case FINALIZO_PROCESO:
+            log_trace(log_memoria, "llego fin de proceso");
+            break;
         default:
             break;
         }

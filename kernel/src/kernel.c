@@ -37,7 +37,6 @@ int main(int argc, char* argv[]) {
 
     iniciar_consola();
 
-    
     log_info(log_kernel, "Finalizo conexion con cliente");
     finalizar_programa();
 
@@ -105,6 +104,8 @@ void iniciar_semaforos(){
     sem_init(&sem_listos_para_ready, 0, 0);
     sem_init(&sem_listos_para_exec, 0, 0);
     sem_init(&sem_listos_para_exit, 0, 0);
+    sem_init(&sem_empezar_quantum, 0, 0);
+    sem_init(&sem_iniciar_consola, 0, 0);
     cola_new = list_create();
     cola_ready = list_create();
     cola_exec = list_create();
@@ -149,10 +150,9 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             t_pcb* pcb_finaliza = malloc(sizeof(t_pcb));
             pcb_finaliza = recibir_pcb(conexion_kernel_cpu_dispatch);
             log_trace(log_kernel,"recibi un pcb por finalizacion de proceso");
-            pthread_mutex_lock(&mutex_cola_exit);
-            list_add(cola_exit,pcb_finaliza);
-            pthread_mutex_unlock(&mutex_cola_exit);
+            actualizar_pcb_envia_exit(pcb_finaliza);
             sem_post(&sem_listos_para_exit);
+            sem_post(&sem_listos_para_exec);
             break;
         case EJECUTAR_WAIT:
             t_pcb* pcb_wait;
@@ -180,8 +180,11 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 }
 
             }else{
+                t_pcb_exit* pcb_exit_wait = malloc(sizeof(t_pcb_exit));
+                pcb_exit_wait->pcb = pcb_wait;
+                pcb_exit_wait->motivo = INVALID_RESOURCE;                
                 pthread_mutex_lock(&mutex_cola_exit);
-                list_add(cola_exit,pcb_wait);
+                list_add(cola_exit,pcb_exit_wait);
                 pthread_mutex_unlock(&mutex_cola_exit);
                 sem_post(&sem_listos_para_exit);
             }
@@ -202,8 +205,11 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 }                
             enviar_pcb(conexion_kernel_cpu_dispatch,pcb_signal,EXEC);    
             }else{
+                t_pcb_exit* pcb_exit_signal = malloc(sizeof(t_pcb_exit));
+                pcb_exit_signal->pcb = pcb_signal;
+                pcb_exit_signal->motivo = INVALID_RESOURCE;
                 pthread_mutex_lock(&mutex_cola_exit);
-                list_add(cola_exit,pcb_signal);
+                list_add(cola_exit,pcb_exit_signal);
                 pthread_mutex_unlock(&mutex_cola_exit);
                 sem_post(&sem_listos_para_exit);
             }
@@ -299,6 +305,7 @@ void finalizar_programa(){
 ------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
 */
 void iniciar_consola(){
+    
     int eleccion;
     printf("Operaciones disponibles para realizar:\n");
     printf("1. Ejecutar Script de Operaciones\n");
@@ -333,13 +340,18 @@ void iniciar_consola(){
         break;
     case 6:
         listar_procesos_estado();
+    case 7:
+        int grado;
+        printf("\n ingrese el grado de multiprogramacion que quiere tener: ");
+        scanf("%d", &grado);
+        grado_multiprogramacion = grado;
         break;
     default:
         printf("Opción no valida intente de nuevo!\n");
         iniciar_consola();
         break;
     }
-
+    
     iniciar_consola();
 }
 
@@ -372,7 +384,30 @@ void iniciar_proceso(){
     sem_post(&sem_listos_para_ready);
 }
 
-void finalizar_proceso(){
+void finalizar_proceso(uint32_t pid){
+    
+    if(esta_en_esta_lista(cola_new, pid)){
+        sacar_de_lista_mover_exit(cola_new,mutex_cola_new,pid);
+        sem_post(&sem_listos_para_exit);
+    }
+
+    if(esta_en_esta_lista(cola_ready, pid)){
+        sacar_de_lista_mover_exit(cola_ready,mutex_cola_ready,pid);
+        sem_post(&sem_listos_para_exit);
+    }
+
+    if(esta_en_esta_lista(cola_exec, pid)){
+        sacar_de_lista_mover_exit(cola_exec,mutex_cola_exec,pid);
+        sem_post(&sem_listos_para_exit);
+    }
+
+    for(int i = 0; i < cantidad_recursos; i++) {
+        if(esta_en_esta_lista(lista_recurso[i],pid)) {
+
+           sacar_de_lista_mover_exit_recurso(lista_recurso[i],pid);
+           sem_post(&sem_listos_para_exit);
+         }
+        }
 
 }
 
@@ -408,8 +443,15 @@ void planificar(){
     planificar_largo_plazo();
     planificar_corto_plazo();
 
-    if(strcmp(algoritmo, "RR") == 0){
+    switch (algoritmo_planificacion)
+    {
+    case RR:
         planificar_rr();
+        break;
+    case VRR:
+        break;
+    default:
+        break;
     }
 }
 
@@ -439,17 +481,23 @@ void planificar_corto_plazo(){
 }
 
 void contador_quantum_RR(){
-    
     while(1){
+        sem_wait(&sem_empezar_quantum);
         //HAY QUE VER COMO HACER PARA UTILIZAR LO DEL QUANTUM Y MANDARLE LA INTERRUPCION A CPU
         sleep(quantum / 1000);
         if (strcmp(algoritmo, "RR") == 0)
         {
-            //enviar_interrupcion(conexion_cpu_interrupt, interrupcion);
+            enviar_interrupcion();
         }
-
-
     }
+
+    
+}
+
+void enviar_interrupcion(){
+    t_paquete* paquete = crear_paquete_op(FIN_QUANTUM_RR);
+    enviar_paquete(paquete,conexion_kernel_cpu_interrupt);
+    eliminar_paquete(paquete);
 }
 
 t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
@@ -462,52 +510,66 @@ t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
 }
 
 void pcb_exit(){
+    while(1){
     sem_wait(&sem_listos_para_exit);
+    
     pthread_mutex_lock(&mutex_cola_exit);
-    t_pcb* pcb_finaliza = list_remove(cola_exit,0);
+    t_pcb_exit* pcb_finaliza = list_remove(cola_exit,0);
     pthread_mutex_unlock(&mutex_cola_exit);
-
-    enviar_string(conexion_kernel_memoria,pcb_finaliza->pid,FINALIZO_PROCESO);
-    sem_post(&sem_multiprogamacion);
-
+    t_paquete* paquete = crear_paquete_op(FINALIZO_PROCESO);
+    agregar_entero_a_paquete(paquete,pcb_finaliza->pcb->pid);
+    enviar_paquete(paquete,conexion_kernel_memoria);
+    eliminar_paquete(paquete);
+    //sem_post(&sem_multiprogamacion);
+    free(pcb_finaliza);   
+    }
 }
 
 void exec_pcb()
 {
-    while (1)
-    {
-
+    while(1){
+        if(!list_is_empty(cola_ready)){
         sem_wait(&sem_listos_para_exec);
         t_pcb* pcb_enviar = elegir_pcb_segun_algoritmo();
 
         dispatch(pcb_enviar);
+        }
     }
 }
 
 void pcb_ready(){
+ while(1){
+    if (proceso_activos() < grado_multiprogramacion){
     sem_wait(&sem_listos_para_ready);
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
-    sem_wait(&sem_multiprogamacion);
+    //sem_wait(&sem_multiprogamacion);
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb);
     pthread_mutex_unlock(&mutex_cola_ready);
     sem_post(&sem_listos_para_exec);
+    }
+ }
+}
+
+int proceso_activos(){
+    int procesos = 0;
+    procesos = list_size(cola_exec) + list_size(cola_exit) + list_size(cola_ready);
+     for(int i = 0; i < cantidad_recursos; i++){
+        procesos = procesos + list_size(lista_recurso[i]);
+     }
+    return procesos;
 }
 
 t_pcb* elegir_pcb_segun_algoritmo(){
-    t_pcb* pcb_ejecutar = malloc(sizeof(t_pcb));
+    t_pcb* pcb_ejecutar;
 
     switch (algoritmo_planificacion)
     {
+    case RR:
     case FIFO:
         pthread_mutex_lock(&mutex_cola_ready);
         pcb_ejecutar = list_remove(cola_ready,0);
         pthread_mutex_unlock(&mutex_cola_ready);
-        break;
-    case RR:
-        pthread_mutex_lock(&mutex_cola_ready);
-        pcb_ejecutar = list_remove(cola_ready,0);
-        pthread_mutex_lock(&mutex_cola_ready);
         break;
     case VRR:
         break; 
@@ -530,8 +592,10 @@ void dispatch(t_pcb* pcb_enviar){
 
 
         pthread_mutex_lock(&mutex_cola_exec);
-        pcb_enviar = list_add(cola_exec, pcb_enviar);
+        list_add(cola_exec, pcb_enviar);
         pthread_mutex_unlock(&mutex_cola_exec);
+        sem_post(&sem_empezar_quantum);
+        
 }
 
 int existe_recurso(char* recurso){
@@ -554,10 +618,12 @@ void actualizar_pcb(t_pcb* pcb_wait){
 
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    pcb_encontrado->pc = pcb_wait->pc;
-    pcb_encontrado->pid = pcb_wait->pid;
-    pcb_encontrado->qq = pcb_wait->qq;
-    pcb_encontrado->registros = pcb_wait->registros;
+    t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
+    pcb_nuevo->pc = pcb_wait->pc;
+    pcb_nuevo->pid = pcb_wait->pid;
+    pcb_nuevo->qq = pcb_wait->qq;
+    pcb_nuevo->registros = pcb_wait->registros;
+    list_replace_by_condition(cola_exec, (void*) encontrar_pcb, pcb_nuevo);
     pthread_mutex_unlock(&mutex_cola_exec);
 }
 
@@ -570,14 +636,38 @@ void actualizar_pcb_con_cambiar_lista(t_pcb* pcb_wait, t_list* lista_bloq_recurs
 
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    pcb_encontrado->pc = pcb_wait->pc;
-    pcb_encontrado->pid = pcb_wait->pid;
-    pcb_encontrado->qq = pcb_wait->qq;
-    pcb_encontrado->registros = pcb_wait->registros;
     list_remove_element(cola_exec,pcb_encontrado);
+    free(pcb_encontrado);
+    t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
+    pcb_nuevo->pc = pcb_wait->pc;
+    pcb_nuevo->pid = pcb_wait->pid;
+    pcb_nuevo->qq = pcb_wait->qq;
+    pcb_nuevo->registros = pcb_wait->registros;
     pthread_mutex_unlock(&mutex_cola_exec);
 
-    list_add(lista_bloq_recurso,pcb_encontrado);
+    list_add(lista_bloq_recurso,pcb_nuevo);
+}
+
+void actualizar_pcb_envia_exit(t_pcb* pcb_wait){
+    
+    bool encontrar_pcb(t_pcb* pcb){
+        return pcb->pid == pcb_wait->pid;
+        };
+    
+
+    pthread_mutex_lock(&mutex_cola_exec);
+    t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
+    list_remove_element(cola_exec,pcb_encontrado);
+    free(pcb_encontrado);
+    pthread_mutex_unlock(&mutex_cola_exec);
+    
+    t_pcb_exit* pcb_exit_ok = malloc(sizeof(t_pcb_exit));
+    pcb_exit_ok->pcb = pcb_wait;
+    pcb_exit_ok->motivo = SUCCESS;
+    
+    pthread_mutex_lock(&mutex_cola_exit);
+    list_add(cola_exit,pcb_exit_ok);
+    pthread_mutex_unlock(&mutex_cola_exit);
 }
 
 void desbloquear_proceso(t_list* lista_recurso_liberar){
@@ -590,4 +680,51 @@ void desbloquear_proceso(t_list* lista_recurso_liberar){
         pthread_mutex_unlock(&mutex_cola_ready);
         sem_post(&sem_listos_para_ready);
     }
+}
+
+bool esta_en_esta_lista(t_list* lista, uint32_t pid_encontrar){
+
+        bool encontrar_pcb(t_pcb* pcb){
+        return pcb->pid == pid_encontrar;
+        };
+
+    return list_any_satisfy(lista, (void*) encontrar_pcb);
+}
+
+void sacar_de_lista_mover_exit(t_list* lista, pthread_mutex_t mutex_lista, uint32_t pid){
+    bool encontrar_pcb(t_pcb* pcb){
+        return pcb->pid == pid;
+        };
+    
+
+    pthread_mutex_lock(&mutex_lista);
+    t_pcb* pcb_encontrado = list_find(lista, (void*) encontrar_pcb);
+    list_remove_element(lista,pcb_encontrado);
+    pthread_mutex_unlock(&mutex_lista);
+
+    t_pcb_exit* pcb_exit_ok = malloc(sizeof(t_pcb_exit));
+    pcb_exit_ok->pcb = pcb_encontrado;
+    pcb_exit_ok->motivo = INTERRUPTED_BY_USER;
+    pthread_mutex_lock(&mutex_cola_exit);
+    list_add(cola_exit,pcb_exit_ok);
+    pthread_mutex_unlock(&mutex_cola_exit);
+}
+
+void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid){
+    bool encontrar_pcb(t_pcb* pcb){
+        return pcb->pid == pid;
+        };
+    
+
+    
+    t_pcb* pcb_encontrado = list_find(lista, (void*) encontrar_pcb);
+    list_remove_element(lista,pcb_encontrado);
+    
+
+    t_pcb_exit* pcb_exit_ok = malloc(sizeof(t_pcb_exit));
+    pcb_exit_ok->pcb = pcb_encontrado;
+    pcb_exit_ok->motivo = INTERRUPTED_BY_USER;
+    pthread_mutex_lock(&mutex_cola_exit);
+    list_add(cola_exit,pcb_exit_ok);
+    pthread_mutex_unlock(&mutex_cola_exit);
 }
