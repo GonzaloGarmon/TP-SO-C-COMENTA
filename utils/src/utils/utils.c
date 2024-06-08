@@ -460,7 +460,7 @@ uint32_t recibir_entero_uint32(int socket, t_log* loggs){
 
 	buffer = recibir_buffer(&size, socket);
 	u_int32_t entero_nuevo32 = leer_entero_uint32(buffer, &desp);
-	log_trace(loggs, "Me llego en numero %i", entero_nuevo32);
+	//log_trace(loggs, "Me llego en numero %i", entero_nuevo32);
 	free(buffer);
 	return entero_nuevo32;
 

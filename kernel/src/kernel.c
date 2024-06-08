@@ -154,6 +154,11 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             sem_post(&sem_listos_para_exit);
             sem_post(&sem_listos_para_exec);
             break;
+        case INTERRUPCION:
+            t_pcb* pcb_interrumpido = malloc(sizeof(t_pcb));
+            pcb_interrumpido = recibir_pcb(conexion_kernel_cpu_dispatch);
+            log_trace(log_kernel,"recibi un pcb por fin de quantum");
+            break;
         case EJECUTAR_WAIT:
             t_pcb* pcb_wait;
             char* recurso_wait;
@@ -167,11 +172,11 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                         if(instancias_recursos[i]-1>0){
                             instancias_recursos[i]--;
                             actualizar_pcb(pcb_wait);
-                            
                             enviar_pcb(conexion_kernel_cpu_dispatch,pcb_wait,EXEC);
                         }else{
                             
                             actualizar_pcb_con_cambiar_lista(pcb_wait, lista_recurso[i]);
+                            enviar_pcb(conexion_kernel_cpu_dispatch,pcb_wait,BLOCK);
                             sem_post(&sem_listos_para_exec);
                             
                         }
@@ -187,6 +192,8 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 list_add(cola_exit,pcb_exit_wait);
                 pthread_mutex_unlock(&mutex_cola_exit);
                 sem_post(&sem_listos_para_exit);
+                enviar_pcb(conexion_kernel_cpu_dispatch,pcb_wait,EXIT);
+                sem_post(&sem_listos_para_exec);
             }
             break;
         case EJECUTAR_SIGNAL:
@@ -212,6 +219,8 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 list_add(cola_exit,pcb_exit_signal);
                 pthread_mutex_unlock(&mutex_cola_exit);
                 sem_post(&sem_listos_para_exit);
+                enviar_pcb(conexion_kernel_cpu_dispatch,pcb_wait,EXIT);
+                sem_post(&sem_listos_para_exec);
             }
             break;
         default:
@@ -483,7 +492,7 @@ void planificar_corto_plazo(){
 void contador_quantum_RR(){
     while(1){
         sem_wait(&sem_empezar_quantum);
-        //HAY QUE VER COMO HACER PARA UTILIZAR LO DEL QUANTUM Y MANDARLE LA INTERRUPCION A CPU
+        
         sleep(quantum / 1000);
         if (strcmp(algoritmo, "RR") == 0)
         {
@@ -496,6 +505,10 @@ void contador_quantum_RR(){
 
 void enviar_interrupcion(){
     t_paquete* paquete = crear_paquete_op(FIN_QUANTUM_RR);
+    pthread_mutex_lock(&mutex_cola_exec);
+    t_pcb* pcb_interrumpir = list_get(cola_exec,0);
+    pthread_mutex_unlock(&mutex_cola_exec);
+    agregar_entero_a_paquete(paquete,pcb_interrumpir->pid);
     enviar_paquete(paquete,conexion_kernel_cpu_interrupt);
     eliminar_paquete(paquete);
 }
@@ -674,7 +687,6 @@ void desbloquear_proceso(t_list* lista_recurso_liberar){
     if (!list_is_empty(lista_recurso_liberar)){
         
         t_pcb* pcb_desbloqueado = list_get(lista_recurso_liberar,0);
-        pcb_desbloqueado->pc = pcb_desbloqueado->pc - 1;
         pthread_mutex_lock(&mutex_cola_ready);
         list_add(lista_recurso_liberar,pcb_desbloqueado);
         pthread_mutex_unlock(&mutex_cola_ready);

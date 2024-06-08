@@ -53,7 +53,7 @@ void leer_config(){
 
 void generar_conexiones(){
     establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
-    sem_init(&sem_fin_de_ciclo, 0, 0);
+    
 }
 
 void terminar_programa(){
@@ -76,7 +76,7 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
             log_trace(log_cpu, "llego contexto de ejecucion");
             contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
             ejecutar_ciclo_de_instruccion();
-            sem_post(&sem_fin_de_ciclo);
+            //sem_post(&sem_fin_de_ciclo);
             log_trace(log_cpu, "ejecute correctamente el ciclo de instruccion");
             
             break;
@@ -95,13 +95,9 @@ void recibir_kernel_interrupt(int SOCKET_CLIENTE_KERNEL_INTERRUPT){
         switch (codigo)
         {
         case FIN_QUANTUM_RR:
-            if (seguir_ejecutando){
-                seguir_ejecutando = 0;
-                sem_wait(&sem_fin_de_ciclo);
-            }else{
-                
-            }
-            
+            pid_interrupt = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL_INTERRUPT,log_cpu);
+            hay_interrupcion = 1;
+            log_trace(log_cpu,"recibi una interrupcion para el pid: %d", pid_interrupt);
             break;
         
         default:
@@ -136,8 +132,12 @@ void ejecutar_ciclo_de_instruccion(){
     while(seguir_ejecutando){
     t_instruccion* instruccion = fetch(contexto->pid, contexto->pc);
     op_code instruccion_nombre = decode(instruccion);
-    contexto->pc++;
     execute(instruccion_nombre, instruccion);
+    contexto->pc++;
+    if(seguir_ejecutando){
+    checkInturrupt(contexto->pid);
+    }
+
     }
 
  }
@@ -183,9 +183,11 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
             break;
         case WAIT:
             funcWait(instruccion);
+            esperar_devolucion_pcb();
             break;
         case SIGNAL:
             funcSignal(instruccion);
+            esperar_devolucion_pcb();
             break;
         case EXIT:
             funcExit(instruccion);
@@ -229,6 +231,16 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
     }
 
     
+}
+
+void checkInturrupt(uint32_t pid){
+    if (hay_interrupcion){
+        hay_interrupcion = 0;
+        if(contexto->pid = pid_interrupt){
+            seguir_ejecutando = 0;
+            enviar_pcb(socket_cliente_kernel_dispatch, contexto,INTERRUPCION);
+        }
+    }
 }
 
 op_code decode(t_instruccion *instruccion) {
@@ -275,6 +287,14 @@ op_code decode(t_instruccion *instruccion) {
     return -1; // Código de operación no válido
 }
 
+void esperar_devolucion_pcb(){
+    op_code codigo = recibir_operacion(socket_cliente_kernel_dispatch);
+    if(codigo != BLOCK && codigo != EXIT){
+    contexto = recibir_pcb(socket_cliente_kernel_dispatch);
+    }else{
+        seguir_ejecutando = 0;
+    }
+}
 
 void funcSet(t_instruccion* instruccion) {
     if (strcmp(instruccion->parametros2, "AX") == 0) {
@@ -487,7 +507,7 @@ void funcSignal(t_instruccion *instruccion){
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
     agregar_pcb_a_paquete(paquete,contexto);
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
-    seguir_ejecutando = 0;
+    
 }
 
 void funcWait(t_instruccion *instruccion){
@@ -496,7 +516,7 @@ void funcWait(t_instruccion *instruccion){
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
     agregar_pcb_a_paquete(paquete,contexto);
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
-    seguir_ejecutando = 0;
+    
    
 }
 
