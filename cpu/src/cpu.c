@@ -289,8 +289,8 @@ op_code decode(t_instruccion *instruccion) {
 
 void esperar_devolucion_pcb(){
     op_code codigo = recibir_operacion(socket_cliente_kernel_dispatch);
-    if(codigo != BLOCK && codigo != EXIT){
     contexto = recibir_pcb(socket_cliente_kernel_dispatch);
+    if(codigo != BLOCK && codigo != EXIT){
     }else{
         seguir_ejecutando = 0;
     }
