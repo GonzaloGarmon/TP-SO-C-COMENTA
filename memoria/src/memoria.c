@@ -270,7 +270,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
 
                 escribir(dir_fisica_escribir_archivo, escritura, strlen(escritura));
                 enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_FS_WRITE_OK);
-                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %d - Origen: FS",
+                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu - Origen: FS",
                          pid_escribir_archivo, dir_fisica_escribir_archivo, strlen(escritura));
 
                 pthread_mutex_unlock(&mutex_memoria);
@@ -344,7 +344,3 @@ char* leer(uint32_t dir_fisca , uint32_t size) {
 }
 
 // retardo en peticiones OK
-
-
-
-

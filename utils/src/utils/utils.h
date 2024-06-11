@@ -17,60 +17,60 @@
 #include <assert.h>
 
 typedef struct{
-	uint8_t AX;
-	uint8_t BX;
-	uint8_t CX;
-	uint8_t DX;
-	uint32_t EAX;
-	uint32_t EBX;
-	uint32_t ECX;
-	uint32_t EDX;
-	//agrego 2 registros que faltaban del struct
-	uint32_t SI;
-	uint32_t DI;
+    uint8_t AX;
+    uint8_t BX;
+    uint8_t CX;
+    uint8_t DX;
+    uint32_t EAX;
+    uint32_t EBX;
+    uint32_t ECX;
+    uint32_t EDX;
+    //agrego 2 registros que faltaban del struct
+    uint32_t SI;
+    uint32_t DI;
 }t_registros_cpu;
 
 // typedef enum{
-// 	NEW,
-// 	READY,
-// 	EXEC,
-// 	BLOCK,
-// 	EXIT,
+//  NEW,
+//  READY,
+//  EXEC,
+//  BLOCK,
+//  EXIT,
 // }t_estado_proceso;
 typedef struct {
-	uint32_t pid;
-	uint32_t pc;
-	int qq;
-	t_registros_cpu* registros;
+    uint32_t pid;
+    uint32_t pc;
+    int qq;
+    t_registros_cpu* registros;
 
 }t_pcb;
 
 typedef enum {
-	SUCCESS,
-	INVALID_RESOURCE,
-	INVALID_INTERFACE,
-	OUT_OF_MEMORY,
-	INTERRUPTED_BY_USER,
+    SUCCESS,
+    INVALID_RESOURCE,
+    INVALID_INTERFACE,
+    OUT_OF_MEMORY,
+    INTERRUPTED_BY_USER,
 }motivo_exit;
 
 typedef struct {
-	t_pcb* pcb;
-	motivo_exit motivo;
+    t_pcb* pcb;
+    motivo_exit motivo;
 }t_pcb_exit;
 
 typedef enum
 {
-	//ESTADOS
-	NEW,
-	READY,
-	EXEC,
-	BLOCK,
-	EXIT_,
-	//MENSAJES GENERICOS
-	MENSAJE,
-	PAQUETE,
-	//INSTRUCCIONES
-	SET,
+    //ESTADOS
+    NEW,
+    READY,
+    EXEC,
+    BLOCK,
+    EXIT_,
+    //MENSAJES GENERICOS
+    MENSAJE,
+    PAQUETE,
+    //INSTRUCCIONES
+    SET,
     SUB,
     SUM,
     JNZ,
@@ -89,49 +89,49 @@ typedef enum
     IO_FS_WRITE,
     IO_FS_READ,
     EXIT,
-	//SOLICITUDES DE CPU A OTROS
-	PEDIR_INSTRUCCION_MEMORIA,
-	EJECUTAR_IO_GEN_SLEEP,
-	EJECUTAR_WAIT,
-	EJECUTAR_SIGNAL,
-	//SOLICITUDES DE KERNEL A OTROS
-	INICIO_NUEVO_PROCESO,
-	FINALIZO_PROCESO,
-	FIN_QUANTUM_RR,
-	//MOTIVOS DE DESALOJO
-	TERMINO_PROCESO,
-	INTERRUPCION,
-	ERROR,
-	LLAMADA_POR_INSTRUCCION,
-	//COMUNICACION MEMORIA CON MODULOS
-	CREAR_PROCESO,
-	ACCESO,
-	FINALIZAR_PROCESO,
-	AJUSTAR_TAMANIO_PROCESO,
-	ACCESO_TABLA_PAGINAS,
-	ACCESO_ESPACIO_USUARIO,
-	IO_FS_WRITE_OK,
-	IO_FS_READ_OK,
-	MOV_OUT_OK,
-	MOV_IN_OK
+    //SOLICITUDES DE CPU A OTROS
+    PEDIR_INSTRUCCION_MEMORIA,
+    EJECUTAR_IO_GEN_SLEEP,
+    EJECUTAR_WAIT,
+    EJECUTAR_SIGNAL,
+    //SOLICITUDES DE KERNEL A OTROS
+    INICIO_NUEVO_PROCESO,
+    FINALIZO_PROCESO,
+    FIN_QUANTUM_RR,
+    //MOTIVOS DE DESALOJO
+    TERMINO_PROCESO,
+    INTERRUPCION,
+    ERROR,
+    LLAMADA_POR_INSTRUCCION,
+    //COMUNICACION MEMORIA CON MODULOS
+    CREAR_PROCESO,
+    ACCESO,
+    FINALIZAR_PROCESO,
+    AJUSTAR_TAMANIO_PROCESO,
+    ACCESO_TABLA_PAGINAS,
+    ACCESO_ESPACIO_USUARIO,
+    IO_FS_WRITE_OK,
+    IO_FS_READ_OK,
+    MOV_OUT_OK,
+    MOV_IN_OK
 
 }op_code;
 
 typedef struct
 {
-	int size;
-	void* stream;
+    int size;
+    void* stream;
 } t_buffer;
 
 typedef struct
 {
-	op_code codigo_operacion;
-	t_buffer* buffer;
+    op_code codigo_operacion;
+    t_buffer* buffer;
 } t_paquete;
 
 typedef struct
 {
-	op_code codigo_operacion;
+    op_code codigo_operacion;
 
 } t_cod;
 
@@ -140,11 +140,11 @@ typedef struct
 
 typedef struct{
     char* parametros1;
-	char* parametros2;
-	char* parametros3;
-	char* parametros4;
-	char* parametros5;
-	char* parametros6;
+    char* parametros2;
+    char* parametros3;
+    char* parametros4;
+    char* parametros5;
+    char* parametros6;
 }t_instruccion;
 
 
@@ -158,24 +158,6 @@ typedef struct {
     uint32_t entero1;
     uint32_t entero2;
 }t_string_2enteros;
-
-typedef struct {
-    uint32_t pid;
-    uint32_t pagina;
-    uint32_t marco;
-	uint32_t ultimo_uso;
-} EntradaTLB;
-
-typedef struct {
-    uint32_t numero_pagina;
-    uint32_t desplazamiento;
-} DireccionLogica;
-
-typedef struct {
-    uint32_t marco;
-    uint32_t desplazamiento;
-} DireccionFisica;
-
 
 /**
 * @fn    decir_hola
@@ -197,7 +179,7 @@ t_paquete* crear_paquete(void);
 void agregar_a_paquete(t_paquete* paquete, void* valor, uint32_t tamanio);
 void enviar_paquete(t_paquete* paquete, int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
-void eliminar_codigo(t_cod* codop);
+void eliminar_codigo(t_paquete* codop);
 void liberar_conexion(int socket_cliente);
 t_config* iniciar_config(char *ruta);
 
@@ -220,8 +202,8 @@ void enviar_pcb (int conexion, t_pcb* pcb, int codop);
 void enviar_instruccion (int conexion, t_instruccion* nueva_instruccion, int codop);
 void enviar_2_enteros(int conexion, t_2_enteros* enteros, int codop);
 void enviar_2_enteros_1_string(int conexion, t_string_2enteros* enteros_string, int codop);
-void enviar_codigo (t_cod * codop, int socket_cliente);
-void enviar_codop(int conexion, int cod_op);
+void enviar_codigo (t_paquete *codop, int socket_cliente);
+void enviar_codop(int conexion, op_code cod_op);
 
 t_paquete* crear_paquete_op(op_code codop);
 
