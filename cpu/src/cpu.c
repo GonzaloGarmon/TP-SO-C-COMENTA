@@ -574,3 +574,15 @@ void funcIoFsRead(t_instruccion* instruccion) {
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
+
+DireccionFisica traducirDireccion(DireccionLogica dirLogica, int tamano_pagina) { //Obtener direc fisica
+    DireccionFisica dirFisica;
+    dirFisica.marco = floor(dirLogica.numero_pagina / tamano_pagina);
+    dirFisica.desplazamiento = dirLogica.numero_pagina - dirFisica.marco * tamano_pagina;
+    return dirFisica;
+}
+
+//EntradaTLB* TLB = malloc(cantidad_entradas_tlb * sizeof(EntradaTLB));
+//free(TLB);
+
+

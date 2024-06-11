@@ -159,6 +159,24 @@ typedef struct {
     uint32_t entero2;
 }t_string_2enteros;
 
+typedef struct {
+    uint32_t pid;
+    uint32_t pagina;
+    uint32_t marco;
+	uint32_t ultimo_uso;
+} EntradaTLB;
+
+typedef struct {
+    uint32_t numero_pagina;
+    uint32_t desplazamiento;
+} DireccionLogica;
+
+typedef struct {
+    uint32_t marco;
+    uint32_t desplazamiento;
+} DireccionFisica;
+
+
 /**
 * @fn    decir_hola
 * @brief Imprime un saludo al nombre que se pase por parámetro por consola.
