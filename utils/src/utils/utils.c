@@ -259,6 +259,8 @@ void enviar_entero (int conexion, uint32_t numero, int codop){
 	eliminar_paquete(paquete);
 }
 
+
+
 void enviar_string (int conexion, char* palabra, int codop){
 	t_paquete* paquete = crear_paquete_op(codop);
 
@@ -279,6 +281,46 @@ void enviar_instruccion (int conexion, t_instruccion* nueva_instruccion, int cod
 	t_paquete* paquete = crear_paquete_op(codop);
 
 	agregar_instruccion_a_paquete(paquete,nueva_instruccion);
+	enviar_paquete(paquete,conexion);
+	eliminar_paquete(paquete);
+}
+
+void enviar_2_enteros(int conexion, t_2_enteros* enteros, int codop){
+	t_paquete* paquete = crear_paquete_op(codop);
+
+	agregar_2_enteros_a_paquete(paquete,enteros);
+	enviar_paquete(paquete,conexion);
+	eliminar_paquete(paquete);
+}
+
+void enviar_codop(int conexion, int cod_op){
+	t_cod * codigo = crear_paquete_op(cod_op);
+	
+	enviar_codigo(codigo,conexion);
+
+	eliminar_codigo(codigo);
+
+}
+
+void enviar_codigo (t_cod * codop, int socket_cliente){
+
+	void *magic = malloc(sizeof(int));
+
+	memcpy(magic, &(codop->codigo_operacion), sizeof(int));
+
+	send(socket_cliente,magic,sizeof(int),0);
+
+	free(magic); 
+}
+
+void eliminar_codigo(t_cod* codop){
+	free(codop);
+}
+
+void enviar_2_enteros_1_string(int conexion, t_string_2enteros* enteros_string, int codop){
+	t_paquete* paquete = crear_paquete_op(codop);
+
+	agregar_2_enteros_1_string_a_paquete(paquete,enteros_string);
 	enviar_paquete(paquete,conexion);
 	eliminar_paquete(paquete);
 }
@@ -318,59 +360,37 @@ void agregar_entero_int_a_paquete(t_paquete *paquete, int numero){
 
 
 void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb){
-	agregar_entero_a_paquete(paquete, pcb->pid);
 	agregar_entero_a_paquete(paquete, pcb->pc);
-	agregar_entero_int_a_paquete(paquete,pcb->qq); 
+	agregar_entero_a_paquete(paquete, pcb->pid);
 	agregar_registros_a_paquete(paquete, pcb->registros);
-	
+	agregar_entero_int_a_paquete(paquete,pcb->qq); 
 }
+
+void agregar_2_enteros_a_paquete(t_paquete *paquete, t_2_enteros * enteros){
+	agregar_entero_a_paquete(paquete, enteros->entero1);
+	agregar_entero_a_paquete(paquete, enteros->entero2);
+
+}
+
+
+void agregar_2_enteros_1_string_a_paquete(t_paquete *paquete, t_string_2enteros * enteros_string){
+	agregar_entero_a_paquete(paquete, enteros_string->entero1);
+	agregar_entero_a_paquete(paquete, enteros_string->entero2);
+	agregar_string_a_paquete(paquete,enteros_string->string); 
+}
+
 
 
 
 void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion * instruccion_nueva){
 	
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros1);
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros2);
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros3);
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros4);
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros5);
+	agregar_string_a_paquete(paquete,instruccion_nueva->parametros6);
 
-	if(instruccion_nueva->parametros1 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros1,strlen(instruccion_nueva->parametros1)+1);
-	}else{
-		instruccion_nueva->parametros1 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros1,strlen(instruccion_nueva->parametros1)+1);
-	}
-
-	if(instruccion_nueva->parametros2 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
-	}else{
-		instruccion_nueva->parametros2 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
-	}
-
-	if(instruccion_nueva->parametros3 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
-	}else{
-		instruccion_nueva->parametros3 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
-	}
-
-	if(instruccion_nueva->parametros4 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
-	}else{
-		instruccion_nueva->parametros4 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
-	}
-
-	if(instruccion_nueva->parametros5 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros5,strlen(instruccion_nueva->parametros5)+1);
-	}else{
-		instruccion_nueva->parametros5 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros5,strlen(instruccion_nueva->parametros5)+1);
-	}
-
-	if(instruccion_nueva->parametros6 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros6,strlen(instruccion_nueva->parametros6)+1);
-	}else{
-		instruccion_nueva->parametros6 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros6,strlen(instruccion_nueva->parametros6)+1);
-	}
 }
 
 
@@ -396,26 +416,26 @@ uint32_t leer_entero_uint32(char *buffer, int * desplazamiento)
 uint8_t leer_entero_uint8(char *buffer, int * desplazamiento)
 {
 	uint8_t entero;
-	memcpy(&entero, buffer + (*desplazamiento), sizeof(uint8_t));
-	(*desplazamiento) += sizeof(uint8_t);
+	memcpy(&entero, buffer + (*desplazamiento), sizeof(uint32_t));
+	(*desplazamiento) += sizeof(uint32_t);
 	return entero;
 }
 
 char* leer_string(char* buffer, int* desplazamiento) {
     int tamanio = leer_entero(buffer, desplazamiento);
 
-    //if (*desplazamiento + tamanio > strlen(buffer)) {
-      //  return NULL;
-    //}
+    if (*desplazamiento + tamanio > strlen(buffer)) {
+        return NULL;
+    }
 
     char* palabra = malloc(tamanio + 1);
-    //if (palabra == NULL) {
-      //  return NULL;
-    //}
+    if (palabra == NULL) {
+        return NULL;
+    }
 
-    memcpy(palabra, buffer + (*desplazamiento), tamanio);
+    memcpy(palabra, buffer + *desplazamiento, tamanio);
     palabra[tamanio] = '\0';
-    (*desplazamiento) += tamanio;
+    *desplazamiento += tamanio;
 
     return palabra;
 }
@@ -504,8 +524,7 @@ t_instruccion* recibir_instruccion(int socket){
 t_pcb* recibir_pcb(int socket){
 
 	t_pcb* nuevo_pcb = malloc(sizeof(t_pcb));
-	t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
-	nuevo_pcb->registros = registros;
+
 	int size = 0;
 	char* buffer;
 	int desp = 0;
@@ -528,46 +547,41 @@ t_pcb* recibir_pcb(int socket){
 	return nuevo_pcb;
 }
 
-t_list* recibir_doble_entero(int socket){
+t_2_enteros* recibir_2_enteros(int socket){
+	
+	t_2_enteros* nuevos_enteros = malloc(sizeof(t_2_enteros));
+
 	int size = 0;
 	char* buffer;
 	int desp = 0;
-	t_list* devolver = list_create();
+		
 	buffer = recibir_buffer(&size, socket);
-	u_int32_t entero_nuevo1 = leer_entero_uint32(buffer, &desp);
-	u_int32_t entero_nuevo2 = leer_entero_uint32(buffer, &desp);
-	list_add(devolver, entero_nuevo1);
-	list_add(devolver, entero_nuevo2);
+
+	nuevos_enteros->entero1  = leer_entero_uint32(buffer, &desp);
+	nuevos_enteros->entero2  = leer_entero_uint32(buffer, &desp);
+	
+	
 	free(buffer);
-
-	return devolver;
+	return nuevos_enteros;
 }
+t_string_2enteros* recibir_string_2enteros(int socket){
+	
+	t_string_2enteros* nuevos_enteros_string = malloc(sizeof(t_string_2enteros));
 
-void recibir_string_mas_pcb(int conexion_kernel_cpu_dispatch,t_pcb** pcb_wait,char** recurso_wait){
-    *pcb_wait = malloc(sizeof(t_pcb));
-    t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
-    (*pcb_wait)->registros = registros;
-    int size = 0;
+	int size = 0;
 	char* buffer;
 	int desp = 0;
-    	
-	buffer = recibir_buffer(&size,conexion_kernel_cpu_dispatch);
-	*recurso_wait = leer_string(buffer, &desp);
+		
+	buffer = recibir_buffer(&size, socket);
 
-	(*pcb_wait)->pid = leer_entero_uint32(buffer,&desp);
-	(*pcb_wait)->pc = leer_entero_uint32(buffer,&desp);
-	(*pcb_wait)->qq = leer_entero(buffer,&desp);
-	(*pcb_wait)->registros->AX = leer_entero_uint8(buffer,&desp);
-	(*pcb_wait)->registros->BX = leer_entero_uint8(buffer,&desp);
-	(*pcb_wait)->registros->CX = leer_entero_uint8(buffer,&desp);
-	(*pcb_wait)->registros->DX = leer_entero_uint8(buffer,&desp);
-	(*pcb_wait)->registros->EAX = leer_entero_uint32(buffer,&desp);
-	(*pcb_wait)->registros->EBX = leer_entero_uint32(buffer,&desp);
-	(*pcb_wait)->registros->ECX = leer_entero_uint32(buffer,&desp);
-	(*pcb_wait)->registros->EDX = leer_entero_uint32(buffer,&desp);
-
+	nuevos_enteros_string->entero1  = leer_entero_uint32(buffer, &desp);
+	nuevos_enteros_string->entero2  = leer_entero_uint32(buffer, &desp);
+	nuevos_enteros_string->string  = leer_string(buffer, &desp);
+	
 	free(buffer);
+	return nuevos_enteros_string;
 }
+
 
 
 

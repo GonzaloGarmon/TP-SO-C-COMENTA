@@ -25,16 +25,6 @@ typedef struct {
     uint32_t cantidad_entradas;
 }tabla_pagina_t;
 
-typedef struct {
-    uint32_t entero1;
-    uint32_t entero2;
-}t_2_enteros;
-
-typedef struct {
-    char *string;
-    uint32_t entero1;
-    uint32_t entero2;
-}t_string_2enteros;
 
 t_log* log_memoria;
 t_config* config_memoria;
@@ -77,11 +67,10 @@ void recibir_kernel1(int SOCKET_CLIENTE_KERNEL);
 void recibir_entradasalida1(int SOCKET_CLIENTE_ENTRADASALIDA);
 void finalizar_proceso(uint32_t proceso);
 void ajustar_tamanio_proceso(uint32_t pid_ajuste, uint32_t nuevo_tam);
-void enviar_CodOp(SOCKET_CLIENTE_CPU, MOV_OUT_OK);
+
 void escribir(uint32_t dir_fisca, void* data, uint32_t size);
 char* leer(uint32_t dir_fisca , uint32_t size);
-t_2_enteros * recibir_2_enteros(int socket);
-t_string_2enteros* recibir_string_2enteros(int socket);
+
 
 
 int instrucciones_maximas;

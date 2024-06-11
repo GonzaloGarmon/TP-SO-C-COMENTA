@@ -105,6 +105,7 @@ typedef enum
 	LLAMADA_POR_INSTRUCCION,
 	//COMUNICACION MEMORIA CON MODULOS
 	CREAR_PROCESO,
+	ACCESO,
 	FINALIZAR_PROCESO,
 	AJUSTAR_TAMANIO_PROCESO,
 	ACCESO_TABLA_PAGINAS,
@@ -128,6 +129,14 @@ typedef struct
 	t_buffer* buffer;
 } t_paquete;
 
+typedef struct
+{
+	op_code codigo_operacion;
+
+} t_cod;
+
+
+
 
 typedef struct{
     char* parametros1;
@@ -137,6 +146,18 @@ typedef struct{
 	char* parametros5;
 	char* parametros6;
 }t_instruccion;
+
+
+typedef struct {
+    uint32_t entero1;
+    uint32_t entero2;
+}t_2_enteros;
+
+typedef struct {
+    char *string;
+    uint32_t entero1;
+    uint32_t entero2;
+}t_string_2enteros;
 
 /**
 * @fn    decir_hola
@@ -158,6 +179,7 @@ t_paquete* crear_paquete(void);
 void agregar_a_paquete(t_paquete* paquete, void* valor, uint32_t tamanio);
 void enviar_paquete(t_paquete* paquete, int socket_cliente);
 void eliminar_paquete(t_paquete* paquete);
+void eliminar_codigo(t_cod* codop);
 void liberar_conexion(int socket_cliente);
 t_config* iniciar_config(char *ruta);
 
@@ -172,10 +194,17 @@ void agregar_string_a_paquete(t_paquete *paquete, char* palabra);
 void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb);
 void agregar_registros_a_paquete(t_paquete * paquete, t_registros_cpu * registros);
 void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion * instruccion_nueva);
+void agregar_2_enteros_1_string_a_paquete(t_paquete *paquete, t_string_2enteros * enteros_string);
+void agregar_2_enteros_a_paquete(t_paquete *paquete, t_2_enteros * enteros);
 void enviar_entero (int conexion, uint32_t numero, int codop);
 void enviar_string (int conexion, char* palabra, int codop);
 void enviar_pcb (int conexion, t_pcb* pcb, int codop);
 void enviar_instruccion (int conexion, t_instruccion* nueva_instruccion, int codop);
+void enviar_2_enteros(int conexion, t_2_enteros* enteros, int codop);
+void enviar_2_enteros_1_string(int conexion, t_string_2enteros* enteros_string, int codop);
+void enviar_codigo (t_cod * codop, int socket_cliente);
+void enviar_codop(int conexion, int cod_op);
+
 t_paquete* crear_paquete_op(op_code codop);
 
 
@@ -193,4 +222,8 @@ t_pcb* recibir_pcb(int socket);
 t_instruccion* recibir_instruccion(int socket);
 t_list* recibir_doble_entero(int socket);
 void recibir_string_mas_pcb(int conexion_kernel_cpu_dispatch,t_pcb** pcb_wait,char** recurso_wait);
+t_2_enteros * recibir_2_enteros(int socket);
+t_string_2enteros* recibir_string_2enteros(int socket);
+
+
 #endif
