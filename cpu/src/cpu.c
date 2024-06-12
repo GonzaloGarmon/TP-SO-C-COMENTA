@@ -74,7 +74,7 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
         {
         case EXEC:
             log_trace(log_cpu, "llego contexto de ejecucion");
-            contexto = recibir_pcb(SOCKET_CLIENTE_KERNEL_DISPATCH);
+            contexto = recibir_contexto(SOCKET_CLIENTE_KERNEL_DISPATCH);
             ejecutar_ciclo_de_instruccion();
             //sem_post(&sem_fin_de_ciclo);
             log_trace(log_cpu, "ejecute correctamente el ciclo de instruccion");
@@ -238,7 +238,7 @@ void checkInturrupt(uint32_t pid){
         hay_interrupcion = 0;
         if(contexto->pid = pid_interrupt){
             seguir_ejecutando = 0;
-            enviar_pcb(socket_cliente_kernel_dispatch, contexto,INTERRUPCION);
+            enviar_contexto(socket_cliente_kernel_dispatch, contexto,INTERRUPCION);
         }
     }
 }
@@ -289,7 +289,7 @@ op_code decode(t_instruccion *instruccion) {
 
 void esperar_devolucion_pcb(){
     op_code codigo = recibir_operacion(socket_cliente_kernel_dispatch);
-    contexto = recibir_pcb(socket_cliente_kernel_dispatch);
+    contexto = recibir_contexto(socket_cliente_kernel_dispatch);
     if(codigo != BLOCK && codigo != EXIT){
     }else{
         seguir_ejecutando = 0;
@@ -505,7 +505,7 @@ void funcSignal(t_instruccion *instruccion){
     t_paquete* paquete = crear_paquete_op(EJECUTAR_SIGNAL);
     
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
-    agregar_pcb_a_paquete(paquete,contexto);
+    agregar_contexto_a_paquete(paquete,contexto);
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
     
 }
@@ -514,7 +514,7 @@ void funcWait(t_instruccion *instruccion){
     t_paquete* paquete = crear_paquete_op(EJECUTAR_WAIT);
     
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
-    agregar_pcb_a_paquete(paquete,contexto);
+    agregar_contexto_a_paquete(paquete,contexto);
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
     
    
@@ -523,7 +523,7 @@ void funcWait(t_instruccion *instruccion){
 void funcExit(t_instruccion *instruccion) {
     seguir_ejecutando = 0;
     t_paquete *paquete = crear_paquete_op(TERMINO_PROCESO);
-    agregar_pcb_a_paquete(paquete,contexto);
+    agregar_contexto_a_paquete(paquete,contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }

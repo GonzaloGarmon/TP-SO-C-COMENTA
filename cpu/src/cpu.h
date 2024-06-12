@@ -6,7 +6,7 @@
 
 t_log* log_cpu;
 t_config* config_cpu;
-t_pcb *contexto;
+t_contexto *contexto;
 uint32_t pid_interrupt;
 int hay_interrupcion;
 

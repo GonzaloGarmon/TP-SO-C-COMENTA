@@ -147,24 +147,24 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
         switch (codigo)
         {
         case TERMINO_PROCESO:
-            t_pcb* pcb_finaliza = malloc(sizeof(t_pcb));
-            pcb_finaliza = recibir_pcb(conexion_kernel_cpu_dispatch);
+            t_contexto* contexto_finaliza = malloc(sizeof(t_contexto));
+            contexto_finaliza = recibir_contexto(conexion_kernel_cpu_dispatch);
             log_trace(log_kernel,"recibi un pcb por finalizacion de proceso");
-            actualizar_pcb_envia_exit(pcb_finaliza,SUCCESS);
+            actualizar_pcb_envia_exit(contexto_finaliza,SUCCESS);
             sem_post(&sem_listos_para_exit);
             sem_post(&sem_listos_para_exec);
             break;
         case INTERRUPCION:
-            t_pcb* pcb_interrumpido = malloc(sizeof(t_pcb));
-            pcb_interrumpido = recibir_pcb(conexion_kernel_cpu_dispatch);
+            t_contexto* pcb_interrumpido = malloc(sizeof(t_contexto));
+            pcb_interrumpido = recibir_contexto(conexion_kernel_cpu_dispatch);
             actualizar_pcb_envia_ready(pcb_interrumpido);
             sem_post(&sem_listos_para_exec);
             //log_trace(log_kernel,"recibi un pcb por fin de quantum");
             break;
         case EJECUTAR_WAIT:
-            t_pcb* pcb_wait;
+            t_contexto* pcb_wait;
             char* recurso_wait;
-            recibir_string_mas_pcb(conexion_kernel_cpu_dispatch,&pcb_wait,&recurso_wait);
+            recibir_string_mas_contexto(conexion_kernel_cpu_dispatch,&pcb_wait,&recurso_wait);
             
             if(existe_recurso(recurso_wait)){
 
@@ -173,12 +173,12 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                         
                         if(instancias_recursos[i]-1>0){
                             instancias_recursos[i]--;
-                            actualizar_pcb(pcb_wait);
-                            enviar_pcb(conexion_kernel_cpu_dispatch,pcb_wait,EXEC);
+                            actualizar_contexto(pcb_wait);
+                            enviar_contexto(conexion_kernel_cpu_dispatch,pcb_wait,EXEC);
                         }else{
                             
                             actualizar_pcb_con_cambiar_lista(pcb_wait, lista_recurso[i]);
-                            enviar_pcb(conexion_kernel_cpu_dispatch,pcb_wait,BLOCK);
+                            enviar_contexto(conexion_kernel_cpu_dispatch,pcb_wait,BLOCK);
                             sem_post(&sem_listos_para_exec);
                             
                         }
@@ -188,28 +188,28 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
 
             }else{
                 actualizar_pcb_envia_exit(pcb_wait,INVALID_RESOURCE);
-                enviar_pcb(conexion_kernel_cpu_dispatch,pcb_wait,EXIT);
+                enviar_contexto(conexion_kernel_cpu_dispatch,pcb_wait,EXIT);
                 sem_post(&sem_listos_para_exec);
             }
             break;
         case EJECUTAR_SIGNAL:
-            t_pcb* pcb_signal;
+            t_contexto* pcb_signal;
             char* recurso_signal;
-            recibir_string_mas_pcb(conexion_kernel_cpu_dispatch,&pcb_signal,&recurso_signal);
+            recibir_string_mas_contexto(conexion_kernel_cpu_dispatch,&pcb_signal,&recurso_signal);
             if(existe_recurso(recurso_signal)){
 
                 for(int i = 0; i < cantidad_recursos; i++) {
                     if(strcmp(recursos[i],recurso_wait) == 0) {
                         instancias_recursos[i]++;
                         desbloquear_proceso(lista_recurso[i]);
-                        actualizar_pcb(pcb_signal);
+                        actualizar_contexto(pcb_signal);
                         
                     }
                 }                
-            enviar_pcb(conexion_kernel_cpu_dispatch,pcb_signal,EXEC);    
+            enviar_contexto(conexion_kernel_cpu_dispatch,pcb_signal,EXEC);    
             }else{
                 actualizar_pcb_envia_exit(pcb_signal,INVALID_RESOURCE);
-                enviar_pcb(conexion_kernel_cpu_dispatch,pcb_wait,EXIT);
+                enviar_contexto(conexion_kernel_cpu_dispatch,pcb_wait,EXIT);
                 sem_post(&sem_listos_para_exec);
             }
             break;
@@ -371,11 +371,13 @@ void iniciar_proceso(){
     generador_pid++;
     
     t_registros_cpu* registros = inicializar_registros();
+    t_contexto* contexto = malloc(sizeof(t_contexto));
     t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
-    pcb_nuevo->qq = quantum;
-    pcb_nuevo->pid = generador_pid;
-    pcb_nuevo->pc = 0;
-    pcb_nuevo ->registros = registros;
+    pcb_nuevo->contexto = contexto;
+    pcb_nuevo->quantum_utilizado = quantum;
+    pcb_nuevo->contexto->pid = generador_pid;
+    pcb_nuevo->contexto->pc = 0;
+    pcb_nuevo ->contexto->registros = registros;
     
     pthread_mutex_lock(&mutex_cola_new);
     list_add(cola_new, pcb_nuevo);
@@ -448,6 +450,7 @@ void planificar(){
         planificar_rr();
         break;
     case VRR:
+        planificar_vrr();
         break;
     default:
         break;
@@ -460,6 +463,11 @@ void planificar_rr(){
     pthread_create(&hilo_manejo_quantum, NULL, (void *)contador_quantum_RR, NULL);
     pthread_detach(hilo_manejo_quantum);
 
+}
+void planificar_vrr(){
+    pthread_t hilo_manejo_VRR;
+    pthread_create(&hilo_manejo_VRR, NULL, (void *)manejar_VRR, NULL);
+    pthread_detach(hilo_manejo_VRR);
 }
 
 void planificar_largo_plazo(){
@@ -493,12 +501,18 @@ void contador_quantum_RR(){
     
 }
 
+void manejar_VRR(){
+    sem_wait(&sem_empezar_quantum);
+
+
+}
+
 void enviar_interrupcion(){
     t_paquete* paquete = crear_paquete_op(FIN_QUANTUM_RR);
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_interrumpir = list_get(cola_exec,0);
     pthread_mutex_unlock(&mutex_cola_exec);
-    agregar_entero_a_paquete(paquete,pcb_interrumpir->pid);
+    agregar_entero_a_paquete(paquete,pcb_interrumpir->contexto->pid);
     enviar_paquete(paquete,conexion_kernel_cpu_interrupt);
     eliminar_paquete(paquete);
 }
@@ -520,7 +534,7 @@ void pcb_exit(){
     t_pcb_exit* pcb_finaliza = list_remove(cola_exit,0);
     pthread_mutex_unlock(&mutex_cola_exit);
     t_paquete* paquete = crear_paquete_op(FINALIZO_PROCESO);
-    agregar_entero_a_paquete(paquete,pcb_finaliza->pcb->pid);
+    agregar_entero_a_paquete(paquete,pcb_finaliza->pcb->contexto->pid);
     enviar_paquete(paquete,conexion_kernel_memoria);
     eliminar_paquete(paquete);
     //sem_post(&sem_multiprogamacion);
@@ -587,11 +601,11 @@ t_pcb* elegir_pcb_segun_algoritmo(){
 void dispatch(t_pcb* pcb_enviar){
 
         
-        log_trace(log_kernel, "envio pcb de pid: %d", pcb_enviar->pid);
-        log_trace(log_kernel, "envio pcb de pc: %d", pcb_enviar->pc);
-        log_trace(log_kernel, "envio pcb de qq: %d", pcb_enviar->qq);
+        log_trace(log_kernel, "envio pcb de pid: %d", pcb_enviar->contexto->pid);
+        log_trace(log_kernel, "envio pcb de pc: %d", pcb_enviar->contexto->pc);
+        log_trace(log_kernel, "envio pcb de qq: %d", pcb_enviar->quantum);
         //ENVIAR CONTEXTO DE EJECUCION A CPU
-        enviar_pcb(conexion_kernel_cpu_dispatch, pcb_enviar,EXEC);
+        enviar_contexto(conexion_kernel_cpu_dispatch, pcb_enviar->contexto,EXEC);
 
 
         pthread_mutex_lock(&mutex_cola_exec);
@@ -612,28 +626,27 @@ int existe_recurso(char* recurso){
     return 0;
 }
 
-void actualizar_pcb(t_pcb* pcb_wait){
+void actualizar_contexto(t_contexto* pcb_wait){
 
     bool encontrar_pcb(t_pcb* pcb){
-        return pcb->pid == pcb_wait->pid;
+        return pcb->contexto->pid == pcb_wait->pid;
     };
     
 
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
     t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
-    pcb_nuevo->pc = pcb_wait->pc;
-    pcb_nuevo->pid = pcb_wait->pid;
-    pcb_nuevo->qq = pcb_wait->qq;
-    pcb_nuevo->registros = pcb_wait->registros;
+    pcb_nuevo->contexto = pcb_wait;
+    //pcb_nuevo->quantum = pcb_encontrado->quantum;
+    pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
     list_replace_by_condition(cola_exec, (void*) encontrar_pcb, pcb_nuevo);
     pthread_mutex_unlock(&mutex_cola_exec);
 }
 
-void actualizar_pcb_con_cambiar_lista(t_pcb* pcb_wait, t_list* lista_bloq_recurso){
+void actualizar_pcb_con_cambiar_lista(t_contexto* pcb_wait, t_list* lista_bloq_recurso){
     
     bool encontrar_pcb(t_pcb* pcb){
-        return pcb->pid == pcb_wait->pid;
+        return pcb->contexto->pid == pcb_wait->pid;
         };
     
 
@@ -642,41 +655,42 @@ void actualizar_pcb_con_cambiar_lista(t_pcb* pcb_wait, t_list* lista_bloq_recurs
     list_remove_element(cola_exec,pcb_encontrado);
     free(pcb_encontrado);
     t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
-    pcb_nuevo->pc = pcb_wait->pc;
-    pcb_nuevo->pid = pcb_wait->pid;
-    pcb_nuevo->qq = pcb_wait->qq;
-    pcb_nuevo->registros = pcb_wait->registros;
+    pcb_nuevo->contexto = pcb_wait;
+    //pcb_nuevo->quantum = pcb_encontrado->quantum;
+    pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
     pthread_mutex_unlock(&mutex_cola_exec);
 
     list_add(lista_bloq_recurso,pcb_nuevo);
 }
 
-void actualizar_pcb_envia_exit(t_pcb* pcb_wait, op_code codigo){
+void actualizar_pcb_envia_exit(t_contexto* pcb_wait, op_code codigo){
     
     bool encontrar_pcb(t_pcb* pcb){
-        return pcb->pid == pcb_wait->pid;
+        return pcb->contexto->pid == pcb_wait->pid;
         };
     
-
+    
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
     list_remove_element(cola_exec,pcb_encontrado);
-    free(pcb_encontrado);
+    
     pthread_mutex_unlock(&mutex_cola_exec);
     
     t_pcb_exit* pcb_exit_ok = malloc(sizeof(t_pcb_exit));
-    pcb_exit_ok->pcb = pcb_wait;
+    pcb_exit_ok->pcb = pcb_encontrado;
+    pcb_exit_ok->pcb->contexto = pcb_wait;
+    pcb_exit_ok->pcb->quantum_utilizado = pcb_encontrado->quantum_utilizado;
     pcb_exit_ok->motivo = codigo;
-    
+    //free(pcb_encontrado);
     pthread_mutex_lock(&mutex_cola_exit);
     list_add(cola_exit,pcb_exit_ok);
     pthread_mutex_unlock(&mutex_cola_exit);
 }
 
-void actualizar_pcb_envia_ready(t_pcb* pcb_wait){
+void actualizar_pcb_envia_ready(t_contexto* pcb_wait){
     
     bool encontrar_pcb(t_pcb* pcb){
-        return pcb->pid == pcb_wait->pid;
+        return pcb->contexto->pid == pcb_wait->pid;
         };
     
 
@@ -684,7 +698,8 @@ void actualizar_pcb_envia_ready(t_pcb* pcb_wait){
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
     list_remove_element(cola_exec,pcb_encontrado);
     pthread_mutex_unlock(&mutex_cola_exec);
-    
+    pcb_encontrado->contexto = pcb_wait;
+
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb_encontrado);
     pthread_mutex_unlock(&mutex_cola_ready);
@@ -704,7 +719,7 @@ void desbloquear_proceso(t_list* lista_recurso_liberar){
 bool esta_en_esta_lista(t_list* lista, uint32_t pid_encontrar){
 
         bool encontrar_pcb(t_pcb* pcb){
-        return pcb->pid == pid_encontrar;
+        return pcb->contexto->pid == pid_encontrar;
         };
 
     return list_any_satisfy(lista, (void*) encontrar_pcb);
@@ -712,7 +727,7 @@ bool esta_en_esta_lista(t_list* lista, uint32_t pid_encontrar){
 
 void sacar_de_lista_mover_exit(t_list* lista, pthread_mutex_t mutex_lista, uint32_t pid){
     bool encontrar_pcb(t_pcb* pcb){
-        return pcb->pid == pid;
+        return pcb->contexto->pid == pid;
         };
     
 
@@ -731,7 +746,7 @@ void sacar_de_lista_mover_exit(t_list* lista, pthread_mutex_t mutex_lista, uint3
 
 void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid){
     bool encontrar_pcb(t_pcb* pcb){
-        return pcb->pid == pid;
+        return pcb->contexto->pid == pid;
         };
     
 
