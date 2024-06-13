@@ -13,6 +13,7 @@ typedef struct {
 
 typedef struct {
     char* nombre;
+    int tiempo_unidad_trabajo;
     char* ip_kernel;
     char* puerto_kernel;
     char* ip_memoria;
@@ -21,6 +22,7 @@ typedef struct {
 
 typedef struct {
     char* nombre;
+    int tiempo_unidad_trabajo;
     char* ip_kernel;
     char* puerto_kernel;
     char* ip_memoria;
@@ -64,6 +66,63 @@ typedef enum {
     STDIN_READ,
     STDOUT_WRITE
 } OperacionIO;
+
+void* crear_interfaz(TipoInterfaz tipo) {
+    void* interfaz = NULL;
+    switch (tipo) {
+        case GENERICA:
+            return malloc(sizeof(InterfazGenerica));
+        case STDIN:
+            return malloc(sizeof(STDIN));
+        case STDOUT:
+            return malloc(sizeof(STDOUT));
+        default:
+            fprintf(stderr, "Tipo de interfaz no válido\n");
+            return NULL;
+    }
+    return interfaz;
+}
+
+
+void liberar_interfaz(void* interfaz, TipoInterfaz tipo) {
+    switch (tipo) {
+        case GENERICA:
+            free(((InterfazGenerica*)interfaz)->nombre);
+            free(interfaz);
+            break;
+        case STDIN:
+            free(((STDIN*)interfaz)->nombre);
+            free(interfaz);
+            break;
+        case STDOUT:
+            free(((STDOUT*)interfaz)->nombre);
+            free(interfaz);
+            break;
+        default:
+            fprintf(stderr, "Tipo de interfaz no válido\n");
+    }
+}
+
+
+t_log* log_entradasalida;
+t_config* config_entradasalida;
+t_config* config_TECLADO;
+t_config* config_MONITOR;
+t_config* config_GENERICA;
+
+char* tipo_interfaz;
+int tiempo_unidad_trabajo;
+char* ip_kernel;
+char* puerto_kernel;
+char* ip_memoria;
+char* puerto_memoria;
+char* path_base_dialfs;
+int block_size;
+int block_count;
+int retraso_compactacion;
+
+int conexion_entradasalida_kernel;
+int conexion_entradasalida_memoria;
 
 // Prototipos de funciones
 void* crear_interfaz(TipoInterfaz tipo);

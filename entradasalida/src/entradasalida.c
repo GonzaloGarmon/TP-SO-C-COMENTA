@@ -16,17 +16,6 @@ int main(int argc, char* argv[]) {
     // Crear interfaz según el tipo especificado en la configuración
     void *interfaz = crear_interfaz(tipo_interfaz);
 
-    // Inicializar la interfaz creada según su tipo
-    if (strcmp(tipo_interfaz, "GENERICA") == 0) {
-        inicializar_interfaz_generica(interfaz, "Interfaz Generica", tiempo_unidad_trabajo);
-    } else if (strcmp(tipo_interfaz, "STDIN") == 0) {
-        inicializar_interfaz_stdin(interfaz, "Interfaz Stdin");
-    } else if (strcmp(tipo_interfaz, "STDOUT") == 0) {
-        inicializar_interfaz_stdout(interfaz, "Interfaz Stdout");
-    } else if (strcmp(tipo_interfaz, "DIALFS") == 0) {
-        // Aquí se podría agregar la inicialización para DIALFS si es necesario
-    }
-
     // Establecer conexión con el kernel usando la interfaz creada
     establecer_conexion_kernel(interfaz, config_entradasalida, log_entradasalida);
 
@@ -59,6 +48,31 @@ void leer_config(){
     block_size = config_get_int_value(config_entradasalida, "BLOCK_SIZE");
     block_count = config_get_int_value(config_entradasalida, "BLOCK_COUNT");
     retraso_compactacion = config_get_int_value(config_entradasalida, "RETRASO_COMPACTACION");
+
+    // Crear interfaz según el tipo especificado en la configuración
+
+
+    config_GENERICA= iniciar_config("/home/utnso/tp-2024-1c-GoC/entradasalida/config/GENERICA.config");
+    
+    config_TECLADO= iniciar_config("/home/utnso/tp-2024-1c-GoC/entradasalida/config/TECLADO.config");
+
+    config_MONITOR= iniciar_config("/home/utnso/tp-2024-1c-GoC/entradasalida/config/MONITOR.config");
+    
+    char *tipo_interfaz = config_get_string_value(config_TECLADO, "TIPO_INTERFAZ");
+    void *interfaz = crear_interfaz(tipo_interfaz);
+    // Inicializar la interfaz creada según su tipo
+        if (strcmp(tipo_interfaz, "GENERICA") == 0) {
+            inicializar_interfaz_generica(interfaz, "Interfaz Generica", tiempo_unidad_trabajo);
+        } else if (strcmp(tipo_interfaz, "STDIN") == 0) {
+            inicializar_interfaz_stdin(interfaz, "Interfaz Stdin");
+        } else if (strcmp(tipo_interfaz, "STDOUT") == 0) {
+            inicializar_interfaz_stdout(interfaz, "Interfaz Stdout");
+        } else if (strcmp(tipo_interfaz, "DIALFS") == 0) {
+            // Aquí se podría agregar la inicialización para DIALFS si es necesario
+        }
+
+        // Liberar recursos utilizados por la interfaz
+        liberar_interfaz(interfaz, tipo_interfaz);
 }
 
 // Función para generar conexiones con la memoria y el kernel
@@ -68,23 +82,38 @@ void generar_conexiones(){
 }
 
 // Función para establecer conexión con el kernel
-void establecer_conexion_kernel(void *interfaz, t_config* config, t_log* loggs) {
-    InterfazGenerica *interfazGen = (InterfazGenerica *)interfaz;
-
+void establecer_conexion_kernel(t_config* config, t_log* loggs) {
     log_trace(loggs, "Inicio como cliente");
 
-    log_trace(loggs,"Lei la IP %s , el Puerto Kernel %s ", ip_kernel, puerto_kernel);
+    // Obtener la IP y el puerto del kernel desde la configuración
+    char *ip_kernel = config_get_string_value(config, "IP_KERNEL");
+    char *puerto_kernel = config_get_string_value(config, "PUERTO_KERNEL");
+    log_trace(loggs, "Lei la IP %s , el Puerto Kernel %s ", ip_kernel, puerto_kernel);
 
-    // Establecer conexión con el kernel usando la IP y el puerto obtenidos de la configuración
-    if((conexion_entradasalida_kernel = crear_conexion(interfazGen->ip_kernel, interfazGen->puerto_kernel)) == -1){
+    // Establecer conexión con el kernel
+    if ((conexion_entradasalida_kernel = crear_conexion(ip_kernel, puerto_kernel)) == -1) {
         log_trace(loggs, "Error al conectar con Kernel. El servidor no esta activo");
-
         exit(EXIT_FAILURE);
     }
 
-    // Realizar operaciones de recepción de datos del kernel si es necesario
-    recibir_operacion(conexion_entradasalida_kernel);
-    recibir_string(conexion_entradasalida_kernel, loggs);
+    // Esperar y recibir una operación desde el kernel
+    int operacion = recibir_operacion(conexion_entradasalida_kernel);
+
+    // Verificar si se recibió una operación válida
+    if (operacion == -1) {
+        log_trace(loggs, "Error al recibir operacion del Kernel. Cerrando conexion.");
+        return;
+    }
+
+    // Procesar la operación recibida
+    if (operacion == ) {
+        log_trace(loggs, "Operacion requerida recibida");
+
+
+
+    } else {
+        log_trace(loggs, "Operacion no reconocida recibida desde Kernel");
+    }
 }
 
 // Función para establecer conexión con la memoria
@@ -118,7 +147,7 @@ void inicializar_interfaz_generica(InterfazGenerica *interfazGen, const char *no
     }
     // Inicializar atributos de la interfaz genérica
     interfazGen->nombre = strdup(nombre);
-    interfazGen->tiempo_unidad_trabajo = tiempo;
+    interfazGen->tiempo_unidad_trabajo = config_get_int_value(config_GENERICA, "TIEMPO_UNIDAD_TRABAJO");
     interfazGen->ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
     interfazGen->puerto_kernel = config_get_string_value(config_entradasalida, "PUERTO_KERNEL");
 }
@@ -130,6 +159,7 @@ void inicializar_interfaz_stdin(STDIN *interfazStdin, const char *nombre) {
     }
     // Inicializar atributos de la interfaz stdin
     interfazStdin->nombre = strdup(nombre);
+    interfazStdin->tiempo_unidad_trabajo = config_get_int_value(config_TECLADO, "TIEMPO_UNIDAD_TRABAJO");
     interfazStdin->ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
     interfazStdin->puerto_kernel = config_get_string_value(config_entradasalida, "PUERTO_KERNEL");
     interfazStdin->ip_memoria = config_get_string_value(config_entradasalida, "IP_MEMORIA");
@@ -143,6 +173,7 @@ void inicializar_interfaz_stdout(STDOUT *interfazStdout, const char *nombre) {
     }
     // Inicializar atributos de la interfaz stdout
     interfazStdout->nombre = strdup(nombre);
+    interfazStdout->tiempo_unidad_trabajo = config_get_int_value(config_MONITOR, "TIEMPO_UNIDAD_TRABAJO");
     interfazStdout->ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
     interfazStdout->puerto_kernel = config_get_string_value(config_entradasalida, "PUERTO_KERNEL");
     interfazStdout->ip_memoria = config_get_string_value(config_entradasalida, "IP_MEMORIA");
