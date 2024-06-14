@@ -1,0 +1,35 @@
+[INFO] 16:42:33:497 CPU/(2516:2516): INICIA EL MODULO DE CPU
+[INFO] 16:42:33:501 CPU/(2516:2516): levanto la configuracion del cpu
+[TRACE] 16:42:33:501 CPU/(2516:2516): Inicio como cliente
+[TRACE] 16:42:33:501 CPU/(2516:2516): Lei la IP 127.0.0.1 , el Puerto Memoria 8002 
+[TRACE] 16:42:33:506 CPU/(2516:2516): Recibi el mensaje hola desde memoria
+[INFO] 16:42:33:506 CPU/(2516:2516): INICIO SERVIDOR DISPATCH
+[INFO] 16:42:33:506 CPU/(2516:2516): Listo para recibir a kernel dispatch
+[INFO] 16:43:37:130 CPU/(2516:2516): INICIO SERVIDOR INTERRUPT
+[INFO] 16:43:37:130 CPU/(2516:2516): Listo para recibir a kernel interrupt
+[TRACE] 16:49:52:514 CPU/(2516:2728): llego contexto de ejecucion
+[TRACE] 16:49:53:083 CPU/(2516:2728): pedi instruccion
+[INFO] 16:53:19:561 CPU/(3319:3319): INICIA EL MODULO DE CPU
+[INFO] 16:53:19:564 CPU/(3319:3319): levanto la configuracion del cpu
+[TRACE] 16:53:19:566 CPU/(3319:3319): Inicio como cliente
+[TRACE] 16:53:19:583 CPU/(3319:3319): Lei la IP 127.0.0.1 , el Puerto Memoria 8002 
+[TRACE] 16:53:19:589 CPU/(3319:3319): Recibi el mensaje hola desde memoria
+[INFO] 16:53:19:590 CPU/(3319:3319): INICIO SERVIDOR DISPATCH
+[INFO] 16:53:19:590 CPU/(3319:3319): Listo para recibir a kernel dispatch
+[INFO] 16:53:34:925 CPU/(3319:3319): INICIO SERVIDOR INTERRUPT
+[INFO] 16:53:34:925 CPU/(3319:3319): Listo para recibir a kernel interrupt
+[INFO] 22:54:59:030 CPU/(5391:5391): INICIA EL MODULO DE CPU
+[INFO] 22:54:59:033 CPU/(5391:5391): levanto la configuracion del cpu
+[TRACE] 22:54:59:036 CPU/(5391:5391): Inicio como cliente
+[TRACE] 22:54:59:038 CPU/(5391:5391): Lei la IP 127.0.0.1 , el Puerto Memoria 8002 
+[INFO] 23:04:15:699 CPU/(7852:7852): INICIA EL MODULO DE CPU
+[INFO] 23:04:15:703 CPU/(7852:7852): levanto la configuracion del cpu
+[TRACE] 23:04:15:706 CPU/(7852:7852): Inicio como cliente
+[TRACE] 23:04:15:708 CPU/(7852:7852): Lei la IP 127.0.0.1 , el Puerto Memoria 8002 
+[TRACE] 23:04:15:713 CPU/(7852:7852): Recibi el mensaje hola desde memoria
+[INFO] 23:04:15:714 CPU/(7852:7852): INICIO SERVIDOR DISPATCH
+[INFO] 23:04:15:714 CPU/(7852:7852): Listo para recibir a kernel dispatch
+[INFO] 23:04:33:759 CPU/(7852:7852): INICIO SERVIDOR INTERRUPT
+[INFO] 23:04:33:759 CPU/(7852:7852): Listo para recibir a kernel interrupt
+[TRACE] 23:05:25:187 CPU/(7852:7988): llego contexto de ejecucion
+[TRACE] 23:05:25:404 CPU/(7852:7988): pedi instruccion

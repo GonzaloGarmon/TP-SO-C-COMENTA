@@ -1,0 +1,6 @@
+[INFO] 23:03:57:652 MEMORIA/(7743:7743): INICIA EL MODULO DE MEMORIA
+[INFO] 23:03:57:655 MEMORIA/(7743:7743): Inicia el servidor de memoria
+[INFO] 23:03:57:656 MEMORIA/(7743:7743): Listo para recibir a CPU
+[INFO] 23:04:15:710 MEMORIA/(7743:7743): Listo para recibir a Kernel
+[INFO] 23:04:33:765 MEMORIA/(7743:7743): Listo para recibir a EntradaSalida
+[TRACE] 23:05:25:186 MEMORIA/(7743:7990): Recibi el mensaje /proceso_1.txt

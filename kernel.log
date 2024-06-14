@@ -1,0 +1,71 @@
+[INFO] 16:43:37:119 KERNEL/(2727:2727): INICIA EL MODULO DE KERNEL
+[INFO] 16:43:37:125 KERNEL/(2727:2727): levanto la configuracion del kernel
+[TRACE] 16:43:37:129 KERNEL/(2727:2727): Inicio como cliente
+[TRACE] 16:43:37:130 KERNEL/(2727:2727): Lei la IP 127.0.0.1 , el Puerto CPU 8006 
+[INFO] 16:43:37:131 KERNEL/(2727:2727): Paso el chequeo
+[INFO] 16:43:37:137 KERNEL/(2727:2727): Paso recibir operacion
+[TRACE] 16:43:37:138 KERNEL/(2727:2727): Recibi el mensaje hola desde cpu dispatch
+[INFO] 16:43:37:138 KERNEL/(2727:2727): Paso recibir string
+[TRACE] 16:43:37:138 KERNEL/(2727:2727): Inicio como cliente
+[TRACE] 16:43:37:138 KERNEL/(2727:2727): Lei la IP 127.0.0.1 , el Puerto CPU 8007 
+[INFO] 16:43:37:138 KERNEL/(2727:2727): Paso el chequeo
+[INFO] 16:43:37:141 KERNEL/(2727:2727): Paso recibir operacion
+[TRACE] 16:43:37:141 KERNEL/(2727:2727): Recibi el mensaje hola desde cpu interrupt
+[INFO] 16:43:37:141 KERNEL/(2727:2727): Paso recibir string
+[TRACE] 16:43:37:141 KERNEL/(2727:2727): Inicio como cliente
+[TRACE] 16:43:37:141 KERNEL/(2727:2727): Lei la IP 127.0.0.1 , el Puerto Memoria 8002 
+[TRACE] 16:43:37:144 KERNEL/(2727:2727): Recibi el mensaje hola desde memoria
+[INFO] 16:43:37:145 KERNEL/(2727:2727): Se generaron correctamente las conexiones
+[INFO] 16:43:37:145 KERNEL/(2727:2727): INICIO SERVIDOR
+[INFO] 16:43:37:145 KERNEL/(2727:2727): Listo para recibir a EntradaSalida
+[TRACE] 16:49:52:513 KERNEL/(2727:2872): envio pcb de pid: 1
+[TRACE] 16:49:52:514 KERNEL/(2727:2872): envio pcb de pc: 0
+[TRACE] 16:49:52:514 KERNEL/(2727:2872): envio pcb de qq: 2000
+[INFO] 16:53:34:915 KERNEL/(3418:3418): INICIA EL MODULO DE KERNEL
+[INFO] 16:53:34:919 KERNEL/(3418:3418): levanto la configuracion del kernel
+[TRACE] 16:53:34:923 KERNEL/(3418:3418): Inicio como cliente
+[TRACE] 16:53:34:925 KERNEL/(3418:3418): Lei la IP 127.0.0.1 , el Puerto CPU 8006 
+[INFO] 16:53:34:926 KERNEL/(3418:3418): Paso el chequeo
+[INFO] 16:53:34:929 KERNEL/(3418:3418): Paso recibir operacion
+[TRACE] 16:53:34:929 KERNEL/(3418:3418): Recibi el mensaje hola desde cpu dispatch
+[INFO] 16:53:34:929 KERNEL/(3418:3418): Paso recibir string
+[TRACE] 16:53:34:929 KERNEL/(3418:3418): Inicio como cliente
+[TRACE] 16:53:34:929 KERNEL/(3418:3418): Lei la IP 127.0.0.1 , el Puerto CPU 8007 
+[INFO] 16:53:34:930 KERNEL/(3418:3418): Paso el chequeo
+[INFO] 16:53:34:935 KERNEL/(3418:3418): Paso recibir operacion
+[TRACE] 16:53:34:936 KERNEL/(3418:3418): Recibi el mensaje hola desde cpu interrupt
+[INFO] 16:53:34:936 KERNEL/(3418:3418): Paso recibir string
+[TRACE] 16:53:34:936 KERNEL/(3418:3418): Inicio como cliente
+[TRACE] 16:53:34:936 KERNEL/(3418:3418): Lei la IP 127.0.0.1 , el Puerto Memoria 8002 
+[TRACE] 16:53:34:939 KERNEL/(3418:3418): Recibi el mensaje hola desde memoria
+[INFO] 16:53:34:939 KERNEL/(3418:3418): Se generaron correctamente las conexiones
+[INFO] 16:53:34:939 KERNEL/(3418:3418): INICIO SERVIDOR
+[INFO] 16:53:34:939 KERNEL/(3418:3418): Listo para recibir a EntradaSalida
+[INFO] 22:55:07:736 KERNEL/(5470:5470): INICIA EL MODULO DE KERNEL
+[INFO] 22:55:07:749 KERNEL/(5470:5470): levanto la configuracion del kernel
+[TRACE] 22:55:07:749 KERNEL/(5470:5470): Inicio como cliente
+[TRACE] 22:55:07:749 KERNEL/(5470:5470): Lei la IP 127.0.0.1 , el Puerto CPU 8006 
+[INFO] 22:55:07:749 KERNEL/(5470:5470): Paso el chequeo
+[INFO] 23:04:33:749 KERNEL/(7987:7987): INICIA EL MODULO DE KERNEL
+[INFO] 23:04:33:753 KERNEL/(7987:7987): levanto la configuracion del kernel
+[TRACE] 23:04:33:755 KERNEL/(7987:7987): Inicio como cliente
+[TRACE] 23:04:33:757 KERNEL/(7987:7987): Lei la IP 127.0.0.1 , el Puerto CPU 8006 
+[INFO] 23:04:33:759 KERNEL/(7987:7987): Paso el chequeo
+[INFO] 23:04:33:762 KERNEL/(7987:7987): Paso recibir operacion
+[TRACE] 23:04:33:763 KERNEL/(7987:7987): Recibi el mensaje hola desde cpu dispatch
+[INFO] 23:04:33:763 KERNEL/(7987:7987): Paso recibir string
+[TRACE] 23:04:33:763 KERNEL/(7987:7987): Inicio como cliente
+[TRACE] 23:04:33:763 KERNEL/(7987:7987): Lei la IP 127.0.0.1 , el Puerto CPU 8007 
+[INFO] 23:04:33:763 KERNEL/(7987:7987): Paso el chequeo
+[INFO] 23:04:33:765 KERNEL/(7987:7987): Paso recibir operacion
+[TRACE] 23:04:33:765 KERNEL/(7987:7987): Recibi el mensaje hola desde cpu interrupt
+[INFO] 23:04:33:765 KERNEL/(7987:7987): Paso recibir string
+[TRACE] 23:04:33:765 KERNEL/(7987:7987): Inicio como cliente
+[TRACE] 23:04:33:765 KERNEL/(7987:7987): Lei la IP 127.0.0.1 , el Puerto Memoria 8002 
+[TRACE] 23:04:33:771 KERNEL/(7987:7987): Recibi el mensaje hola desde memoria
+[INFO] 23:04:33:771 KERNEL/(7987:7987): Se generaron correctamente las conexiones
+[INFO] 23:04:33:771 KERNEL/(7987:7987): INICIO SERVIDOR
+[INFO] 23:04:33:771 KERNEL/(7987:7987): Listo para recibir a EntradaSalida
+[TRACE] 23:05:25:186 KERNEL/(7987:8120): envio pcb de pid: 1
+[TRACE] 23:05:25:187 KERNEL/(7987:8120): envio pcb de pc: 0
+[TRACE] 23:05:25:187 KERNEL/(7987:8120): envio pcb de qq: 2000
