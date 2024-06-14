@@ -6,7 +6,9 @@
 
 t_log* log_cpu;
 t_config* config_cpu;
-t_pcb *contexto;
+t_contexto *contexto;
+uint32_t pid_interrupt;
+int hay_interrupcion;
 
 char* ip_memoria;
 char* puerto_memoria; 
@@ -22,7 +24,7 @@ int socket_cliente_kernel_dispatch;
 int socket_cliente_kernel_interrupt;
 int conexion_memoria;
 int seguir_ejecutando;
-sem_t sem_fin_de_ciclo;
+
 
 void leer_config();
 
@@ -56,5 +58,6 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion);
 uint8_t obtener_valor_registro_XX(char* parametro);
 uint32_t obtener_valor_registro_XXX(char* parametro);
 t_instruccion* fetch(uint32_t pid, uint32_t pc);
-void devolver_contexto();
+void checkInturrupt(uint32_t pid);
+void esperar_devolucion_pcb();
 #endif

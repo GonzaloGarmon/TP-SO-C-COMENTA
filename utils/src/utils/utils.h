@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <commons/log.h> 
 #include <commons/config.h>
+#include <commons/config.h>
+#include <commons/temporal.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
@@ -38,11 +40,16 @@ typedef struct{
 //  EXIT,
 // }t_estado_proceso;
 typedef struct {
-    uint32_t pid;
-    uint32_t pc;
-    int qq;
-    t_registros_cpu* registros;
+	uint32_t pid;
+	uint32_t pc;
+	t_registros_cpu* registros;
 
+}t_contexto;
+
+typedef struct {
+	t_contexto* contexto;
+	int quantum_utilizado;
+	t_temporal* quantum;
 }t_pcb;
 
 typedef enum {
@@ -191,14 +198,14 @@ void agregar_entero_a_paquete(t_paquete *paquete, uint32_t numero);
 void agregar_entero_uint8_a_paquete(t_paquete *paquete, uint8_t numero);
 void agregar_entero_int_a_paquete(t_paquete *paquete, int numero);
 void agregar_string_a_paquete(t_paquete *paquete, char* palabra);
-void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb);
+void agregar_contexto_a_paquete(t_paquete *paquete, t_contexto * pcb);
 void agregar_registros_a_paquete(t_paquete * paquete, t_registros_cpu * registros);
 void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion * instruccion_nueva);
 void agregar_2_enteros_1_string_a_paquete(t_paquete *paquete, t_string_2enteros * enteros_string);
 void agregar_2_enteros_a_paquete(t_paquete *paquete, t_2_enteros * enteros);
 void enviar_entero (int conexion, uint32_t numero, int codop);
 void enviar_string (int conexion, char* palabra, int codop);
-void enviar_pcb (int conexion, t_pcb* pcb, int codop);
+void enviar_contexto (int conexion, t_contexto* pcb, int codop);
 void enviar_instruccion (int conexion, t_instruccion* nueva_instruccion, int codop);
 void enviar_2_enteros(int conexion, t_2_enteros* enteros, int codop);
 void enviar_2_enteros_1_string(int conexion, t_string_2enteros* enteros_string, int codop);
@@ -218,12 +225,14 @@ t_registros_cpu * leer_registros(char* buffer, int* desp);
 
 uint32_t recibir_entero_uint32(int socket, t_log* loggs);
 char* recibir_string(int socket, t_log* loggs);
-t_pcb* recibir_pcb(int socket);
+t_contexto* recibir_contexto(int socket);
 t_instruccion* recibir_instruccion(int socket);
 t_list* recibir_doble_entero(int socket);
-void recibir_string_mas_pcb(int conexion_kernel_cpu_dispatch,t_pcb** pcb_wait,char** recurso_wait);
+
+void recibir_string_mas_contexto(int conexion_kernel_cpu_dispatch,t_contexto** pcb_wait,char** recurso_wait);
 t_2_enteros * recibir_2_enteros(int socket);
 t_string_2enteros* recibir_string_2enteros(int socket);
 
 
 #endif
+

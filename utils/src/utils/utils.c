@@ -269,12 +269,14 @@ void enviar_string (int conexion, char* palabra, int codop){
     eliminar_paquete(paquete);
 }
 
-void enviar_pcb (int conexion, t_pcb* pcb, int codop){
-    t_paquete* paquete = crear_paquete_op(codop);
 
-    agregar_pcb_a_paquete(paquete,pcb);
-    enviar_paquete(paquete,conexion);
-    eliminar_paquete(paquete);
+void enviar_contexto (int conexion, t_contexto* pcb, int codop){
+	t_paquete* paquete = crear_paquete_op(codop);
+
+	agregar_contexto_a_paquete(paquete,pcb);
+	enviar_paquete(paquete,conexion);
+	eliminar_paquete(paquete);
+
 }
 
 void enviar_instruccion (int conexion, t_instruccion* nueva_instruccion, int codop){
@@ -359,11 +361,11 @@ void agregar_entero_int_a_paquete(t_paquete *paquete, int numero){
 
 
 
-void agregar_pcb_a_paquete(t_paquete *paquete, t_pcb * pcb){
-    agregar_entero_a_paquete(paquete, pcb->pc);
-    agregar_entero_a_paquete(paquete, pcb->pid);
-    agregar_registros_a_paquete(paquete, pcb->registros);
-    agregar_entero_int_a_paquete(paquete,pcb->qq); 
+
+void agregar_contexto_a_paquete(t_paquete *paquete, t_contexto * pcb){
+	agregar_entero_a_paquete(paquete, pcb->pid);
+	agregar_entero_a_paquete(paquete, pcb->pc);
+	agregar_registros_a_paquete(paquete, pcb->registros);
 }
 
 void agregar_2_enteros_a_paquete(t_paquete *paquete, t_2_enteros * enteros){
@@ -478,11 +480,12 @@ uint32_t recibir_entero_uint32(int socket, t_log* loggs){
     char* buffer;
     int desp = 0;
 
-    buffer = recibir_buffer(&size, socket);
-    u_int32_t entero_nuevo32 = leer_entero_uint32(buffer, &desp);
-    log_trace(loggs, "Me llego en numero %i", entero_nuevo32);
-    free(buffer);
-    return entero_nuevo32;
+
+	buffer = recibir_buffer(&size, socket);
+	u_int32_t entero_nuevo32 = leer_entero_uint32(buffer, &desp);
+	//log_trace(loggs, "Me llego en numero %i", entero_nuevo32);
+	free(buffer);
+	return entero_nuevo32;
 
 }
 
@@ -500,10 +503,77 @@ char* recibir_string(int socket,t_log* loggs){
     return nuevo_string;
 }
 
+
+
+t_contexto* recibir_contexto(int socket){
+
+	t_contexto* nuevo_contexto = malloc(sizeof(t_contexto));
+	t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
+	nuevo_contexto->registros = registros;
+	int size = 0;
+	char* buffer;
+	int desp = 0;
+		
+	buffer = recibir_buffer(&size, socket);
+
+	nuevo_contexto->pid = leer_entero_uint32(buffer,&desp);
+	nuevo_contexto->pc = leer_entero_uint32(buffer,&desp);
+	nuevo_contexto->registros->AX = leer_entero_uint8(buffer,&desp);
+	nuevo_contexto->registros->BX = leer_entero_uint8(buffer,&desp);
+	nuevo_contexto->registros->CX = leer_entero_uint8(buffer,&desp);
+	nuevo_contexto->registros->DX = leer_entero_uint8(buffer,&desp);
+	nuevo_contexto->registros->EAX = leer_entero_uint32(buffer,&desp);
+	nuevo_contexto->registros->EBX = leer_entero_uint32(buffer,&desp);
+	nuevo_contexto->registros->ECX = leer_entero_uint32(buffer,&desp);
+	nuevo_contexto->registros->EDX = leer_entero_uint32(buffer,&desp);
+
+	free(buffer);
+	return nuevo_contexto;
+}
+
+t_list* recibir_doble_entero(int socket){
+	int size = 0;
+	char* buffer;
+	int desp = 0;
+	t_list* devolver = list_create();
+	buffer = recibir_buffer(&size, socket);
+	u_int32_t entero_nuevo1 = leer_entero_uint32(buffer, &desp);
+	u_int32_t entero_nuevo2 = leer_entero_uint32(buffer, &desp);
+	list_add(devolver, entero_nuevo1);
+	list_add(devolver, entero_nuevo2);
+	free(buffer);
+
+	return devolver;
+}
+
+void recibir_string_mas_contexto(int conexion_kernel_cpu_dispatch,t_contexto** pcb_wait,char** recurso_wait){
+    *pcb_wait = malloc(sizeof(t_contexto));
+    t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
+    (*pcb_wait)->registros = registros;
+    int size = 0;
+	char* buffer;
+	int desp = 0;
+    	
+	buffer = recibir_buffer(&size,conexion_kernel_cpu_dispatch);
+	*recurso_wait = leer_string(buffer, &desp);
+
+	(*pcb_wait)->pid = leer_entero_uint32(buffer,&desp);
+	(*pcb_wait)->pc = leer_entero_uint32(buffer,&desp);
+	(*pcb_wait)->registros->AX = leer_entero_uint8(buffer,&desp);
+	(*pcb_wait)->registros->BX = leer_entero_uint8(buffer,&desp);
+	(*pcb_wait)->registros->CX = leer_entero_uint8(buffer,&desp);
+	(*pcb_wait)->registros->DX = leer_entero_uint8(buffer,&desp);
+	(*pcb_wait)->registros->EAX = leer_entero_uint32(buffer,&desp);
+	(*pcb_wait)->registros->EBX = leer_entero_uint32(buffer,&desp);
+	(*pcb_wait)->registros->ECX = leer_entero_uint32(buffer,&desp);
+	(*pcb_wait)->registros->EDX = leer_entero_uint32(buffer,&desp);
+
+	free(buffer);
+  }
+
 t_instruccion* recibir_instruccion(int socket){
     
     t_instruccion* nueva_instruccion = malloc(sizeof(t_instruccion));
-
     int size = 0;
     char* buffer;
     int desp = 0;
@@ -519,6 +589,7 @@ t_instruccion* recibir_instruccion(int socket){
     
     free(buffer);
     return nueva_instruccion;
+
 }
 
 t_pcb* recibir_pcb(int socket){
