@@ -66,11 +66,12 @@ void recibir_cpu1(int SOCKET_CLIENTE_CPU);
 void recibir_kernel1(int SOCKET_CLIENTE_KERNEL);
 void recibir_entradasalida1(int SOCKET_CLIENTE_ENTRADASALIDA);
 void finalizar_proceso(uint32_t proceso);
-void ajustar_tamanio_proceso(uint32_t pid_ajuste, uint32_t nuevo_tam);
+void ajustar_tamanio_proceso(uint32_t nuevo_tam);
 void crear_tabla_pagina(uint32_t pid_t, uint32_t cant_paginas);
 
 void escribir(uint32_t dir_fisca, void* data, uint32_t size);
 char* leer(uint32_t dir_fisca , uint32_t size);
+uint32_t obtener_marco_pagina(uint32_t pid, uint32_t num_pagina);
 
 
 
