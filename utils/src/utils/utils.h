@@ -115,7 +115,6 @@ typedef enum
     CREAR_PROCESO,
     ACCESO,
     FINALIZAR_PROCESO,
-    AJUSTAR_TAMANIO_PROCESO,
     ACCESO_TABLA_PAGINAS,
     ACCESO_ESPACIO_USUARIO,
     IO_FS_WRITE_OK,
@@ -190,6 +189,7 @@ void eliminar_paquete(t_paquete* paquete);
 void eliminar_codigo(t_paquete* codop);
 void liberar_conexion(int socket_cliente);
 t_config* iniciar_config(char *ruta);
+char* obtener_instruccion(uint32_t pid, uint32_t pc);
 
 
 

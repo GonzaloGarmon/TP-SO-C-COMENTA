@@ -16,13 +16,13 @@ typedef struct {
 
 typedef struct {
     uint32_t numero_pagina;
-    void *direccion_fisica;
+    uint32_t numero_marco;
 } entrada_tabla_pagina_t;
 
 typedef struct {
     uint32_t pid;
-    entrada_tabla_pagina_t *entraada;
-    uint32_t cantidad_entradas;
+    entrada_tabla_pagina_t *tabla_paginas;
+    uint32_t cantidad_paginas; 
 }tabla_pagina_t;
 
 
