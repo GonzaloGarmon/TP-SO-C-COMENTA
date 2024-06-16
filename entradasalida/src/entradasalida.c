@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
     log_info(log_entradasalida, "Finalizo conexion con servidores");
 
     // Liberar recursos utilizados por la interfaz y finalizar el programa
-    liberar_interfaz(interfaz, tipo_interfaz); //no va aca
+    liberar_interfaz(  , tipo_interfaz); //no va aca
     finalizar_programa();
 
     return 0;
