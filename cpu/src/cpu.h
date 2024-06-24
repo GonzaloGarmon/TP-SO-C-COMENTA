@@ -3,6 +3,20 @@
 
 #include <utils/utils.h>
 
+//estructura tlb
+typedef struct{
+    uint32_t pid;
+    uint32_t numero_de_pagina;
+    uint32_t marco;
+}tlb[cantidad_entradas_tlb]; //Consultar como hacer para q no tire error cantidad_entradas_tlb, puntero?
+
+//typedef struct{ // fila tlb = entrada tlb . 
+//    cantidad_entradas
+//    algoritmo (lru o fifo)
+//    entrada_tlb *entradas;
+//}
+
+
 
 t_log* log_cpu;
 t_config* config_cpu;

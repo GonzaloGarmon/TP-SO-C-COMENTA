@@ -595,14 +595,87 @@ void funcIoFsRead(t_instruccion* instruccion) {
     eliminar_paquete(paquete);
 }
 
-DireccionFisica traducirDireccion(DireccionLogica dirLogica, int tamano_pagina) { //Obtener direc fisica
-    DireccionFisica dirFisica;
+/*
+direccionFisica traducirDireccion(direccionLogica dirLogica, int tamano_pagina) { //Obtener direc fisica
+    direccionFisica dirFisica;
     dirFisica.marco = floor(dirLogica.numero_pagina / tamano_pagina);
     dirFisica.desplazamiento = dirLogica.numero_pagina - dirFisica.marco * tamano_pagina;
     return dirFisica;
 }
+*/
 
 //EntradaTLB* TLB = malloc(cantidad_entradas_tlb * sizeof(EntradaTLB));
 //free(TLB);
 
+uint32_t traducirDireccion(uint32_t pid, uint32_t dirLogica, uint32_t tamanio_pagina) {
 
+
+    uint32_t numero_pagina = floor(dirLogica / tamano_pagina);
+    uint32_t desplazamiento = dirLogica - numero_pagina * tamanio_pagina;
+    uint32_t dirFisica;
+    
+    //codigo para buscar en tlb
+     for(int i=0; i < cantidad_entradas_tlb; i++){
+        if(pid == tlb[i].pid && numero_pagina == tlb[i].nuemero_de_pagina){
+        //TLB hit
+        dirFisica = tlb[i].marco * tamanio_pagina + desplazamiento;
+        }
+    }
+
+    //codigo para buscar en tabla de paginas
+    
+    //consultar a memoria por la tabla de paginas!!!
+    
+    //uint32_t numero_marco = obtener_marco_pagina
+    
+    //Fallo de pagina (page fault)
+    if(numero_marco == -1) {
+        //buscar en disco, no se como
+        //manenjar ese page fault
+        //actualizar tlb, tabla de paginas, memoriaP
+    }else{
+        
+        //actulalizar TLB
+        dirFisica = numero_marco * tamanio_pagina + desplazamiento
+    }
+
+    return dirFisica;
+}
+
+void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina){
+
+    bool  espacio_libre = false; //flag
+    //chequo espacio vacio
+    for(int i=0 ;i < cantidad_entradas_tlb; i++){
+        if(tlb[i].pid == NULL){
+            tlb[i].pid = pid;
+            tlb[i].numero_de_pagina = pagina;
+            tlb[i].marco = marco;
+            espacio_libre = true;
+            break;
+        }
+    }
+    if(!espacio_libre){
+        switch (algoritmo_tlb){
+            
+            case FIFO:
+                reemplazarXFIFO(pid, marco, pagina);
+                break;
+
+            case LRU:
+                reemplazarXLRU(pid, marco, pagina);
+                break;
+            
+            default:
+                break;
+        }
+    }
+}
+
+void reemplazarXFIFO(uint32_t pid, uint32_t marco, uint32_t pagina){
+    
+}
+
+void reemplazarXLRU(uint32_t pid, uint32_t marco, uint32_t pagina){
+    
+}
