@@ -4,19 +4,22 @@
 #include <utils/utils.h>
 
 //estructura tlb
-typedef struct{
+typedef struct {
     uint32_t pid;
     uint32_t numero_de_pagina;
     uint32_t marco;
-}tlb[cantidad_entradas_tlb]; //Consultar como hacer para q no tire error cantidad_entradas_tlb, puntero?
+}tlb; //Consultar como hacer para q no tire error cantidad_entradas_tlb, puntero?
+
+typedef struct {
+    tlb entrada_tlb[cantidad_entradas_tlb];
+    nodo *siguiente;
+}nodo;
 
 //typedef struct{ // fila tlb = entrada tlb . 
 //    cantidad_entradas
 //    algoritmo (lru o fifo)
 //    entrada_tlb *entradas;
 //}
-
-
 
 t_log* log_cpu;
 t_config* config_cpu;
@@ -28,7 +31,7 @@ char* ip_memoria;
 char* puerto_memoria; 
 char* puerto_escucha_dispatch;
 char* puerto_escucha_interrupt;
-int cantidad_entradas_tlb;
+int* cantidad_entradas_tlb;
 char* algoritmo_tlb;
 
 
@@ -39,6 +42,9 @@ int socket_cliente_kernel_interrupt;
 int conexion_memoria;
 int seguir_ejecutando;
 
+tlb entrada_tlb[cantidad_entradas_tlb]; //SOLUCIONAR, no se como hacer q cantidad_entradas_tlb no tire error. puntero?
+nodo *frente = NULL;
+nodo *fin = NULL;
 
 void leer_config();
 

@@ -609,16 +609,14 @@ direccionFisica traducirDireccion(direccionLogica dirLogica, int tamano_pagina) 
 
 uint32_t traducirDireccion(uint32_t pid, uint32_t dirLogica, uint32_t tamanio_pagina) {
 
-
-    uint32_t numero_pagina = floor(dirLogica / tamano_pagina);
+    uint32_t numero_pagina = floor(dirLogica / tamanio_pagina);
     uint32_t desplazamiento = dirLogica - numero_pagina * tamanio_pagina;
     uint32_t dirFisica;
     
     //codigo para buscar en tlb
      for(int i=0; i < cantidad_entradas_tlb; i++){
-        if(pid == tlb[i].pid && numero_pagina == tlb[i].nuemero_de_pagina){
-        //TLB hit
-        dirFisica = tlb[i].marco * tamanio_pagina + desplazamiento;
+        if(pid == entrada_tlb[i].pid && numero_pagina == entrada_tlb[i].nuemero_de_pagina){ //TLB hit
+        dirFisica = entrada_tlb[i].marco * tamanio_pagina + desplazamiento;
         }
     }
 
@@ -628,29 +626,28 @@ uint32_t traducirDireccion(uint32_t pid, uint32_t dirLogica, uint32_t tamanio_pa
     
     //uint32_t numero_marco = obtener_marco_pagina
     
-    //Fallo de pagina (page fault)
-    if(numero_marco == -1) {
+    if(numero_marco == -1) {//Fallo de pagina (page fault)
         //buscar en disco, no se como
         //manenjar ese page fault
-        //actualizar tlb, tabla de paginas, memoriaP
-    }else{
-        
-        //actulalizar TLB
-        dirFisica = numero_marco * tamanio_pagina + desplazamiento
+        //actualizar: tabla de paginas y memoriaP (la tlb la actualizamos abajo)
     }
+    
+    //actulalizar TLB
+    //agregar_entrada_tlb(); ver parametros
+    
 
     return dirFisica;
 }
 
-void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina){
+void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina){ //actualizar tlb
 
     bool  espacio_libre = false; //flag
     //chequo espacio vacio
     for(int i=0 ;i < cantidad_entradas_tlb; i++){
-        if(tlb[i].pid == NULL){
-            tlb[i].pid = pid;
-            tlb[i].numero_de_pagina = pagina;
-            tlb[i].marco = marco;
+        if(entrada_tlb[i].pid == NULL){
+            entrada_tlb[i].pid = pid;
+            entrada_tlb[i].numero_de_pagina = pagina;
+            entrada_tlb[i].marco = marco;
             espacio_libre = true;
             break;
         }
@@ -673,7 +670,18 @@ void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina){
 }
 
 void reemplazarXFIFO(uint32_t pid, uint32_t marco, uint32_t pagina){
-    
+    //encolar y desencolar
+    //sobreescribir la entrada de la tlb q este primera en la cola
+    //desencolar la entrada q sacamos
+    //encolar la nueva entrada
+    /*
+    paginas todas cargadas
+    cola[paginas_cargadas]
+    desencolar(cola[0]);
+    encolar(cola[])
+    */
+//    desencolar(struct);
+//    encolar(struct, valor);
 }
 
 void reemplazarXLRU(uint32_t pid, uint32_t marco, uint32_t pagina){
