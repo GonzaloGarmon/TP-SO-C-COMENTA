@@ -213,6 +213,31 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 sem_post(&sem_listos_para_exec);
             }
             break;
+        case EJECUTAR_IO_GEN_SLEEP:
+            char* interfaz_gen_sleep;
+            uint32_t tiempo_trabajo;
+            recibir_string_mas_u32(conexion_kernel_cpu_dispatch,&interfaz_gen_sleep, &tiempo_trabajo);
+
+            break;
+        case EJECUTAR_IO_STDIN_READ:
+            char* interfaz_stdin_read;
+            char* registro1_stdin_read;
+            char* registro2_stdin_read;
+            recibir_3_string(conexion_kernel_cpu_dispatch, &interfaz_stdin_read, &registro1_stdin_read, &registro2_stdin_read);
+            
+            break;
+        case EJECUTAR_IO_STDOUT_WRITE:
+            break;
+        case EJECUTAR_IO_FS_CREATE:
+            break;
+        case EJECUTAR_IO_FS_DELETE:
+            break;
+        case EJECUTAR_IO_FS_TRUNCATE:
+            break;
+        case EJECUTAR_IO_FS_WRITE:
+            break;
+        case EJECUTAR_IO_FS_READ:
+            break;
         default:
             break;
         }

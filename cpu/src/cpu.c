@@ -495,7 +495,7 @@ void funcJnz(t_instruccion *instruccion) {
 void funcIoGenSleep(t_instruccion *instruccion) {
     
     t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_GEN_SLEEP);
-    agregar_string_a_paquete(paquete, instruccion->parametros2);
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3));
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
 
@@ -530,7 +530,7 @@ void funcExit(t_instruccion *instruccion) {
 
 void funcIoStdinRead(t_instruccion *instruccion) {
 
-    t_paquete *paquete = crear_paquete_op(IO_STDIN_READ);
+    t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_STDIN_READ);
     agregar_string_a_paquete(paquete, instruccion->parametros2); //interfaz
     agregar_entero_a_paquete(paquete, instruccion->parametros3); //regDir
     agregar_entero_a_paquete(paquete, instruccion->parametros4); //regtam
@@ -540,7 +540,7 @@ void funcIoStdinRead(t_instruccion *instruccion) {
 
 void funcIoStdOutWrite(t_instruccion *instruccion) {
 
-    t_paquete *paquete = crear_paquete_op(IO_STDOUT_WRITE);
+    t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_STDOUT_WRITE);
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros2)); // Interfaz
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3)); // regDir
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros4)); // regTam
@@ -549,7 +549,7 @@ void funcIoStdOutWrite(t_instruccion *instruccion) {
 
 void funcIoFsCreate(t_instruccion *instruccion) {
 
-    t_paquete *paquete = crear_paquete_op(IO_FS_CREATE);  
+    t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_FS_CREATE);  
     agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
     agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
@@ -558,7 +558,7 @@ void funcIoFsCreate(t_instruccion *instruccion) {
 
 void funcIoFsDelete(t_instruccion *instruccion) {
 
-    t_paquete *paquete = crear_paquete_op(IO_FS_DELETE);
+    t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_FS_DELETE);
     agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
     agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
@@ -567,7 +567,7 @@ void funcIoFsDelete(t_instruccion *instruccion) {
 
 void funcIoFsTruncate(t_instruccion *instruccion) {
     
-    t_paquete* paquete = crear_paquete_op(IO_FS_TRUNCATE);
+    t_paquete* paquete = crear_paquete_op(EJECUTAR_IO_FS_TRUNCATE);
     agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
     agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
     agregar_entero_int_a_paquete(paquete, atoi(instruccion->parametros4)); // tam
@@ -576,7 +576,7 @@ void funcIoFsTruncate(t_instruccion *instruccion) {
 }
 
 void funcIoFsWrite(t_instruccion* instruccion) {
-    t_paquete* paquete = crear_paquete_op(IO_FS_WRITE);
+    t_paquete* paquete = crear_paquete_op(EJECUTAR_IO_FS_WRITE);
     agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
     agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros4)); // tam
@@ -586,7 +586,7 @@ void funcIoFsWrite(t_instruccion* instruccion) {
 }
 
 void funcIoFsRead(t_instruccion* instruccion) {
-    t_paquete* paquete = crear_paquete_op(IO_FS_READ);
+    t_paquete* paquete = crear_paquete_op(EJECUTAR_IO_FS_READ);
     agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
     agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros4)); // tam
@@ -594,14 +594,14 @@ void funcIoFsRead(t_instruccion* instruccion) {
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
-
+/*
 DireccionFisica traducirDireccion(DireccionLogica dirLogica, int tamano_pagina) { //Obtener direc fisica
     DireccionFisica dirFisica;
     dirFisica.marco = floor(dirLogica.numero_pagina / tamano_pagina);
     dirFisica.desplazamiento = dirLogica.numero_pagina - dirFisica.marco * tamano_pagina;
     return dirFisica;
 }
-
+*/
 //EntradaTLB* TLB = malloc(cantidad_entradas_tlb * sizeof(EntradaTLB));
 //free(TLB);
 

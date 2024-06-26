@@ -163,7 +163,7 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
 
 void recibir_cpu(int SOCKET_CLIENTE_CPU){
 
-    enviar_mensaje("Recibido CPU", SOCKET_CLIENTE_CPU);
+    enviar_string(SOCKET_CLIENTE_CPU,"hola desde memoria", MENSAJE);
     int codigoOp = 0;
     while(codigoOp != -1){
         int codigoOperacion = recibir_operacion(SOCKET_CLIENTE_CPU);
@@ -249,7 +249,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
-    enviar_mensaje("Recibido ENTRADASALIDA", SOCKET_CLIENTE_ENTRADASALIDA);
+    enviar_string(SOCKET_CLIENTE_ENTRADASALIDA,"hola desde memoria", MENSAJE);
 
     int codigoOP = 0;
     while (codigoOP != -1) {

@@ -425,18 +425,10 @@ uint8_t leer_entero_uint8(char *buffer, int * desplazamiento)
 
 char* leer_string(char* buffer, int* desplazamiento) {
     int tamanio = leer_entero(buffer, desplazamiento);
-
-    if (*desplazamiento + tamanio > strlen(buffer)) {
-        return NULL;
-    }
-
-    char* palabra = malloc(tamanio + 1);
-    if (palabra == NULL) {
-        return NULL;
-    }
+    char* palabra = malloc(tamanio);
 
     memcpy(palabra, buffer + *desplazamiento, tamanio);
-    palabra[tamanio] = '\0';
+    
     *desplazamiento += tamanio;
 
     return palabra;
@@ -571,6 +563,29 @@ void recibir_string_mas_contexto(int conexion_kernel_cpu_dispatch,t_contexto** p
 	free(buffer);
   }
 
+  void recibir_string_mas_u32(int conexion_kernel_cpu_dispatch,char** palabra,uint32_t* numero){
+    int size = 0;
+	char* buffer;
+	int desp = 0;
+    *numero = malloc(sizeof(uint32_t));	
+	buffer = recibir_buffer(&size,conexion_kernel_cpu_dispatch);
+	*palabra = leer_string(buffer, &desp);
+    *numero = leer_entero_uint32(buffer,&desp);
+
+    free(buffer);
+  }
+
+  void recibir_3_string(int conexion_kernel_cpu_dispatch, char** palabra1,char** palabra2, char** palabra3){
+    int size = 0;
+	char* buffer;
+	int desp = 0;
+    buffer = recibir_buffer(&size,conexion_kernel_cpu_dispatch);
+    *palabra1 = leer_string(buffer, &desp);
+    *palabra2 = leer_string(buffer, &desp);
+    *palabra3 = leer_string(buffer, &desp);
+
+  }
+
 t_instruccion* recibir_instruccion(int socket){
     
     t_instruccion* nueva_instruccion = malloc(sizeof(t_instruccion));
@@ -591,7 +606,7 @@ t_instruccion* recibir_instruccion(int socket){
     return nueva_instruccion;
 
 }
-
+/*
 t_pcb* recibir_pcb(int socket){
 
     t_pcb* nuevo_pcb = malloc(sizeof(t_pcb));
@@ -617,7 +632,7 @@ t_pcb* recibir_pcb(int socket){
     free(buffer);
     return nuevo_pcb;
 }
-
+*/
 t_2_enteros* recibir_2_enteros(int socket){
     
     t_2_enteros* nuevos_enteros = malloc(sizeof(t_2_enteros));
