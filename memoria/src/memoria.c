@@ -117,7 +117,7 @@ void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* in
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
 
-    enviar_mensaje("Recibido KERNEL", SOCKET_CLIENTE_KERNEL);
+    enviar_string(socket_cliente_kernel,"hola desde memoria", MENSAJE);
     int codigoOp = 0;
     while(codigoOp != -1){
         int codigoOperacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
@@ -154,7 +154,7 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             codigoOp = codigoOperacion;
             break;
         default:
-            log_trace(log_memoria, "Recibi el codigo de opreacion %d y entre en DEFAULT", codigoOperacion);
+            log_trace(log_memoria, "2 Recibi el codigo de opreacion %d y entre en DEFAULT", codigoOperacion);
             break;
         }
     }
@@ -170,12 +170,12 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
         switch (codigoOperacion)
         {
         case PEDIR_INSTRUCCION_MEMORIA:
-        //t_list* enteros = recibir_doble_entero(SOCKET_CLIENTE_CPU);
+        t_list* enteros = recibir_doble_entero(SOCKET_CLIENTE_CPU);
         //RECIBO PID Y PC PRIMERO HAY QUE IDENTIFICAR QUE INSTRUCCIONES CORRESPONDE A PID
         //LUEGO HACER INSTRUCCIONES[PC], DEJO ESTO PARA PODER CONTINUAR CON LA EJECUCION
         //PERO TODAVIA FALTA VER COMO HACER LO DE IDENTIFICAR
-        //uint32_t ins = list_get(enteros,1);
-        //enviar_instruccion(SOCKET_CLIENTE_CPU, instrucciones[ins],READY);
+        uint32_t ins = list_get(enteros,1);
+        enviar_instruccion(SOCKET_CLIENTE_CPU, instrucciones[ins],READY);
             // uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
             // uint32_t pc = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
 
@@ -239,7 +239,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
             break;
         default:
-            log_trace(log_memoria, "Recibí el código de operación %d y entré en DEFAULT", codigoOperacion);
+            log_trace(log_memoria, "1 Recibí el código de operación %d y entré en DEFAULT", codigoOperacion);
             break;
         }
     }

@@ -418,8 +418,8 @@ uint32_t leer_entero_uint32(char *buffer, int * desplazamiento)
 uint8_t leer_entero_uint8(char *buffer, int * desplazamiento)
 {
     uint8_t entero;
-    memcpy(&entero, buffer + (*desplazamiento), sizeof(uint32_t));
-    (*desplazamiento) += sizeof(uint32_t);
+    memcpy(&entero, buffer + (*desplazamiento), sizeof(uint8_t));
+    (*desplazamiento) += sizeof(uint8_t);
     return entero;
 }
 
@@ -586,6 +586,16 @@ void recibir_string_mas_contexto(int conexion_kernel_cpu_dispatch,t_contexto** p
 
   }
 
+void recibir_2_string(int conexion_kernel_cpu_dispatch, char** palabra1,char** palabra2){
+    int size = 0;
+	char* buffer;
+	int desp = 0;
+    buffer = recibir_buffer(&size,conexion_kernel_cpu_dispatch);
+    *palabra1 = leer_string(buffer, &desp);
+    *palabra2 = leer_string(buffer, &desp);
+
+  }
+
 t_instruccion* recibir_instruccion(int socket){
     
     t_instruccion* nueva_instruccion = malloc(sizeof(t_instruccion));
@@ -666,4 +676,26 @@ t_string_2enteros* recibir_string_2enteros(int socket){
     
     free(buffer);
     return nuevos_enteros_string;
+}
+
+void recibir_2_string_mas_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1){
+    int size = 0;
+	char* buffer;
+	int desp = 0;
+    buffer = recibir_buffer(&size,socket);
+    *palabra1 = leer_string(buffer, &desp);
+    *palabra2 = leer_string(buffer, &desp);
+    *valor1 = leer_entero_uint32(buffer,&desp);
+}
+
+void recibir_2_string_mas_3_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1, uint32_t* valor2, uint32_t* valor3){
+    int size = 0;
+	char* buffer;
+	int desp = 0;
+    buffer = recibir_buffer(&size,socket);
+    *palabra1 = leer_string(buffer, &desp);
+    *palabra2 = leer_string(buffer, &desp);
+    *valor1 = leer_entero_uint32(buffer,&desp);
+    *valor2 = leer_entero_uint32(buffer,&desp);
+    *valor3 = leer_entero_uint32(buffer,&desp);  
 }
