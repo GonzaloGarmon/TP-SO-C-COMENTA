@@ -213,6 +213,53 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 sem_post(&sem_listos_para_exec);
             }
             break;
+        case EJECUTAR_IO_GEN_SLEEP:
+            char* interfaz_gen_sleep;
+            uint32_t tiempo_trabajo;
+            recibir_string_mas_u32(conexion_kernel_cpu_dispatch,&interfaz_gen_sleep, &tiempo_trabajo);
+
+            break;
+        case EJECUTAR_IO_STDIN_READ:
+            t_string_2enteros* parametros_stdin_read;
+            parametros_stdin_read = recibir_string_2enteros(conexion_kernel_cpu_dispatch);
+            break;
+        case EJECUTAR_IO_STDOUT_WRITE:
+            t_string_2enteros* parametros_stdin_write;
+            parametros_stdin_write = recibir_string_2enteros(conexion_kernel_cpu_dispatch);
+            break;
+        case EJECUTAR_IO_FS_CREATE:
+            char* interfaz_fs_create;
+            char* nombre_archivo_create;
+            recibir_2_string(conexion_kernel_cpu_dispatch, &interfaz_fs_create, &nombre_archivo_create);
+            break;
+        case EJECUTAR_IO_FS_DELETE:
+            char* interfaz_fs_delete;
+            char* nombre_archivo_delete;
+            recibir_2_string(conexion_kernel_cpu_dispatch, &interfaz_fs_delete, &nombre_archivo_delete);
+            break;
+        case EJECUTAR_IO_FS_TRUNCATE:
+            char* interfaz_fs_truncate;
+            char* nombre_archivo_truncate;
+            uint32_t registro1_truncate;
+            recibir_2_string_mas_u32(conexion_kernel_cpu_dispatch, &interfaz_fs_truncate, &nombre_archivo_truncate, &registro1_truncate);
+
+            break;
+        case EJECUTAR_IO_FS_WRITE:
+            char* interfaz_fs_write;
+            char* nombre_archivo_write;
+            uint32_t registro1_write;
+            uint32_t registro2_write; 
+            uint32_t registro3_write;
+            recibir_2_string_mas_3_u32(conexion_kernel_cpu_dispatch, &interfaz_fs_write, &nombre_archivo_write, &registro1_write, &registro2_write, &registro3_write);             
+            break;
+        case EJECUTAR_IO_FS_READ:
+            char* interfaz_fs_read;
+            char* nombre_archivo_read;
+            uint32_t registro1_read;
+            uint32_t registro2_read; 
+            uint32_t registro3_read;
+            recibir_2_string_mas_3_u32(conexion_kernel_cpu_dispatch, &interfaz_fs_read, &nombre_archivo_read, &registro1_read, &registro2_read, &registro3_read);          
+            break;
         default:
             break;
         }
@@ -366,7 +413,7 @@ void iniciar_proceso(){
     scanf("%s", path);
 
     
-    enviar_string(conexion_kernel_memoria,path,INICIO_NUEVO_PROCESO);
+    enviar_string(conexion_kernel_memoria,path,CREAR_PROCESO);
     
     generador_pid++;
     
