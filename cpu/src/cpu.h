@@ -1,6 +1,5 @@
 #ifndef CPU_H_
 #define CPU_H_
-
 #include <utils/utils.h>
 
 //estructura tlb
@@ -8,19 +7,11 @@ typedef struct {
     uint32_t pid;
     uint32_t numero_de_pagina;
     uint32_t marco;
-}tlb; //Consultar como hacer para q no tire error cantidad_entradas_tlb, puntero?
+    uint32_t contador_reciente; // LRU
+}tlb;
 
-typedef struct {
-    tlb entrada_tlb[cantidad_entradas_tlb];
-    nodo *siguiente;
-}nodo;
-
-//typedef struct{ // fila tlb = entrada tlb . 
-//    cantidad_entradas
-//    algoritmo (lru o fifo)
-//    entrada_tlb *entradas;
-//}
-
+tlb entrada_tlb[cantidad_entradas_tlb];
+int cantidad_entradas_tlb = 0;
 t_log* log_cpu;
 t_config* config_cpu;
 t_contexto *contexto;
@@ -41,10 +32,7 @@ int socket_cliente_kernel_dispatch;
 int socket_cliente_kernel_interrupt;
 int conexion_memoria;
 int seguir_ejecutando;
-
-tlb entrada_tlb[cantidad_entradas_tlb]; //SOLUCIONAR, no se como hacer q cantidad_entradas_tlb no tire error. puntero?
-nodo *frente = NULL;
-nodo *fin = NULL;
+int indice_frente;
 
 void leer_config();
 
