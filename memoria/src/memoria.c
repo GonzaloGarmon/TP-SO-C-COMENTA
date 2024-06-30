@@ -45,6 +45,7 @@ void leer_config(){
     tam_pagina = config_get_int_value(config_memoria, "TAM_PAGINA");
     path_instrucciones = config_get_string_value(config_memoria, "PATH_INSTRUCCIONES");
     retardo_respuesta = config_get_int_value(config_memoria, "RETARDO_RESPUESTA");
+    sem_init(&sem, 0, 0);
 }
 
 void finalizar_programa(){
@@ -63,7 +64,8 @@ void finalizar_programa(){
 // t_instruccion ins a enviar = instrucciones[pid];
 
 void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* instrucciones[instrucciones_maximas]) {
-    FILE* archivo = fopen(nombre_archivo, "r");
+    strcat(path_instrucciones,nombre_archivo);
+    FILE* archivo = fopen(path_instrucciones, "r");
     if (archivo == NULL) {
         perror("Error al abrir el archivo");
         exit(EXIT_FAILURE);
@@ -118,19 +120,24 @@ void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* in
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
 
     enviar_string(socket_cliente_kernel,"hola desde memoria", MENSAJE);
-    int codigoOp = 0;
-    while(codigoOp != -1){
-        int codigoOperacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+    int codigoOperacion = 0;
+    while(codigoOperacion != -1){
+        codigoOperacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
         switch (codigoOperacion)
         {
         case CREAR_PROCESO:
-         usleep(retardo_respuesta * 1000); // aca dice memoria_config.retardo rari
-            uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
-            uint32_t cant_paginas = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
+            levantar_estructuras_administrativas();
+            usleep(retardo_respuesta * 1000); // aca dice memoria_config.retardo rari
+            uint32_t pid;
+            char* path;
+            recibir_string_mas_u32(SOCKET_CLIENTE_KERNEL,&path,&pid);
+            uint32_t cant_paginas = 5; //recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
             //devolver tabla inicial de alguna manera
-            crear_tabla_pagina(pid, cant_paginas);
             log_info(log_memoria, "Creacion del proceso PID %d", pid);
-            enviar_mensaje("Proceso creado", SOCKET_CLIENTE_KERNEL);
+            crear_tabla_pagina(pid, cant_paginas);
+            cargar_instrucciones_desde_archivo(path, &instrucciones);
+            sem_post(&sem);
+            //enviar_mensaje("Proceso creado", SOCKET_CLIENTE_KERNEL);
             break;
         case FINALIZAR_PROCESO:
             usleep(retardo_respuesta * 1000);
@@ -150,9 +157,6 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             // enviar_entero(SOCKET_CLIENTE_KERNEL, marco_correspondiente, /*ACA FALTA ALGO*/); //ver en kernel
             log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
             break;
-        case -1:
-            codigoOp = codigoOperacion;
-            break;
         default:
             log_trace(log_memoria, "2 Recibi el codigo de opreacion %d y entre en DEFAULT", codigoOperacion);
             break;
@@ -164,12 +168,14 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
 void recibir_cpu(int SOCKET_CLIENTE_CPU){
 
     enviar_string(SOCKET_CLIENTE_CPU,"hola desde memoria", MENSAJE);
-    int codigoOp = 0;
-    while(codigoOp != -1){
-        int codigoOperacion = recibir_operacion(SOCKET_CLIENTE_CPU);
+    int codigoOperacion = 0;
+    while(codigoOperacion != -1){
+        codigoOperacion = recibir_operacion(SOCKET_CLIENTE_CPU);
         switch (codigoOperacion)
         {
         case PEDIR_INSTRUCCION_MEMORIA:
+        sem_wait(&sem);
+        sleep(retardo_respuesta/1000);
         t_list* enteros = recibir_doble_entero(SOCKET_CLIENTE_CPU);
         //RECIBO PID Y PC PRIMERO HAY QUE IDENTIFICAR QUE INSTRUCCIONES CORRESPONDE A PID
         //LUEGO HACER INSTRUCCIONES[PC], DEJO ESTO PARA PODER CONTINUAR CON LA EJECUCION
@@ -186,6 +192,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             //     log_info(log_memoria, "No se encontro la instruccion para el PID: %d y PC %d", pid, pc);
             //     enviar_mensaje("ERROR", SOCKET_CLIENTE_CPU);
             // }
+            sem_post(&sem);
         break;
         case RESIZE: // preguntar de donde viene
             usleep(retardo_respuesta * 1000);
@@ -239,6 +246,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
             break;
         default:
+            
             log_trace(log_memoria, "1 Recibí el código de operación %d y entré en DEFAULT", codigoOperacion);
             break;
         }
@@ -251,9 +259,9 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
     enviar_string(SOCKET_CLIENTE_ENTRADASALIDA,"hola desde memoria", MENSAJE);
 
-    int codigoOP = 0;
-    while (codigoOP != -1) {
-        int codigoOperacion = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
+    int codigoOperacion = 0;
+    while (codigoOperacion != -1) {
+         codigoOperacion = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
         switch (codigoOperacion) {
             case IO_FS_READ:
                 usleep(retardo_respuesta * 1000);

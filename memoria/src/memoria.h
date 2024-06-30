@@ -36,6 +36,7 @@ int tam_pagina;
 char* path_instrucciones;
 int retardo_respuesta;
 pthread_mutex_t mutex_memoria;
+sem_t sem;
 
 //Chequear los tamanios maximos de todo.
 int longitud_maxima = 100;

@@ -6,6 +6,13 @@ int main(int argc, char* argv[]) {
     inicializar_registro();
     leer_config();
     generar_conexiones();
+
+    //ESTO ESTA PUESTO PARA QUE EL MODULO NO FINALICE Y PUEDA SEGUIR CONECTADO A LOS OTROS UNA VES LEVANTADO
+    //CUANDO SE ARREGLE SE PUEDE SACAR
+    while(1){
+
+    }
+
     log_info(log_entradasalida, "Finalizo conexion con servidores");
     finalizar_programa();
     return 0;
@@ -120,6 +127,7 @@ void establecer_conexion_kernel(char* ip_kernel, char* puerto_kernel, t_config* 
         log_trace(loggs, "Error al recibir operación");
         exit(EXIT_FAILURE);
     }
+    recibir_string(conexion_entradasalida_kernel, log_entradasalida);
 }
 
 void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria, t_config* config, t_log* loggs) {
@@ -136,6 +144,8 @@ void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria, t_confi
         log_trace(loggs, "Error al recibir operación");
         exit(EXIT_FAILURE);
     }
+
+    recibir_string(conexion_entradasalida_memoria, log_entradasalida);
 }
 
 void inicializar_interfaz_generica(t_config *config, InterfazGenerica *interfazGen, const char *nombre) {

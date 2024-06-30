@@ -10,8 +10,7 @@ typedef struct {
     uint32_t contador_reciente; // LRU
 }tlb;
 
-tlb entrada_tlb[cantidad_entradas_tlb];
-int cantidad_entradas_tlb = 0;
+tlb entrada_tlb[]; //verificar que funcione
 t_log* log_cpu;
 t_config* config_cpu;
 t_contexto *contexto;
@@ -22,7 +21,7 @@ char* ip_memoria;
 char* puerto_memoria; 
 char* puerto_escucha_dispatch;
 char* puerto_escucha_interrupt;
-int* cantidad_entradas_tlb;
+int cantidad_entradas_tlb;
 char* algoritmo_tlb;
 
 

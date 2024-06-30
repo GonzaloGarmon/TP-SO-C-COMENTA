@@ -7,7 +7,7 @@ int main(int argc, char* argv[]) {
     log_info(log_cpu, "INICIA EL MODULO DE CPU");
 
     leer_config();
-
+    
     generar_conexiones();
 
     socket_servidor_cpu_dispatch = iniciar_servidor(puerto_escucha_dispatch, log_cpu);
@@ -47,7 +47,7 @@ void leer_config(){
     puerto_escucha_interrupt = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_INTERRUPT");
     cantidad_entradas_tlb = config_get_int_value(config_cpu, "CANTIDAD_ENTRADAS_TLB");
     algoritmo_tlb = config_get_string_value(config_cpu, "ALGORITMO_TLB");
-
+    tlb entrada_tlb[cantidad_entradas_tlb]; //verificar que funcione asi
     log_info(log_cpu, "levanto la configuracion del cpu");
 }
 
@@ -711,8 +711,8 @@ void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina){ //actua
 }
 
 void reemplazarXFIFO(uint32_t pid, uint32_t marco, uint32_t pagina){
-    int cantidad_entradas_tlb_valor = *cantidad_entradas_tlb;  // Obtener el valor entero desde el puntero
-
+    int cantidad_entradas_tlb_valor = cantidad_entradas_tlb;  // Obtener el valor entero desde el puntero
+    
     indice_frente = 0; // Obtener índice a reemplazar
 
     entrada_tlb[indice_frente].pid = pid;

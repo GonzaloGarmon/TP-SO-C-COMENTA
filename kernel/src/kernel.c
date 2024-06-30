@@ -412,8 +412,8 @@ void iniciar_proceso(){
     printf("Por favor ingrese el path: ");
     scanf("%s", path);
 
-    
-    enviar_string(conexion_kernel_memoria,path,CREAR_PROCESO);
+
+    //enviar_string(conexion_kernel_memoria,path,CREAR_PROCESO);
     
     generador_pid++;
     
@@ -426,6 +426,12 @@ void iniciar_proceso(){
     pcb_nuevo->contexto->pc = 0;
     pcb_nuevo ->contexto->registros = registros;
     
+    t_paquete* paquete = crear_paquete_op(CREAR_PROCESO);
+    agregar_a_paquete(paquete,path, strlen(path)+1);
+    agregar_entero_a_paquete(paquete,pcb_nuevo->contexto->pid);
+    enviar_paquete(paquete,conexion_kernel_memoria);
+    eliminar_paquete(paquete);
+
     pthread_mutex_lock(&mutex_cola_new);
     list_add(cola_new, pcb_nuevo);
     pthread_mutex_unlock(&mutex_cola_new);
@@ -580,7 +586,7 @@ void pcb_exit(){
     pthread_mutex_lock(&mutex_cola_exit);
     t_pcb_exit* pcb_finaliza = list_remove(cola_exit,0);
     pthread_mutex_unlock(&mutex_cola_exit);
-    t_paquete* paquete = crear_paquete_op(FINALIZO_PROCESO);
+    t_paquete* paquete = crear_paquete_op(FINALIZAR_PROCESO);
     agregar_entero_a_paquete(paquete,pcb_finaliza->pcb->contexto->pid);
     enviar_paquete(paquete,conexion_kernel_memoria);
     eliminar_paquete(paquete);
