@@ -650,7 +650,103 @@ DireccionFisica traducirDireccion(DireccionLogica dirLogica, int tamano_pagina) 
     return dirFisica;
 }
 */
+
 //EntradaTLB* TLB = malloc(cantidad_entradas_tlb * sizeof(EntradaTLB));
 //free(TLB);
 
+uint32_t traducirDireccion(uint32_t pid, uint32_t dirLogica, uint32_t tamanio_pagina) {
 
+    uint32_t numero_pagina = floor(dirLogica / tamanio_pagina);
+    uint32_t desplazamiento = dirLogica - numero_pagina * tamanio_pagina;
+    uint32_t dirFisica;
+    
+    //codigo para buscar en tlb
+     for(int i=0; i < cantidad_entradas_tlb; i++){
+        if(pid == entrada_tlb[i].pid && numero_pagina == entrada_tlb[i].numero_de_pagina){ //TLB hit
+        dirFisica = entrada_tlb[i].marco * tamanio_pagina + desplazamiento;
+
+        return dirFisica;
+        }
+    }
+
+    //codigo para buscar en tabla de paginas
+    
+    //consultar a memoria por la tabla de paginas!!!
+    
+    //uint32_t numero_marco = obtener_marco_pagina
+    
+    //if(numero_marco == -1) {//Fallo de pagina (page fault)
+        //buscar en disco, no se como
+        //manenjar ese page fault
+        //actualizar: tabla de paginas y memoriaP (la tlb la actualizamos abajo)
+    //}
+    
+    //actulalizar TLB
+    //agregar_entrada_tlb(); ver parametros
+    
+
+    return dirFisica;
+}
+
+void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina){ //actualizar tlb
+
+    bool  espacio_libre = false; //flag
+    //chequo espacio vacio
+    for(int i=pid ;i < cantidad_entradas_tlb; i++){
+        if(entrada_tlb[i].pid == NULL){
+            entrada_tlb[i].pid = pid;
+            entrada_tlb[i].numero_de_pagina = pagina;
+            entrada_tlb[i].marco = marco;
+            espacio_libre = true;
+            break;
+        }
+    }
+    if(!espacio_libre){
+        if(algoritmo_tlb == "FIFO"){
+            reemplazarXFIFO(pid, marco, pagina);
+         }else if (algoritmo_tlb == "LRU"){
+            reemplazarXLRU(pid, marco, pagina);
+        }
+    }
+}
+
+void reemplazarXFIFO(uint32_t pid, uint32_t marco, uint32_t pagina){
+    int cantidad_entradas_tlb_valor = *cantidad_entradas_tlb;  // Obtener el valor entero desde el puntero
+
+    indice_frente = 0; // Obtener índice a reemplazar
+
+    entrada_tlb[indice_frente].pid = pid;
+    entrada_tlb[indice_frente].numero_de_pagina = pagina;
+    entrada_tlb[indice_frente].marco = marco;
+
+    indice_frente = (indice_frente + 1) % cantidad_entradas_tlb_valor;
+}
+
+
+void reemplazarXLRU(uint32_t pid, uint32_t marco, uint32_t pagina){
+    
+    int indice_menos_reciente = 0;
+    uint32_t menos_reciente = entrada_tlb[0].contador_reciente;
+
+    for(int i = 1; i < cantidad_entradas_tlb; i++){
+        if (entrada_tlb[i].contador_reciente < menos_reciente){
+            menos_reciente = entrada_tlb[i].contador_reciente;
+            indice_menos_reciente = i;
+        }
+    }
+
+    //reemplazar la entrada menos reciente usada con la nueva entrada de la tlb
+    entrada_tlb[indice_menos_reciente].pid = pid;
+    entrada_tlb[indice_menos_reciente].numero_de_pagina = pagina;
+    entrada_tlb[indice_menos_reciente].marco = marco;
+
+    //reiniciar el cont reciente de la entrada reemplazada, porque se acabo de usar
+    entrada_tlb[indice_menos_reciente].contador_reciente = 0;
+
+    for(int i = 0; i < cantidad_entradas_tlb ; i++){
+        if(i != indice_menos_reciente){
+            entrada_tlb[i].contador_reciente++;
+        }
+    }
+
+}

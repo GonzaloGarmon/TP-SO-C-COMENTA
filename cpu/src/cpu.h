@@ -1,9 +1,17 @@
 #ifndef CPU_H_
 #define CPU_H_
-
 #include <utils/utils.h>
 
+//estructura tlb
+typedef struct {
+    uint32_t pid;
+    uint32_t numero_de_pagina;
+    uint32_t marco;
+    uint32_t contador_reciente; // LRU
+}tlb;
 
+tlb entrada_tlb[cantidad_entradas_tlb];
+int cantidad_entradas_tlb = 0;
 t_log* log_cpu;
 t_config* config_cpu;
 t_contexto *contexto;
@@ -14,7 +22,7 @@ char* ip_memoria;
 char* puerto_memoria; 
 char* puerto_escucha_dispatch;
 char* puerto_escucha_interrupt;
-int cantidad_entradas_tlb;
+int* cantidad_entradas_tlb;
 char* algoritmo_tlb;
 
 
@@ -24,7 +32,7 @@ int socket_cliente_kernel_dispatch;
 int socket_cliente_kernel_interrupt;
 int conexion_memoria;
 int seguir_ejecutando;
-
+int indice_frente;
 
 void leer_config();
 
