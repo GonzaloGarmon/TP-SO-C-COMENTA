@@ -495,7 +495,7 @@ void funcJnz(t_instruccion *instruccion) {
 void funcIoGenSleep(t_instruccion *instruccion) {
     
     t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_GEN_SLEEP);
-    agregar_string_a_paquete(paquete, instruccion->parametros2);
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3));
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
 
@@ -529,75 +529,122 @@ void funcExit(t_instruccion *instruccion) {
 }
 
 void funcIoStdinRead(t_instruccion *instruccion) {
-
-    t_paquete *paquete = crear_paquete_op(IO_STDIN_READ);
-    agregar_string_a_paquete(paquete, instruccion->parametros2); //interfaz
-    agregar_entero_a_paquete(paquete, instruccion->parametros3); //regDir
-    agregar_entero_a_paquete(paquete, instruccion->parametros4); //regtam
+    uint32_t registro_direccion;
+    uint32_t registro_tamanio;
+    registro_direccion = obtener_valor_registro(instruccion->parametros3);
+    registro_tamanio = obtener_valor_registro(instruccion->parametros4);
+    t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_STDIN_READ);
+    agregar_entero_a_paquete(paquete,registro_direccion);
+    agregar_entero_a_paquete(paquete,registro_tamanio);
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
 
 void funcIoStdOutWrite(t_instruccion *instruccion) {
-
-    t_paquete *paquete = crear_paquete_op(IO_STDOUT_WRITE);
-    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros2)); // Interfaz
-    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3)); // regDir
-    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros4)); // regTam
+    uint32_t registro_direccion;
+    uint32_t registro_tamanio;
+    registro_direccion = obtener_valor_registro(instruccion->parametros3);
+    registro_tamanio = obtener_valor_registro(instruccion->parametros4);
+    t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_STDOUT_WRITE);
+    agregar_entero_a_paquete(paquete,registro_direccion);
+    agregar_entero_a_paquete(paquete,registro_tamanio);
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
 }
 
 void funcIoFsCreate(t_instruccion *instruccion) {
 
-    t_paquete *paquete = crear_paquete_op(IO_FS_CREATE);  
-    agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
-    agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
+    t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_FS_CREATE);  
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
+    agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
 
 void funcIoFsDelete(t_instruccion *instruccion) {
 
-    t_paquete *paquete = crear_paquete_op(IO_FS_DELETE);
-    agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
-    agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
+    t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_FS_DELETE);
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
+    agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
 
 void funcIoFsTruncate(t_instruccion *instruccion) {
-    
-    t_paquete* paquete = crear_paquete_op(IO_FS_TRUNCATE);
-    agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
-    agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
-    agregar_entero_int_a_paquete(paquete, atoi(instruccion->parametros4)); // tam
+    uint32_t registro_tamanio;
+    registro_tamanio = obtener_valor_registro(instruccion->parametros4);
+    t_paquete* paquete = crear_paquete_op(EJECUTAR_IO_FS_TRUNCATE);
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
+    agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
+    agregar_entero_a_paquete(paquete,registro_tamanio);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
 
 void funcIoFsWrite(t_instruccion* instruccion) {
-    t_paquete* paquete = crear_paquete_op(IO_FS_WRITE);
-    agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
-    agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
-    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros4)); // tam
-    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros5)); // Puntero Arch
+    uint32_t registro_direccion;
+    uint32_t registro_tamanio;
+    uint32_t registro_puntero;
+    registro_direccion = obtener_valor_registro(instruccion->parametros4);
+    registro_tamanio = obtener_valor_registro(instruccion->parametros5);
+    registro_puntero = obtener_valor_registro(instruccion->parametros6);
+    t_paquete* paquete = crear_paquete_op(EJECUTAR_IO_FS_WRITE);
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
+    agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
+    agregar_entero_a_paquete(paquete,registro_direccion);
+    agregar_entero_a_paquete(paquete,registro_tamanio);
+    agregar_entero_a_paquete(paquete,registro_puntero);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
 
 void funcIoFsRead(t_instruccion* instruccion) {
-    t_paquete* paquete = crear_paquete_op(IO_FS_READ);
-    agregar_string_a_paquete(paquete, instruccion->parametros2); // Interfaz
-    agregar_string_a_paquete(paquete, instruccion->parametros3); // nomArch
-    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros4)); // tam
-    agregar_entero_a_paquete(paquete, atoi(instruccion->parametros5)); // Puntero Arch
+    uint32_t registro_direccion;
+    uint32_t registro_tamanio;
+    uint32_t registro_puntero;
+    registro_direccion = obtener_valor_registro(instruccion->parametros4);
+    registro_tamanio = obtener_valor_registro(instruccion->parametros5);
+    registro_puntero = obtener_valor_registro(instruccion->parametros6);
+    t_paquete* paquete = crear_paquete_op(EJECUTAR_IO_FS_READ);
+    agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
+    agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
+    agregar_entero_a_paquete(paquete,registro_direccion);
+    agregar_entero_a_paquete(paquete,registro_tamanio);
+    agregar_entero_a_paquete(paquete,registro_puntero);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
 
+uint32_t obtener_valor_registro(char* registro){
+    uint32_t devolver;
+     if (strcmp(registro, "AX") == 0) {  
+        devolver = contexto->registros->AX;
+    } else if (strcmp(registro, "BX") == 0) {
+        devolver = contexto->registros->BX;
+    } else if (strcmp(registro, "CX") == 0) {
+        devolver = contexto->registros->CX;
+    } else if (strcmp(registro, "DX") == 0) {
+        devolver = contexto->registros->DX;
+    } else if (strcmp(registro, "EAX") == 0) {
+        devolver = contexto->registros->EAX;
+    } else if (strcmp(registro, "EBX") == 0) {
+        devolver = contexto->registros->EBX;
+    } else if (strcmp(registro, "ECX") == 0) {
+        devolver = contexto->registros->ECX;
+    } else if (strcmp(registro, "EDX") == 0) {
+        devolver = contexto->registros->EDX;
+    } else {
+        printf("Registro desconocido: %s\n", registro);
+    }
+
+    return devolver;
+}
+
+
 /*
-direccionFisica traducirDireccion(direccionLogica dirLogica, int tamano_pagina) { //Obtener direc fisica
-    direccionFisica dirFisica;
+DireccionFisica traducirDireccion(DireccionLogica dirLogica, int tamano_pagina) { //Obtener direc fisica
+    DireccionFisica dirFisica;
     dirFisica.marco = floor(dirLogica.numero_pagina / tamano_pagina);
     dirFisica.desplazamiento = dirLogica.numero_pagina - dirFisica.marco * tamano_pagina;
     return dirFisica;

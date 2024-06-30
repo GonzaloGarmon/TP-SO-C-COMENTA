@@ -1,7 +1,13 @@
+// entradasalida.h
 #ifndef ENTRADASALIDA_H_
 #define ENTRADASALIDA_H_
 
-#include <utils/utils.h> 
+#include <utils/utils.h>
+
+typedef struct {
+    char* nombre;
+    bool conectada;
+} ListaIO;
 
 typedef enum {
     TIPO_GENERICA,
@@ -52,8 +58,17 @@ typedef struct {
     bool enUso;
 } DIALFS;
 
+typedef enum {
+    IOGENSLEEP,
+    STDINREAD,
+    STDOUTWRITE,
+    FSCREATE,
+    FSDELETE,
+    FSTRUNCATE,
+    FSREAD,
+    FSWRITE
+} OperacionIO;
 
-// Definir el registro de interfaces
 typedef struct {
     ListaIO* interfaces;
     int cantidad;
@@ -61,21 +76,8 @@ typedef struct {
 } RegistroInterfaz;
 
 RegistroInterfaz registro;
-
-// Declarar las operaciones de entrada/salida
-typedef enum {
-    IO_GEN_SLEEP,
-    STDIN_READ,
-    STDOUT_WRITE
-} OperacionIO;
-
-// Definir una estructura para una interfaz en el registro
-typedef struct {
-    char* nombre;
-    bool conectada;
-} ListaIO;
-    
-
+pthread_mutex_t mutex;
+pthread_cond_t cond;
 
 t_log* log_entradasalida;
 t_config *config_entradasalida;
@@ -115,6 +117,6 @@ bool interfaz_conectada(char* nombre_interfaz);
 void esperar_interfaz_libre();
 void* crear_interfaz(TipoInterfaz tipo);
 void liberar_interfaz(void* interfaz, TipoInterfaz tipo);
+bool tiene_extension_config(const char* filename);
 
-
-#endif
+#endif // ENTRADASALIDA_H_

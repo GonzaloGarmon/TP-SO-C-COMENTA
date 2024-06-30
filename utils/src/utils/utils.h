@@ -102,6 +102,13 @@ typedef enum
     EJECUTAR_IO_GEN_SLEEP,
     EJECUTAR_WAIT,
     EJECUTAR_SIGNAL,
+    EJECUTAR_IO_STDIN_READ,
+    EJECUTAR_IO_STDOUT_WRITE,
+    EJECUTAR_IO_FS_CREATE,
+    EJECUTAR_IO_FS_DELETE,
+    EJECUTAR_IO_FS_TRUNCATE,
+    EJECUTAR_IO_FS_WRITE,
+    EJECUTAR_IO_FS_READ,
     //SOLICITUDES DE KERNEL A OTROS
     INICIO_NUEVO_PROCESO,
     FINALIZO_PROCESO,
@@ -231,8 +238,13 @@ t_instruccion* recibir_instruccion(int socket);
 t_list* recibir_doble_entero(int socket);
 
 void recibir_string_mas_contexto(int conexion_kernel_cpu_dispatch,t_contexto** pcb_wait,char** recurso_wait);
+void recibir_string_mas_u32(int conexion_kernel_cpu_dispatch,char** palabra,uint32_t* numero);
+void recibir_3_string(int conexion_kernel_cpu_dispatch, char** palabra1,char** palabra2, char** palabra3);
+void recibir_2_string(int conexion_kernel_cpu_dispatch, char** palabra1,char** palabra2);
 t_2_enteros * recibir_2_enteros(int socket);
 t_string_2enteros* recibir_string_2enteros(int socket);
+void recibir_2_string_mas_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1);
+void recibir_2_string_mas_3_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1, uint32_t* valor2, uint32_t* valor3);
 
 
 #endif

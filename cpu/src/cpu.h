@@ -68,4 +68,5 @@ uint32_t obtener_valor_registro_XXX(char* parametro);
 t_instruccion* fetch(uint32_t pid, uint32_t pc);
 void checkInturrupt(uint32_t pid);
 void esperar_devolucion_pcb();
+uint32_t obtener_valor_registro(char* registro);
 #endif
