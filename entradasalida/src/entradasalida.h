@@ -23,7 +23,7 @@ typedef struct {
     char* ip_kernel;
     char* puerto_kernel;
     bool enUso;
-} InterfazGenerica;
+} GENERICA;
 
 typedef struct {
     char* nombre;
@@ -55,6 +55,10 @@ typedef struct {
     char* puerto_kernel;
     char* ip_memoria;
     char* puerto_memoria;
+    char* path_base_dialfs;
+    int block_size;
+    int block_count;
+    int retraso_compactacion;
     bool enUso;
 } DIALFS;
 
@@ -96,14 +100,19 @@ int conexion_entradasalida_memoria;
 
 // funciones
 void leer_config();
-void procesar_archivo_config(const char *ruta_archivo);
-void generar_conexiones();
+void procesar_todos_los_archivos_config();
+void procesar_archivo_config(const char* ruta_archivo);
 void finalizar_programa();
+
+void generar_conexiones();
 void establecer_conexion_kernel(char* ip_kernel, char* puerto_kernel, t_config* config, t_log* logger);
 void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
-void inicializar_interfaz_generica(t_config *config, InterfazGenerica *interfazGen, const char *nombre);
+
+void inicializar_interfaz_generica(t_config *config, GENERICA *interfazGen, const char *nombre);
 void inicializar_interfaz_stdin(t_config *config, STDIN *interfazStdin, const char *nombre);
 void inicializar_interfaz_stdout(t_config *config, STDOUT *interfazStdout, const char *nombre);
+void inicializar_interfaz_dialfs(t_config *config, DIALFS *interfazDialFS, const char *nombre);
+
 bool validar_interfaz(ListaIO* interfaces, int num_interfaces, char* nombre_solicitado);
 void validar_operacion_io(void *interfaz, OperacionIO operacion);
 bool es_operacion_compatible(TipoInterfaz tipo, OperacionIO operacion);
@@ -115,7 +124,6 @@ void conectar_interfaz(char* nombre_interfaz);
 void desconectar_interfaz(char* nombre_interfaz);
 bool interfaz_conectada(char* nombre_interfaz);
 void esperar_interfaz_libre();
-void* crear_interfaz(TipoInterfaz tipo);
 void liberar_interfaz(void* interfaz, TipoInterfaz tipo);
 bool tiene_extension_config(const char* filename);
 
