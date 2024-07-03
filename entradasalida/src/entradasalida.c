@@ -9,6 +9,35 @@ int main(int argc, char* argv[]) {
 
     //ESTO ESTA PUESTO PARA QUE EL MODULO NO FINALICE Y PUEDA SEGUIR CONECTADO A LOS OTROS UNA VES LEVANTADO
     //CUANDO SE ARREGLE SE PUEDE SACAR
+    char* inter;
+    printf("ingresa nombre interfaz: \n");
+    scanf("%s", &inter);
+    op_code codigo;
+    if (strcmp(tipo_interfaz, "GENERICA") == 0)
+    {
+        codigo = GENERICA_I;
+    }
+    else if (strcmp(tipo_interfaz, "STDIN") == 0)
+    {
+        codigo = STDIN_I;
+    }
+    else if (strcmp(tipo_interfaz, "STDOUT") == 0)
+    {
+        codigo = STDOUT_I;
+    }
+    else if (strcmp(tipo_interfaz, "DIALFS") == 0)
+    {
+        codigo = DIALFS_I;
+    }
+    else
+    {
+        
+    }
+    
+    enviar_string(conexion_entradasalida_kernel, tipo_interfaz, IDENTIFICACION);
+    log_trace(log_entradasalida, "mande un mensaje");
+    enviar_string(conexion_entradasalida_kernel, "hola papito", codigo);
+    log_trace(log_entradasalida, "mande un mensaje");
     while(1){
 
     }
@@ -120,7 +149,7 @@ void establecer_conexion_kernel(char* ip_kernel, char* puerto_kernel, t_config* 
         log_trace(loggs, "Error al conectar con Kernel. El servidor no está activo");
         exit(EXIT_FAILURE);
     }
-
+    /*
     int operacion = recibir_operacion(conexion_entradasalida_kernel);
 
     if (operacion == -1) {
@@ -128,6 +157,7 @@ void establecer_conexion_kernel(char* ip_kernel, char* puerto_kernel, t_config* 
         exit(EXIT_FAILURE);
     }
     recibir_string(conexion_entradasalida_kernel, log_entradasalida);
+    */
 }
 
 void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria, t_config* config, t_log* loggs) {
@@ -137,7 +167,7 @@ void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria, t_confi
         log_trace(loggs, "Error al conectar con Memoria. El servidor no está activo");
         exit(EXIT_FAILURE);
     }
-
+    /*
     int operacion = recibir_operacion(conexion_entradasalida_memoria);
 
     if (operacion == -1) {
@@ -146,6 +176,7 @@ void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria, t_confi
     }
 
     recibir_string(conexion_entradasalida_memoria, log_entradasalida);
+    */
 }
 
 void inicializar_interfaz_generica(t_config *config, InterfazGenerica *interfazGen, const char *nombre) {

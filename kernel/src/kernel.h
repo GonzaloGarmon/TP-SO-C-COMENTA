@@ -6,6 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct{
+ int socket_servidor_kernel_dispatch;
+ t_list* conexiones_io;
+ t_list* conexiones_io_nombres;
+
+}t_conexiones_kernel_io;
 typedef enum{
     FIFO,
     RR,
@@ -23,6 +29,8 @@ pthread_mutex_t mutex_cola_new;
 pthread_mutex_t mutex_cola_ready;
 pthread_mutex_t mutex_cola_exec;
 pthread_mutex_t mutex_cola_exit;
+pthread_mutex_t conexion;
+
 sem_t sem_listos_para_ready;
 sem_t sem_multiprogamacion;
 sem_t sem_listos_para_exec;
@@ -40,12 +48,13 @@ char* puerto_cpu_dispatch;
 char* algoritmo;
 t_algoritmo algoritmo_planificacion;
 int quantum;
-
+t_conexiones_kernel_io conexiones_io;
 char** recursos;
 int* instancias_recursos;
 int cantidad_recursos;
 int grado_multiprogramacion;
 t_list** lista_recurso;
+
 
 int socket_servidor_kernel_dispatch;
 int socket_servidor_kernel_interrupt;
@@ -63,6 +72,7 @@ void generar_conexiones();
 void iniciar_semaforos();
 void finalizar_programa();
 int* convertirArrayDeNumeros(char** caracteres);
+void esperar_cliente_especial(int socket_cliente_entradasalida);
 /*
 ------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
 */
