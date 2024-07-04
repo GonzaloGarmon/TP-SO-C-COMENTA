@@ -88,6 +88,7 @@ char nombre_interfaz[256];
 char ruta_archivo[256];
 char ruta_completa[512];
 
+
 t_log* log_entradasalida;
 t_config *config_entradasalida;
 char* tipo_interfaz;
@@ -109,12 +110,12 @@ void crear_interfaz();
 void finalizar_programa();
 
 void generar_conexiones();
-void establecer_conexion_kernel(char* ip_kernel, char* puerto_kernel, t_config* config, t_log* logger);
-void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
+void establecer_conexion_kernel(char* ip_kernel, char* puerto_kernel, t_config* config_entradasalida, t_log* logger);
+void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria, t_config* config_entradasalida, t_log* logger);
 
-void inicializar_interfaz_generica(t_config *config, GENERICA *interfazGen, const char *nombre);
-void inicializar_interfaz_stdin(t_config *config, STDIN *interfazStdin, const char *nombre);
-void inicializar_interfaz_stdout(t_config *config, STDOUT *interfazStdout, const char *nombre);
+void inicializar_interfaz_generica(t_config *config_entradasalida, GENERICA *interfazGen, const char *nombre);
+void inicializar_interfaz_stdin(t_config *config_entradasalida, STDIN *interfazStdin, const char *nombre);
+void inicializar_interfaz_stdout(t_config *config_entradasalida, STDOUT *interfazStdout, const char *nombre);
 void inicializar_interfaz_dialfs(DIALFS *dialfs, const char *nombre, int block_size, int block_count);
 
 bool validar_interfaz(ListaIO* interfaces, int num_interfaces, char* nombre_solicitado);
