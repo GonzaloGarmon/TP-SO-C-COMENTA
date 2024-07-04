@@ -6,15 +6,15 @@ int main(int argc, char *argv[]){
     inicializar_registro();
  
     //Crear Interfaz
-    printf("Crear Interfaz \"Nombre\" \"Nombre.config_entradasalida\"\n");
+    printf("Crear Interfaz \"Nombre\" \"Nombre.config\"\n");
     printf("Crear Interfaz ");
 
     if (scanf(" \"%255[^\"]\" \"%255[^\"]\"", nombre_interfaz, ruta_archivo) == 2) {
-        sprintf(ruta_completa, "/home/utnso/tp-2024-1c-GoC/entradasalida/config_entradasalida/%s", ruta_archivo);
+        sprintf(ruta_completa, "/home/utnso/tp-2024-1c-GoC/entradasalida/config/%s", ruta_archivo);
         crear_interfaz(nombre_interfaz, ruta_completa);
     } else {
-        printf("Formato de entrada incorrecto. Uso: \"Nombre\" \"Nombre.config_entradasalida\"\n");
-        while (getchar() != '\n');
+        printf("Formato de entrada incorrecto. Uso: \"Nombre\" \"Nombre.config\"\n");
+        printf("Reiniciar Interfaz\n");
     }
 
     while (1) {
@@ -94,8 +94,59 @@ void finalizar_programa()
     liberar_registro();
 }
 
-void generar_conexiones()
-{   
+void enviarOpKernel(){
+
+
+}
+
+void enviarOpMemoria(){
+
+
+}
+
+void funcIoGenSleep(){
+
+
+}
+
+void funcIoStdRead(){
+
+
+}
+
+void funcIoStdWrite(){
+
+
+}
+
+void funcIoFsRead(){
+
+
+}
+
+void funcIoFsWrite(){
+
+
+}
+
+
+void funcIoFsTruncate(){
+
+
+}
+
+void funcIoFsCreate(){
+
+
+}
+
+void funcIoFsDelete(){
+
+
+}
+
+void generar_conexiones() {   
+
     ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
     puerto_kernel = config_get_string_value(config_entradasalida, "PUERTO_KERNEL");
     ip_memoria = config_get_string_value(config_entradasalida, "IP_MEMORIA");
