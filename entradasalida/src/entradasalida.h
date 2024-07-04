@@ -116,7 +116,6 @@ void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria, t_confi
 void inicializar_interfaz_generica(t_config *config_entradasalida, GENERICA *interfazGen, const char *nombre);
 void inicializar_interfaz_stdin(t_config *config_entradasalida, STDIN *interfazStdin, const char *nombre);
 void inicializar_interfaz_stdout(t_config *config_entradasalida, STDOUT *interfazStdout, const char *nombre);
-void inicializar_interfaz_dialfs(DIALFS *dialfs, const char *nombre, int block_size, int block_count);
 
 bool validar_interfaz(ListaIO* interfaces, int num_interfaces, char* nombre_solicitado);
 void validar_operacion_io(void *interfaz, op_code operacion);
@@ -125,6 +124,10 @@ void solicitar_operacion_io(void *interfaz, op_code operacion);
 void operacion_io_finalizada();
 void inicializar_registro();
 void liberar_registro();
+
+//funciones a terminar
+void inicializar_interfaz_dialfs(DIALFS *dialfs, const char *nombre, int block_size, int block_count);
+
 void conectar_interfaz(char* nombre_interfaz);
 void desconectar_interfaz(char* nombre_interfaz);
 bool interfaz_conectada(char* nombre_interfaz);
@@ -140,5 +143,16 @@ void dialfs_read_block(DialFS *fs, int block_index, uint8_t *buffer, size_t size
 int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, const uint8_t *datos, size_t size);
 void dialfs_redimensionar_archivo(DialFS *fs, int bloque_archivo, const uint8_t *nuevos_datos, size_t nuevo_size);
 void dialfs_compactar_archivos(DialFS *fs);
+
+void enviarOpKernel();
+void enviarOpMemoria();
+void funcIoGenSleep();
+void funcIoStdRead();
+void funcIoStdWrite();
+void funcIoFsRead();
+void funcIoFsWrite();
+void funcIoFsCreate();
+void funcIoFsDelete();
+void funcIoFsTruncate();
 
 #endif // ENTRADASALIDA_H_

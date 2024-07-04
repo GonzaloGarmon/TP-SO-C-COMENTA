@@ -4,8 +4,8 @@ int main(int argc, char *argv[]){
     log_entradasalida = log_create("./entradasalida.log", "ENTRADASALIDA", 1, LOG_LEVEL_TRACE);
     log_info(log_entradasalida, "INICIA EL MODULO DE ENTRADASALIDA");
     inicializar_registro();
- 
-    //Crear Interfaz
+
+    // Crear Interfaz
     printf("Crear Interfaz \"Nombre\" \"Nombre.config\"\n");
     printf("Crear Interfaz ");
 
@@ -17,19 +17,23 @@ int main(int argc, char *argv[]){
         printf("Reiniciar Interfaz\n");
     }
 
-    while (1) {
-
-    }
-
     generar_conexiones();
+
+    while (1) {
+        // Bucle principal
+    }
 
     log_info(log_entradasalida, "Finalizo conexion con servidores");
     finalizar_programa();
     return 0;
 }
 
-void crear_interfaz(char *nombre_interfaz,char *ruta_archivo) {
-    
+void crear_interfaz(char *nombre_interfaz, char *ruta_archivo) {
+    if (nombre_interfaz == NULL || ruta_archivo == NULL) {
+        log_error(log_entradasalida, "El nombre de la interfaz o la ruta del archivo es NULL");
+        return;
+    }
+
     config_entradasalida = iniciar_config(ruta_archivo);
 
     if (config_entradasalida == NULL) {
@@ -38,7 +42,7 @@ void crear_interfaz(char *nombre_interfaz,char *ruta_archivo) {
     }
 
     tipo_interfaz = config_get_string_value(config_entradasalida, "TIPO_INTERFAZ");
-    
+
     if (tipo_interfaz == NULL) {
         log_warning(log_entradasalida, "El archivo de configuración %s no tiene la clave TIPO_INTERFAZ", ruta_archivo);
         config_destroy(config_entradasalida);
@@ -87,8 +91,7 @@ void crear_interfaz(char *nombre_interfaz,char *ruta_archivo) {
     }
 }
 
-void finalizar_programa()
-{
+void finalizar_programa(){
     log_destroy(log_entradasalida);
     config_destroy(config_entradasalida);
     liberar_registro();
@@ -152,22 +155,20 @@ void generar_conexiones() {
     ip_memoria = config_get_string_value(config_entradasalida, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_entradasalida, "PUERTO_MEMORIA");
 
-    if (ip_memoria && puerto_memoria)
-    {
-        establecer_conexion_memoria(ip_memoria, puerto_memoria, config_entradasalida, log_entradasalida);
-    }
-    else
-    {
-        log_error(log_entradasalida, "Faltan configuraciones de memoria.");
+    if(strcmp(tipo_interfaz, "GENERICA") != 0){
+        if (ip_memoria && puerto_memoria) {
+            establecer_conexion_memoria(ip_memoria, puerto_memoria, config_entradasalida, log_entradasalida);
+        }
+        else {
+            log_error(log_entradasalida, "Faltan configuraciones de memoria.");
+        }
     }
 
-    if(strcmp(tipo_interfaz, "GENERICA") != 0){
-        if (ip_kernel && puerto_kernel){
-            establecer_conexion_kernel(ip_kernel, puerto_kernel, config_entradasalida, log_entradasalida);
-        }
+    if (ip_kernel && puerto_kernel){
+        establecer_conexion_kernel(ip_kernel, puerto_kernel, config_entradasalida, log_entradasalida);
+    }
     else {
         log_error(log_entradasalida, "Faltan configuraciones de kernel.");
-        }
     }
 }
 
@@ -516,6 +517,20 @@ void inicializar_interfaz_dialfs(DIALFS *interfazDialFS, const char *nombre, int
     interfazDialFS->block_count = config_get_int_value(config_entradasalida, "BLOCK_COUNT");
     interfazDialFS->retraso_compactacion = config_get_int_value(config_entradasalida, "RETRASO_COMPACTACION");
     interfazDialFS->enUso = false;
+
+    printf("Interfaz DialFS creada:\n");
+    printf("  Nombre: %s\n", interfazDialFS->nombre);
+    printf("  Tipo de interfaz: STDOUT\n");
+    printf("  Tiempo de unidad de trabajo: %d\n", interfazDialFS->tiempo_unidad_trabajo);
+    printf("  IP Kernel: %s\n", interfazDialFS->ip_kernel);
+    printf("  Puerto Kernel: %s\n", interfazDialFS->puerto_kernel);
+    printf("  IP Memoria: %s\n", interfazDialFS->ip_memoria);
+    printf("  Puerto Memoria: %s\n", interfazDialFS->puerto_memoria);
+    printf("  Path Base: %s\n", interfazDialFS->path_base_dialfs);
+    printf("  Block Size: %d\n", interfazDialFS->block_size);
+    printf("  Block Count: %d\n", interfazDialFS->block_count);
+    printf("  Retraso Compactacion: %d\n", interfazDialFS->retraso_compactacion);
+    printf("  En uso: %s\n", interfazDialFS->enUso ? "true" : "false");
 }
 
 // Función para inicializar el sistema de archivos DialFS
