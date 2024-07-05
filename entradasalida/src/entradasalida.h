@@ -9,52 +9,6 @@ typedef struct {
     bool conectada;
 } ListaIO;
 
-typedef struct {
-    char* nombre;
-    op_code tipo;
-    int tiempo_unidad_trabajo;
-    char* ip_kernel;
-    char* puerto_kernel;
-    bool enUso;
-} GENERICA;
-
-typedef struct {
-    char* nombre;
-    op_code tipo;
-    int tiempo_unidad_trabajo;
-    char* ip_kernel;
-    char* puerto_kernel;
-    char* ip_memoria;
-    char* puerto_memoria;
-    bool enUso;
-} STDIN;
-
-typedef struct {
-    char* nombre;
-    op_code tipo;
-    int tiempo_unidad_trabajo;
-    char* ip_kernel;
-    char* puerto_kernel;
-    char* ip_memoria;
-    char* puerto_memoria;
-    bool enUso;
-} STDOUT;
-
-typedef struct {
-    char* nombre;
-    op_code tipo;
-    int tiempo_unidad_trabajo;
-    char* ip_kernel;
-    char* puerto_kernel;
-    char* ip_memoria;
-    char* puerto_memoria;
-    char* path_base_dialfs;
-    int block_size;
-    int block_count;
-    int retraso_compactacion;
-    bool enUso;
-} DIALFS;
-
 // Estructura para representar un bloque de datos en DialFS
 typedef struct {
     uint8_t *data;      // Datos del bloque
@@ -85,7 +39,7 @@ char ruta_completa[512];
 t_log* log_entradasalida;
 t_config *config_entradasalida;
 char* tipo_interfaz_txt;
-op_code codigo;  //Guarda el tipo de interfaz
+op_code tipo;  //Guarda el tipo de interfaz
 int tiempo_unidad_trabajo;
 char* ip_kernel;
 char* puerto_kernel;
@@ -95,6 +49,7 @@ char* path_base_dialfs;
 int block_size;
 int block_count;
 int retraso_compactacion;
+bool enUso;
 int conexion_entradasalida_kernel;
 int conexion_entradasalida_memoria;
 
@@ -102,30 +57,24 @@ int conexion_entradasalida_memoria;
 void leer_config();
 void crear_interfaz();
 void finalizar_programa();
-
 void generar_conexiones();
 void establecer_conexion_kernel(char* ip_kernel, char* puerto_kernel, t_config* config_entradasalida, t_log* logger);
 void establecer_conexion_memoria(char* ip_memoria, char* puerto_memoria, t_config* config_entradasalida, t_log* logger);
-
-void inicializar_interfaz_generica(t_config *config_entradasalida, GENERICA *interfazGen, const char *nombre);
-void inicializar_interfaz_stdin(t_config *config_entradasalida, STDIN *interfazStdin, const char *nombre);
-void inicializar_interfaz_stdout(t_config *config_entradasalida, STDOUT *interfazStdout, const char *nombre);
-
+void inicializar_interfaz_generica(t_config *config_entradasalida, const char *nombre);
+void inicializar_interfaz_stdin(t_config *config_entradasalida, const char *nombre);
+void inicializar_interfaz_stdout(t_config *config_entradasalida, const char *nombre);
+void inicializar_interfaz_dialfs(t_config *config_entradasalida, const char *nombre);
 bool validar_interfaz(ListaIO* interfaces, int num_interfaces, char* nombre_solicitado);
-void validar_operacion_io(void *interfaz, op_code operacion);
 bool es_operacion_compatible(op_code tipo, op_code operacion);
-
 void inicializar_registro();
 void liberar_registro();
 
-//funciones a terminar
-void inicializar_interfaz_dialfs(DIALFS *dialfs, const char *nombre);
 
+//funciones a terminar
 void conectar_interfaz(char* nombre_interfaz);
 void desconectar_interfaz(char* nombre_interfaz);
 bool interfaz_conectada(char* nombre_interfaz);
 void esperar_interfaz_libre();
-void liberar_interfaz(void* interfaz, op_code tipo);
 
 void dialfs_init(DialFS *dialfs, int num_blocks);
 void dialfs_destroy(DialFS *fs);
