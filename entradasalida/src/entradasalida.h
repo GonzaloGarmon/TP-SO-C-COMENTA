@@ -9,16 +9,9 @@ typedef struct {
     bool conectada;
 } ListaIO;
 
-typedef enum {
-    TIPO_GENERICA,
-    TIPO_STDIN,
-    TIPO_STDOUT,
-    TIPO_DIALFS
-} TipoInterfaz;
-
 typedef struct {
     char* nombre;
-    TipoInterfaz tipo;
+    op_code tipo;
     int tiempo_unidad_trabajo;
     char* ip_kernel;
     char* puerto_kernel;
@@ -27,7 +20,7 @@ typedef struct {
 
 typedef struct {
     char* nombre;
-    TipoInterfaz tipo;
+    op_code tipo;
     int tiempo_unidad_trabajo;
     char* ip_kernel;
     char* puerto_kernel;
@@ -38,7 +31,7 @@ typedef struct {
 
 typedef struct {
     char* nombre;
-    TipoInterfaz tipo;
+    op_code tipo;
     int tiempo_unidad_trabajo;
     char* ip_kernel;
     char* puerto_kernel;
@@ -49,7 +42,7 @@ typedef struct {
 
 typedef struct {
     char* nombre;
-    TipoInterfaz tipo;
+    op_code tipo;
     int tiempo_unidad_trabajo;
     char* ip_kernel;
     char* puerto_kernel;
@@ -91,7 +84,8 @@ char ruta_completa[512];
 
 t_log* log_entradasalida;
 t_config *config_entradasalida;
-char* tipo_interfaz;
+char* tipo_interfaz_txt;
+op_code codigo;  //Guarda el tipo de interfaz
 int tiempo_unidad_trabajo;
 char* ip_kernel;
 char* puerto_kernel;
@@ -119,20 +113,19 @@ void inicializar_interfaz_stdout(t_config *config_entradasalida, STDOUT *interfa
 
 bool validar_interfaz(ListaIO* interfaces, int num_interfaces, char* nombre_solicitado);
 void validar_operacion_io(void *interfaz, op_code operacion);
-bool es_operacion_compatible(TipoInterfaz tipo, op_code operacion);
-void solicitar_operacion_io(void *interfaz, op_code operacion);
-void operacion_io_finalizada();
+bool es_operacion_compatible(op_code tipo, op_code operacion);
+
 void inicializar_registro();
 void liberar_registro();
 
 //funciones a terminar
-void inicializar_interfaz_dialfs(DIALFS *dialfs, const char *nombre, int block_size, int block_count);
+void inicializar_interfaz_dialfs(DIALFS *dialfs, const char *nombre);
 
 void conectar_interfaz(char* nombre_interfaz);
 void desconectar_interfaz(char* nombre_interfaz);
 bool interfaz_conectada(char* nombre_interfaz);
 void esperar_interfaz_libre();
-void liberar_interfaz(void* interfaz, TipoInterfaz tipo);
+void liberar_interfaz(void* interfaz, op_code tipo);
 
 void dialfs_init(DialFS *dialfs, int num_blocks);
 void dialfs_destroy(DialFS *fs);
@@ -144,8 +137,8 @@ int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, const uint8_t *
 void dialfs_redimensionar_archivo(DialFS *fs, int bloque_archivo, const uint8_t *nuevos_datos, size_t nuevo_size);
 void dialfs_compactar_archivos(DialFS *fs);
 
-void enviarOpKernel();
-void enviarOpMemoria();
+void RecibirOpKernel();
+void RecibirOpMemoria();
 void funcIoGenSleep();
 void funcIoStdRead();
 void funcIoStdWrite();

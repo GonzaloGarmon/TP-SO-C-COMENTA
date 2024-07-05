@@ -19,6 +19,11 @@ int main(int argc, char *argv[]){
 
     generar_conexiones();
 
+    enviar_string(conexion_entradasalida_kernel, tipo_interfaz_txt, IDENTIFICACION);
+    log_trace(log_entradasalida, "mande un mensaje");
+    enviar_string(conexion_entradasalida_kernel, "hola papito", codigo);
+    log_trace(log_entradasalida, "mande un mensaje");
+
     while (1) {
         // Bucle principal
     }
@@ -41,15 +46,15 @@ void crear_interfaz(char *nombre_interfaz, char *ruta_archivo) {
         return;
     }
 
-    tipo_interfaz = config_get_string_value(config_entradasalida, "TIPO_INTERFAZ");
+    tipo_interfaz_txt = config_get_string_value(config_entradasalida, "TIPO_INTERFAZ");
 
-    if (tipo_interfaz == NULL) {
+    if (tipo_interfaz_txt == NULL) {
         log_warning(log_entradasalida, "El archivo de configuración %s no tiene la clave TIPO_INTERFAZ", ruta_archivo);
         config_destroy(config_entradasalida);
         return;
     }
 
-    if (strcmp(tipo_interfaz, "GENERICA") == 0) {
+    if (strcmp(tipo_interfaz_txt, "GENERICA") == 0) {
         GENERICA *interfaz = malloc(sizeof(GENERICA));
         if (interfaz == NULL) {
             log_error(log_entradasalida, "Error al asignar memoria para GENERICA");
@@ -58,7 +63,7 @@ void crear_interfaz(char *nombre_interfaz, char *ruta_archivo) {
         }
         inicializar_interfaz_generica(config_entradasalida, interfaz, nombre_interfaz);
         conectar_interfaz((char *)nombre_interfaz);
-    } else if (strcmp(tipo_interfaz, "STDIN") == 0) {
+    } else if (strcmp(tipo_interfaz_txt, "STDIN") == 0) {
         STDIN *interfaz = malloc(sizeof(STDIN));
         if (interfaz == NULL) {
             log_error(log_entradasalida, "Error al asignar memoria para STDIN");
@@ -67,7 +72,7 @@ void crear_interfaz(char *nombre_interfaz, char *ruta_archivo) {
         }
         inicializar_interfaz_stdin(config_entradasalida, interfaz, nombre_interfaz);
         conectar_interfaz((char *)nombre_interfaz);
-    } else if (strcmp(tipo_interfaz, "STDOUT") == 0) {
+    } else if (strcmp(tipo_interfaz_txt, "STDOUT") == 0) {
         STDOUT *interfaz = malloc(sizeof(STDOUT));
         if (interfaz == NULL) {
             log_error(log_entradasalida, "Error al asignar memoria para STDOUT");
@@ -76,7 +81,7 @@ void crear_interfaz(char *nombre_interfaz, char *ruta_archivo) {
         }
         inicializar_interfaz_stdout(config_entradasalida, interfaz, nombre_interfaz);
         conectar_interfaz((char *)nombre_interfaz);
-    } else if (strcmp(tipo_interfaz, "DIALFS") == 0) {
+    } else if (strcmp(tipo_interfaz_txt, "DIALFS") == 0) {
         DIALFS *interfazDialFS = malloc(sizeof(DIALFS));
         if (interfazDialFS == NULL) {
             log_error(log_entradasalida, "Error al asignar memoria para DIALFS");
@@ -84,10 +89,10 @@ void crear_interfaz(char *nombre_interfaz, char *ruta_archivo) {
             return;
         }
         // Inicializar la interfaz DialFS
-        inicializar_interfaz_dialfs(interfazDialFS, nombre_interfaz, block_size, block_count);
+        inicializar_interfaz_dialfs(interfazDialFS, nombre_interfaz);
         conectar_interfaz(nombre_interfaz);
     } else {
-        log_warning(log_entradasalida, "Tipo de interfaz desconocido: %s", tipo_interfaz);
+        log_warning(log_entradasalida, "Tipo de interfaz desconocido: %s", tipo_interfaz_txt);
     }
 }
 
@@ -97,12 +102,59 @@ void finalizar_programa(){
     liberar_registro();
 }
 
-void enviarOpKernel(){
-
+void RecibirOpKernel(int SOCKET_CLIENTE_KERNEL){
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        op_code operacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+        switch (operacion){
+        case IO_GEN_SLEEP:
+            if(es_operacion_compatible(codigo,operacion)){
+                funcIoGenSleep();
+            }
+        break;
+        case IO_STDIN_READ:
+            if(es_operacion_compatible(codigo,operacion)){
+                funcIoStdRead();
+            }
+        break;
+        case IO_STDOUT_WRITE:
+            if(es_operacion_compatible(codigo,operacion)){
+                funcIoStdWrite();
+            }
+        break;
+        case IO_FS_READ:
+            if(es_operacion_compatible(codigo,operacion)){
+                funcIoFsRead();
+            }
+        break;
+        case IO_FS_WRITE:
+            if(es_operacion_compatible(codigo,operacion)){
+              funcIoFsWrite();
+            }
+        break;
+        case IO_FS_CREATE:
+            if(es_operacion_compatible(codigo,operacion)){
+                funcIoFsCreate();
+            }
+        break;
+        case IO_FS_DELETE:
+            if(es_operacion_compatible(codigo,operacion)){
+                funcIoFsDelete();
+            }
+        case IO_FS_TRUNCATE:
+            if(es_operacion_compatible(codigo,operacion)){
+                funcIoFsTruncate();
+            }
+        break;
+        default:
+            log_warning(log_entradasalida, "Operacion no compatible");
+        break;
+        }
+    }
 
 }
 
-void enviarOpMemoria(){
+void RecibirOpMemoria(){
 
 
 }
@@ -155,7 +207,7 @@ void generar_conexiones() {
     ip_memoria = config_get_string_value(config_entradasalida, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_entradasalida, "PUERTO_MEMORIA");
 
-    if(strcmp(tipo_interfaz, "GENERICA") != 0){
+    if(codigo == GENERICA_I){
         if (ip_memoria && puerto_memoria) {
             establecer_conexion_memoria(ip_memoria, puerto_memoria, config_entradasalida, log_entradasalida);
         }
@@ -181,16 +233,15 @@ void establecer_conexion_kernel(char *ip_kernel, char *puerto_kernel, t_config *
         log_error(loggs, "Error al conectar con Kernel. El servidor no está activo");
         return;
     }
-
+    /*
     int operacion = recibir_operacion(conexion_entradasalida_kernel);
 
-    if (operacion == -1)
-    {
-        log_error(loggs, "Error al recibir operación del Kernel");
-        return;
+    if (operacion == -1) {
+        log_trace(loggs, "Error al recibir operación");
+        exit(EXIT_FAILURE);
     }
-
-    recibir_string(conexion_entradasalida_kernel, loggs);
+    recibir_string(conexion_entradasalida_kernel, log_entradasalida);
+    */
 }
 
 void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_config *config_entradasalida, t_log *loggs)
@@ -202,16 +253,16 @@ void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_confi
         log_error(loggs, "Error al conectar con Memoria. El servidor no está activo");
         return;
     }
-
+    /*
     int operacion = recibir_operacion(conexion_entradasalida_memoria);
 
-    if (operacion == -1)
-    {
-        log_error(loggs, "Error al recibir operación de Memoria");
-        return;
+    if (operacion == -1) {
+        log_trace(loggs, "Error al recibir operación");
+        exit(EXIT_FAILURE);
     }
 
-    recibir_string(conexion_entradasalida_memoria, loggs);
+    recibir_string(conexion_entradasalida_memoria, log_entradasalida);
+    */
 }
 
 void inicializar_interfaz_generica(t_config *config_entradasalida, GENERICA *interfazGen, const char *nombre)
@@ -221,9 +272,10 @@ void inicializar_interfaz_generica(t_config *config_entradasalida, GENERICA *int
         fprintf(stderr, "Interfaz vacia\n");
         return;
     }
+    codigo = GENERICA_I;
     // Inicializar atributos de la interfaz genérica
     interfazGen->nombre = strdup(nombre);
-    interfazGen->tipo = TIPO_GENERICA;
+    interfazGen->tipo = GENERICA_I;
     interfazGen->tiempo_unidad_trabajo = config_get_int_value(config_entradasalida, "TIEMPO_UNIDAD_TRABAJO");
     interfazGen->ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
     interfazGen->puerto_kernel = config_get_string_value(config_entradasalida, "PUERTO_KERNEL");
@@ -246,9 +298,10 @@ void inicializar_interfaz_stdin(t_config *config_entradasalida, STDIN *interfazS
         fprintf(stderr, "Interfaz vacia\n");
         return;
     }
+    codigo = STDIN_I;
     // Inicializar atributos de la interfaz stdin
     interfazStdin->nombre = strdup(nombre);
-    interfazStdin->tipo = TIPO_STDIN;
+    interfazStdin->tipo = STDIN_I;
     interfazStdin->tiempo_unidad_trabajo = config_get_int_value(config_entradasalida, "TIEMPO_UNIDAD_TRABAJO");
     interfazStdin->ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
     interfazStdin->puerto_kernel = config_get_string_value(config_entradasalida, "PUERTO_KERNEL");
@@ -274,9 +327,10 @@ void inicializar_interfaz_stdout(t_config *config_entradasalida, STDOUT *interfa
         fprintf(stderr, "Interfaz vacia\n");
         return;
     }
+    codigo = STDOUT_I;
     // Inicializar atributos de la interfaz stdout
     interfazStdout->nombre = strdup(nombre);
-    interfazStdout->tipo = TIPO_STDOUT;
+    interfazStdout->tipo = STDOUT_I;
     interfazStdout->tiempo_unidad_trabajo = config_get_int_value(config_entradasalida, "TIEMPO_UNIDAD_TRABAJO");
     interfazStdout->ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
     interfazStdout->puerto_kernel = config_get_string_value(config_entradasalida, "PUERTO_KERNEL");
@@ -308,17 +362,17 @@ bool validar_interfaz(ListaIO *interfaces, int num_interfaces, char *nombre_soli
     return false;
 }
 
-bool es_operacion_compatible(TipoInterfaz tipo, op_code operacion)
+bool es_operacion_compatible(op_code tipo, op_code operacion)
 {
     switch (tipo)
     {
-    case TIPO_GENERICA:
+    case GENERICA_I:
         return operacion == IO_GEN_SLEEP;
-    case TIPO_STDIN:
+    case STDIN_I:
         return operacion == IO_STDIN_READ;
-    case TIPO_STDOUT:
+    case STDOUT_I:
         return operacion == IO_STDOUT_WRITE;
-    case TIPO_DIALFS:
+    case DIALFS_I:
         return operacion == IO_FS_CREATE || operacion == IO_FS_DELETE || operacion == IO_FS_TRUNCATE || operacion == IO_FS_WRITE || operacion == IO_FS_READ;
     default:
         return false;
@@ -342,21 +396,6 @@ void validar_operacion_io(void *interfaz, op_code operacion)
     {
         log_trace(log_entradasalida, "Operación válida para la interfaz");
     }
-}
-
-void solicitar_operacion_io(void *interfaz, op_code operacion)
-{
-    pthread_mutex_lock(&mutex);
-    validar_operacion_io(interfaz, operacion);
-    pthread_cond_wait(&cond, &mutex);
-    pthread_mutex_unlock(&mutex);
-}
-
-void operacion_io_finalizada()
-{
-    pthread_mutex_lock(&mutex);
-    pthread_cond_signal(&cond);
-    pthread_mutex_unlock(&mutex);
 }
 
 void inicializar_registro()
@@ -448,10 +487,10 @@ void esperar_interfaz_libre()
     pthread_mutex_unlock(&mutex);
 }
 
-void liberar_interfaz(void *interfaz, TipoInterfaz tipo) {
+void liberar_interfaz(void *interfaz, op_code tipo) {
     if (interfaz != NULL) {
         switch (tipo) {
-        case TIPO_GENERICA:
+        case GENERICA_I:
         {
             GENERICA *interfazGen = (GENERICA *)interfaz;
             free(interfazGen->nombre);
@@ -460,7 +499,7 @@ void liberar_interfaz(void *interfaz, TipoInterfaz tipo) {
             free(interfaz);
             break;
         }
-        case TIPO_STDIN:
+        case STDIN_I:
         {
             STDIN *interfazStdin = (STDIN *)interfaz;
             free(interfazStdin->nombre);
@@ -471,7 +510,7 @@ void liberar_interfaz(void *interfaz, TipoInterfaz tipo) {
             free(interfaz);
             break;
         }
-        case TIPO_STDOUT:
+        case STDOUT_I:
         {
             STDOUT *interfazStdout = (STDOUT *)interfaz;
             free(interfazStdout->nombre);
@@ -482,7 +521,7 @@ void liberar_interfaz(void *interfaz, TipoInterfaz tipo) {
             free(interfaz);
             break;
         }
-        case TIPO_DIALFS:
+        case DIALFS_I:
         {
             DIALFS *interfazDialFS = (DIALFS *)interfaz;
             free(interfazDialFS->nombre);
@@ -501,9 +540,21 @@ void liberar_interfaz(void *interfaz, TipoInterfaz tipo) {
 }
 
 // Ver como recibo datos
-void inicializar_interfaz_dialfs(DIALFS *interfazDialFS, const char *nombre, int block_size, int block_count) {
+void inicializar_interfaz_dialfs(DIALFS *interfazDialFS, const char *nombre) {
+    
+    if (interfazDialFS == NULL)
+    {
+        fprintf(stderr, "Interfaz vacia\n");
+        return;
+    }
+    codigo = DIALFS_I;
+    block_size = config_get_int_value(config_entradasalida, "BLOCK_SIZE");
+    block_count = config_get_int_value(config_entradasalida, "BLOCK_COUNT");
+    retraso_compactacion = config_get_int_value(config_entradasalida, "RETRASO_COMPACTACION");
+    // Inicializar atributos de la interfaz stdout
+    
     interfazDialFS->nombre = strdup(nombre);
-    interfazDialFS->tipo = TIPO_DIALFS;
+    interfazDialFS->tipo = DIALFS_I;
     interfazDialFS->tiempo_unidad_trabajo = config_get_int_value(config_entradasalida, "TIEMPO_UNIDAD_TRABAJO");
 
     interfazDialFS->ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
@@ -511,7 +562,6 @@ void inicializar_interfaz_dialfs(DIALFS *interfazDialFS, const char *nombre, int
     interfazDialFS->ip_memoria = config_get_string_value(config_entradasalida, "IP_MEMORIA");
     interfazDialFS->puerto_memoria = config_get_string_value(config_entradasalida, "PUERTO_MEMORIA");
 
-    //modificar para poner ruta de archivo o algo
     interfazDialFS->path_base_dialfs = config_get_string_value(config_entradasalida, "PATH_BASE_DIALFS");
     interfazDialFS->block_size = config_get_int_value(config_entradasalida, "BLOCK_SIZE");
     interfazDialFS->block_count = config_get_int_value(config_entradasalida, "BLOCK_COUNT");
