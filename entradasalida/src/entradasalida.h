@@ -31,13 +31,13 @@ RegistroInterfaz registro;
 pthread_mutex_t mutex;
 pthread_cond_t cond;
 
-char nombre_interfaz[256];
-char ruta_archivo[256];
-char ruta_completa[512];
-
-
 t_log* log_entradasalida;
 t_config *config_entradasalida;
+
+char* ruta_archivo;
+char* ruta_completa;
+
+char* nombre_interfaz;
 char* tipo_interfaz_txt;
 op_code tipo;  //Guarda el tipo de interfaz
 int tiempo_unidad_trabajo;
@@ -50,12 +50,14 @@ int block_size;
 int block_count;
 int retraso_compactacion;
 bool enUso;
+
+int socket_servidor_entradasalida;
 int conexion_entradasalida_kernel;
 int conexion_entradasalida_memoria;
 
 // funciones
 void leer_config();
-void crear_interfaz();
+void crear_interfaz(char *nombre_interfaz, char *ruta_archivo);
 void finalizar_programa();
 void generar_conexiones();
 void establecer_conexion_kernel(char* ip_kernel, char* puerto_kernel, t_config* config_entradasalida, t_log* logger);
@@ -68,7 +70,6 @@ bool validar_interfaz(ListaIO* interfaces, int num_interfaces, char* nombre_soli
 bool es_operacion_compatible(op_code tipo, op_code operacion);
 void inicializar_registro();
 void liberar_registro();
-
 
 //funciones a terminar
 void conectar_interfaz(char* nombre_interfaz);
@@ -86,11 +87,11 @@ int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, const uint8_t *
 void dialfs_redimensionar_archivo(DialFS *fs, int bloque_archivo, const uint8_t *nuevos_datos, size_t nuevo_size);
 void dialfs_compactar_archivos(DialFS *fs);
 
-void RecibirOpKernel();
-void RecibirOpMemoria();
-void funcIoGenSleep();
-void funcIoStdRead();
-void funcIoStdWrite();
+void recibirOpKernel(int SOCKET_CLIENTE_KERNEL);
+void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA);
+void funcIoGenSleep(int unidades);
+void funcIoStdRead(int direccion, int tamaño);
+void funcIoStdWrite(int direccion, int tamaño);
 void funcIoFsRead();
 void funcIoFsWrite();
 void funcIoFsCreate();

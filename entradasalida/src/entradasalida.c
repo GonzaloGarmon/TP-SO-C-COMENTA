@@ -19,10 +19,36 @@ int main(int argc, char *argv[]){
 
     generar_conexiones();
 
+    //Conexion Kernel
+    socket_servidor_entradasalida = iniciar_servidor(puerto_kernel, log_entradasalida);
+    log_info(log_entradasalida, "INICIO SERVIDOR con Kernel");
+
+    pthread_t atiende_cliente_kernel;
+    log_info(log_entradasalida, "Listo para recibir a kernel");
+    conexion_entradasalida_kernel = esperar_cliente(socket_servidor_entradasalida);
+   
+    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
+    pthread_join(atiende_cliente_kernel, NULL);
+
+    //Conexion Memoria
+    if(tipo != GENERICA_I){
+        socket_servidor_entradasalida = iniciar_servidor(puerto_memoria, log_entradasalida);
+        log_info(log_entradasalida, "INICIO SERVIDOR con Memoria");
+
+        pthread_t atiende_cliente_memoria;
+        log_info(log_entradasalida, "Listo para recibir a memoria");
+        conexion_entradasalida_memoria = esperar_cliente(socket_servidor_entradasalida);
+   
+        pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_memoria);
+        pthread_join(atiende_cliente_memoria, NULL);
+    }
+
     enviar_string(conexion_entradasalida_kernel, tipo_interfaz_txt, IDENTIFICACION);
     log_trace(log_entradasalida, "mande un mensaje");
     enviar_string(conexion_entradasalida_kernel, "hola papito", tipo);
     log_trace(log_entradasalida, "mande un mensaje");
+
+    enviar_string(conexion_entradasalida_memoria, "hola", GENERICA_I);
 
     while (1) {
         // Bucle principal
@@ -80,107 +106,159 @@ void finalizar_programa(){
     liberar_registro();
 }
 
-void RecibirOpKernel(int SOCKET_CLIENTE_KERNEL){
+void recibirOpKernel(int SOCKET_CLIENTE_KERNEL){
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        op_code operacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
-        switch (operacion){
-        case IO_GEN_SLEEP:
-            if(es_operacion_compatible(tipo,operacion)){
-                funcIoGenSleep();
+        char* nombreRecibido = recibir_string(SOCKET_CLIENTE_KERNEL, log_entradasalida); //preguntar como usar funcion
+        if(nombreRecibido == nombre_interfaz){
+            op_code operacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+            switch (operacion){
+            case IO_GEN_SLEEP:
+                if(es_operacion_compatible(tipo,operacion)){
+                    //ejemplo
+                    int unidades = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL,log_entradasalida);
+                    funcIoGenSleep(unidades);//ver como recibir los componentes
+                }
+            break;
+            case IO_STDIN_READ:
+                if(es_operacion_compatible(tipo,operacion)){
+                    funcIoStdRead(1,1);
+                }
+            break;
+            case IO_STDOUT_WRITE:
+                if(es_operacion_compatible(tipo,operacion)){
+                    funcIoStdWrite(1,1);
+                }
+            break;
+            case IO_FS_READ:
+                if(es_operacion_compatible(tipo,operacion)){
+                    funcIoFsRead();
+                }
+            break;
+            case IO_FS_WRITE:
+                if(es_operacion_compatible(tipo,operacion)){
+                    funcIoFsWrite();
+                }
+            break;
+            case IO_FS_CREATE:
+                if(es_operacion_compatible(tipo,operacion)){
+                    funcIoFsCreate();
+                }
+            break;
+            case IO_FS_DELETE:
+                if(es_operacion_compatible(tipo,operacion)){
+                    funcIoFsDelete();
+                }
+            case IO_FS_TRUNCATE:
+                if(es_operacion_compatible(tipo,operacion)){
+                    funcIoFsTruncate();
+                }
+            break;
+            default:
+                log_warning(log_entradasalida, "Operacion no compatible");
+            break;
             }
-        break;
-        case IO_STDIN_READ:
-            if(es_operacion_compatible(tipo,operacion)){
-                funcIoStdRead();
-            }
-        break;
-        case IO_STDOUT_WRITE:
-            if(es_operacion_compatible(tipo,operacion)){
-                funcIoStdWrite();
-            }
-        break;
-        case IO_FS_READ:
-            if(es_operacion_compatible(tipo,operacion)){
-                funcIoFsRead();
-            }
-        break;
-        case IO_FS_WRITE:
-            if(es_operacion_compatible(tipo,operacion)){
-              funcIoFsWrite();
-            }
-        break;
-        case IO_FS_CREATE:
-            if(es_operacion_compatible(tipo,operacion)){
-                funcIoFsCreate();
-            }
-        break;
-        case IO_FS_DELETE:
-            if(es_operacion_compatible(tipo,operacion)){
-                funcIoFsDelete();
-            }
-        case IO_FS_TRUNCATE:
-            if(es_operacion_compatible(tipo,operacion)){
-                funcIoFsTruncate();
-            }
-        break;
-        default:
-            log_warning(log_entradasalida, "Operacion no compatible");
-        break;
         }
     }
 
 }
 
-void RecibirOpMemoria(){
-
-
+void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
+    int noFinalizar = 0;
+    while(noFinalizar != -1){
+        op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
+        switch (operacion){
+            case IO_STDOUT_WRITE_OK:
+            break;
+            case IO_STDIN_READ_OK:
+            break;
+            default:
+                log_warning(log_entradasalida, "Operacion no compatible");
+            break;
+        }
+    }
 }
 
-void funcIoGenSleep(){
-
-
+void funcIoGenSleep(int unidades){
+    enUso = true;
+    log_trace(log_entradasalida, "Esperando");
+    sleep(unidades*tiempo_unidad_trabajo);
+    enUso = false;
 }
 
-void funcIoStdRead(){
+void funcIoStdRead(int direccion, int tamaño){
+    enUso = true;
+    log_trace(log_entradasalida, "Leyendo desde STDIN");
 
+    char *buffer = (char *)malloc(tamaño + 1);
 
+    // Leer entrada del usuario
+    if (fgets(buffer, tamaño + 1, stdin) == NULL) {
+        log_error(log_entradasalida, "Error al leer desde STDIN");
+        free(buffer);
+        enUso = false;
+        return;
+    }
+
+    // Validar que el tamaño de la entrada no exceda el tamaño especificado
+    if (strlen(buffer) > tamaño) {
+        log_warning(log_entradasalida, "El texto ingresado es mayor al tamaño permitido. Se truncará.");
+        buffer[tamaño] = '\0';
+    }
+
+    // Escribir el valor en la memoria. se encarga memoria yo solo le envio lo que escribio el usuario
+    enviar_string(conexion_entradasalida_memoria, buffer, GENERICA_I);//Ver 3er elemento de la funcion
+
+    free(buffer);
+    enUso = false;
 }
 
-void funcIoStdWrite(){
-
-
+void funcIoStdWrite(int direccion, int tamaño){
+    enUso = true;
+    log_trace(log_entradasalida, "Leyendo desde memoria");
+    enviar_entero(conexion_entradasalida_memoria,direccion,GENERICA_I);//Ver 3er elemento de la funcion
+    enviar_entero(conexion_entradasalida_memoria,tamaño,GENERICA_I);//Ver 3er elemento de la funcion
+    recibirOpMemoria(conexion_entradasalida_memoria);//Ver si poner puerto o conexion
+    enUso = false;
 }
 
 void funcIoFsRead(){
+    enUso = true;
+    log_trace(log_entradasalida, "a");
 
-
+    enUso = false;
 }
 
 void funcIoFsWrite(){
+    enUso = true;
+    log_trace(log_entradasalida, "a");
 
-
+    enUso = false;
 }
 
-
 void funcIoFsTruncate(){
+    enUso = true;
+    log_trace(log_entradasalida, "a");
 
-
+    enUso = false;
 }
 
 void funcIoFsCreate(){
+    enUso = true;
+    log_trace(log_entradasalida, "a");
 
-
+    enUso = false;
 }
 
 void funcIoFsDelete(){
+    enUso = true;
+    log_trace(log_entradasalida, "a");
 
-
+    enUso = false;
 }
 
-void generar_conexiones() {   
-
-    if(tipo == GENERICA_I){
+void generar_conexiones(){   
+    if(tipo != GENERICA_I){
         if (ip_memoria && puerto_memoria) {
             establecer_conexion_memoria(ip_memoria, puerto_memoria, config_entradasalida, log_entradasalida);
         }
@@ -331,8 +409,7 @@ void inicializar_interfaz_dialfs(t_config *config_entradasalida, const char *nom
     printf("  En uso: %s\n", enUso ? "true" : "false");
 }
 
-bool validar_interfaz(ListaIO *interfaces, int num_interfaces, char *nombre_solicitado)
-{
+bool validar_interfaz(ListaIO *interfaces, int num_interfaces, char *nombre_solicitado){
     for (int i = 0; i < num_interfaces; i++)
     {
         if (strcmp(interfaces[i].nombre, nombre_solicitado) == 0)
@@ -343,8 +420,7 @@ bool validar_interfaz(ListaIO *interfaces, int num_interfaces, char *nombre_soli
     return false;
 }
 
-bool es_operacion_compatible(op_code tipo, op_code operacion)
-{
+bool es_operacion_compatible(op_code tipo, op_code operacion){
     switch (tipo)
     {
     case GENERICA_I:
@@ -360,8 +436,7 @@ bool es_operacion_compatible(op_code tipo, op_code operacion)
     }
 }
 
-void inicializar_registro()
-{
+void inicializar_registro(){
     registro.capacidad = 10;
     registro.cantidad = 0;
     registro.interfaces = malloc(registro.capacidad * sizeof(ListaIO));
@@ -372,8 +447,7 @@ void inicializar_registro()
     }
 }
 
-void liberar_registro()
-{
+void liberar_registro(){
     if (registro.interfaces == NULL)
     {
         fprintf(stderr, "Error: registro.interfaces no ha sido inicializado correctamente\n");
@@ -386,7 +460,7 @@ void liberar_registro()
     free(registro.interfaces);
 }
 
-void conectar_interfaz(char *nombre_interfaz) {
+void conectar_interfaz(char *nombre_interfaz){
     if (registro.interfaces == NULL) {
         fprintf(stderr, "Error: registro.interfaces no ha sido inicializado correctamente\n");
         exit(EXIT_FAILURE);
@@ -399,8 +473,7 @@ void conectar_interfaz(char *nombre_interfaz) {
     }
 }
 
-void desconectar_interfaz(char *nombre_interfaz)
-{
+void desconectar_interfaz(char *nombre_interfaz){
     for (int i = 0; i < registro.cantidad; i++)
     {
         if (strcmp(registro.interfaces[i].nombre, nombre_interfaz) == 0)
@@ -410,8 +483,7 @@ void desconectar_interfaz(char *nombre_interfaz)
     }
 }
 
-bool interfaz_conectada(char *nombre_interfaz)
-{
+bool interfaz_conectada(char *nombre_interfaz){
     for (int i = 0; i < registro.cantidad; i++)
     {
         if (strcmp(registro.interfaces[i].nombre, nombre_interfaz) == 0)
@@ -422,8 +494,7 @@ bool interfaz_conectada(char *nombre_interfaz)
     return false;
 }
 
-void esperar_interfaz_libre()
-{
+void esperar_interfaz_libre(){
     pthread_mutex_lock(&mutex);
     while (true)
     {
