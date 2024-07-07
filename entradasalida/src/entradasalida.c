@@ -4,55 +4,48 @@ int main(int argc, char *argv[]){
     log_entradasalida = log_create("./entradasalida.log", "ENTRADASALIDA", 1, LOG_LEVEL_TRACE);
     log_info(log_entradasalida, "INICIA EL MODULO DE ENTRADASALIDA");
     inicializar_registro();
+    
+    //Crear Interfaz
+    //printf("Crear Interfaz \"Nombre\" \"Nombre.config\"\n");
+    nombre_interfaz = malloc(100 * sizeof(char));
+    ruta_archivo = malloc(100 * sizeof(char));
+    //ruta_completa = malloc(100 * sizeof(char));
+    ruta_completa = "/home/utnso/tp-2024-1c-GoC/entradasalida/config/";
+    printf("ingresa nombre interfaz: ");
+    scanf("%99s", nombre_interfaz);
+    printf("\n ingresa el config: ");
+    scanf("%99s", ruta_archivo);
+    char* ruta_final = malloc(strlen(ruta_completa) + strlen(ruta_archivo) + 1);
+    strcpy(ruta_final,ruta_completa);
+    strcat(ruta_final,ruta_archivo);
+    //if (scanf(" \"%255[^\"]\" \"%255[^\"]\"", nombre_interfaz, ruta_archivo) == 2) {
+      //  sprintf(ruta_completa, "/home/utnso/tp-2024-1c-GoC/entradasalida/config/%s", ruta_archivo);
 
-    // Crear Interfaz
-    printf("Crear Interfaz \"Nombre\" \"Nombre.config\"\n");
-    printf("Crear Interfaz ");
-
-    if (scanf(" \"%255[^\"]\" \"%255[^\"]\"", nombre_interfaz, ruta_archivo) == 2) {
-        sprintf(ruta_completa, "/home/utnso/tp-2024-1c-GoC/entradasalida/config/%s", ruta_archivo);
-        crear_interfaz(nombre_interfaz, ruta_completa);
-    } else {
-        printf("Formato de entrada incorrecto. Uso: \"Nombre\" \"Nombre.config\"\n");
-        printf("Reiniciar Interfaz\n");
-    }
+        crear_interfaz(nombre_interfaz, ruta_final);
+   // } else {
+     //   printf("Formato de entrada incorrecto. Uso: \"Nombre\" \"Nombre.config\"\n");
+       // printf("Reiniciar Interfaz\n");
+    //}
 
     generar_conexiones();
-
-    //Conexion Kernel
-    socket_servidor_entradasalida = iniciar_servidor(puerto_kernel, log_entradasalida);
-    log_info(log_entradasalida, "INICIO SERVIDOR con Kernel");
-
+    pthread_t atiende_cliente_memoria; 
     pthread_t atiende_cliente_kernel;
-    log_info(log_entradasalida, "Listo para recibir a kernel");
-    conexion_entradasalida_kernel = esperar_cliente(socket_servidor_entradasalida);
-   
-    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
-    pthread_join(atiende_cliente_kernel, NULL);
 
-    //Conexion Memoria
     if(tipo != GENERICA_I){
-        socket_servidor_entradasalida = iniciar_servidor(puerto_memoria, log_entradasalida);
-        log_info(log_entradasalida, "INICIO SERVIDOR con Memoria");
 
-        pthread_t atiende_cliente_memoria;
-        log_info(log_entradasalida, "Listo para recibir a memoria");
-        conexion_entradasalida_memoria = esperar_cliente(socket_servidor_entradasalida);
+        pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
+        pthread_detach(atiende_cliente_kernel);
    
         pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_memoria);
         pthread_join(atiende_cliente_memoria, NULL);
+    }else{
+        pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
+        pthread_join(atiende_cliente_kernel,NULL);
     }
 
-    enviar_string(conexion_entradasalida_kernel, tipo_interfaz_txt, IDENTIFICACION);
-    log_trace(log_entradasalida, "mande un mensaje");
-    enviar_string(conexion_entradasalida_kernel, "hola papito", tipo);
-    log_trace(log_entradasalida, "mande un mensaje");
 
-    enviar_string(conexion_entradasalida_memoria, "hola", GENERICA_I);
+    //enviar_string(conexion_entradasalida_memoria, "hola", GENERICA_I);
 
-    while (1) {
-        // Bucle principal
-    }
 
     log_info(log_entradasalida, "Finalizo conexion con servidores");
     finalizar_programa();
@@ -109,9 +102,8 @@ void finalizar_programa(){
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL){
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        char* nombreRecibido = recibir_string(SOCKET_CLIENTE_KERNEL, log_entradasalida); //preguntar como usar funcion
-        if(nombreRecibido == nombre_interfaz){
-            op_code operacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+        //char* nombreRecibido = recibir_string(SOCKET_CLIENTE_KERNEL, log_entradasalida); //preguntar como usar funcion
+        op_code operacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);  
             switch (operacion){
             case IO_GEN_SLEEP:
                 if(es_operacion_compatible(tipo,operacion)){
@@ -156,9 +148,9 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL){
             break;
             default:
                 log_warning(log_entradasalida, "Operacion no compatible");
+                noFinalizar = -1;
             break;
             }
-        }
     }
 
 }
@@ -174,6 +166,7 @@ void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
             break;
             default:
                 log_warning(log_entradasalida, "Operacion no compatible");
+                noFinalizar = -1;
             break;
         }
     }
@@ -293,6 +286,11 @@ void establecer_conexion_kernel(char *ip_kernel, char *puerto_kernel, t_config *
     }
     recibir_string(conexion_entradasalida_kernel, log_entradasalida);
     */
+    sleep(3);
+    enviar_string(conexion_entradasalida_kernel, tipo_interfaz_txt, IDENTIFICACION);
+    log_trace(log_entradasalida, "mande un mensaje");
+    enviar_string(conexion_entradasalida_kernel, "hola papito", tipo);
+    log_trace(log_entradasalida, "mande un mensaje");
 }
 
 void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_config *config_entradasalida, t_log *loggs)
