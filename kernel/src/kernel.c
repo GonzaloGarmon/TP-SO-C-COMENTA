@@ -14,17 +14,10 @@ int main(int argc, char* argv[]) {
 
 
     socket_servidor_kernel_dispatch = iniciar_servidor(puerto_escucha, log_kernel);
-
+    conexiones_io.socket_servidor_kernel_dispatch = socket_servidor_kernel_dispatch;
     log_info(log_kernel, "INICIO SERVIDOR");
 
-    log_info(log_kernel, "Listo para recibir a EntradaSalida");
-
-    socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
-     
-    pthread_t atiende_cliente_entradasalida;
-    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
-    pthread_detach(atiende_cliente_entradasalida);
-
+    
     pthread_t cpu_dispatch;
     pthread_create(&cpu_dispatch, NULL, (void *)recibir_cpu_dispatch, (void *) (intptr_t) conexion_kernel_cpu_dispatch);
     pthread_detach(cpu_dispatch);
@@ -32,7 +25,20 @@ int main(int argc, char* argv[]) {
     pthread_t cpu_interrupt;
     pthread_create(&cpu_interrupt, NULL, (void *)recibir_cpu_interrupt, (void *) (intptr_t) conexion_kernel_cpu_interrupt);
     pthread_detach(cpu_interrupt);
-    
+
+
+
+    log_info(log_kernel, "Listo para recibir a EntradaSalida");
+    //socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
+
+    //pthread_mutex_lock(&conexion);
+    //list_add(conexiones_io.conexiones_io,socket_cliente_entradasalida);
+    //pthread_mutex_unlock(&conexion);
+
+    pthread_t atiende_nuevas_interfaces;
+    pthread_create(&atiende_nuevas_interfaces, NULL, (void *)esperar_cliente_especial, (void *) (intptr_t) socket_servidor_kernel_dispatch);
+    pthread_detach(atiende_nuevas_interfaces);
+
     planificar();
 
     iniciar_consola();
@@ -99,6 +105,7 @@ void iniciar_semaforos(){
     pthread_mutex_init(&mutex_cola_new, NULL);
     pthread_mutex_init(&mutex_cola_exec, NULL);
     pthread_mutex_init(&mutex_cola_exit, NULL);
+    pthread_mutex_init(&conexion, NULL);
 
     sem_init(&sem_multiprogamacion, 0, grado_multiprogramacion);
     sem_init(&sem_listos_para_ready, 0, 0);
@@ -111,7 +118,9 @@ void iniciar_semaforos(){
     cola_exec = list_create();
     cola_exit = list_create();
     generador_pid = 0;
-
+    conexiones_io.conexiones_io = list_create();
+    conexiones_io.conexiones_io_nombres = list_create();
+    
     lista_recurso = (t_list**)malloc(cantidad_recursos * sizeof(t_list*));
 
     for (int i = 0; i < cantidad_recursos; i++) {
@@ -132,11 +141,49 @@ int* convertirArrayDeNumeros(char** caracteres){
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
-    enviar_string(socket_cliente_entradasalida, "hola desde kernel", MENSAJE);
+    //enviar_string(socket_cliente_entradasalida, "hola desde kernel", MENSAJE);
     //Se deben enviar la cantidad de unidades de trabakp necesarias, crear una nueva funcion
     int noFinalizar = 0;
     while(noFinalizar != -1){
         int op_code = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
+        switch (op_code)
+        {
+        case IDENTIFICACION:
+            char* nombre_interfaz = recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
+            pthread_mutex_lock(&conexion);
+            list_add(conexiones_io.conexiones_io_nombres, nombre_interfaz);
+            pthread_mutex_unlock(&conexion);
+            log_trace(log_kernel, "me llego la interfaz: %s", nombre_interfaz);
+            break;
+        case GENERICA_I:
+            log_trace(log_kernel, "entre a GENERICA_I");
+            recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
+            break; 
+        case STDIN_I:
+            log_trace(log_kernel, "entre a STDIN_I");
+            recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
+            break;
+        case STDOUT_I:
+            log_trace(log_kernel, "entre a STDOUT_I");
+            recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
+            break; 
+        case DIALFS_I:
+            log_trace(log_kernel, "entre a DIALFS_I");
+            recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
+            break;                                      
+        case -1:
+        log_trace(log_kernel, "se desconecto un modulo io");
+        for (int i = 0; i < list_size(conexiones_io.conexiones_io); i++) {
+        int socket = list_get(conexiones_io.conexiones_io, i);
+        if ( socket == SOCKET_CLIENTE_ENTRADASALIDA) {
+            list_remove(conexiones_io.conexiones_io,i);
+            list_remove(conexiones_io.conexiones_io_nombres,i);
+            }
+        }
+        break;
+        default:
+            break;
+        }
     }
 }
 
@@ -350,6 +397,24 @@ void finalizar_programa(){
 /*
 ------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
 */
+
+void esperar_cliente_especial(int socket_servidor_kernel_dispatch)
+{   int no_fin = 1;
+    while(no_fin != 0){
+    // Aceptamos un nuevo cliente
+    int socket_cliente = esperar_cliente(socket_servidor_kernel_dispatch);
+    log_trace(log_kernel, "conecte una interfaz");
+    pthread_mutex_lock(&conexion);
+    list_add(conexiones_io.conexiones_io,socket_cliente);
+    pthread_mutex_unlock(&conexion);
+    pthread_t atiende_cliente_entradasalida;
+    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente);
+    pthread_detach(atiende_cliente_entradasalida);
+    }
+
+    return 0;
+}
+
 void iniciar_consola(){
     
     int eleccion;
@@ -815,3 +880,4 @@ void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid){
     list_add(cola_exit,pcb_exit_ok);
     pthread_mutex_unlock(&mutex_cola_exit);
 }
+

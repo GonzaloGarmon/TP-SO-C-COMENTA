@@ -27,9 +27,9 @@ int main(int argc, char* argv[]) {
     pthread_detach(atiende_cliente_kernel);
 
     log_info(log_memoria, "Listo para recibir a EntradaSalida");
-    socket_cliente_entradasalida = esperar_cliente(socket_servidor_memoria_dispatch);
+    //socket_cliente_entradasalida = esperar_cliente(socket_servidor_memoria_dispatch);
     
-    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
+    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)esperar_cliente_especial, (void *) (intptr_t) socket_servidor_memoria_dispatch);
     pthread_join(atiende_cliente_entradasalida, NULL);
 
     log_info(log_memoria, "Finalizo conexion con clientes");
@@ -57,7 +57,19 @@ void finalizar_programa(){
     config_destroy(config_memoria);
 }
 
+void esperar_cliente_especial(int socket_servidor_memoria_dispatch)
+{   int no_fin = 1;
+    while(no_fin != 0){
+    // Aceptamos un nuevo cliente
+    int socket_cliente = esperar_cliente(socket_servidor_memoria_dispatch);
+    log_trace(log_memoria, "conecte una interfaz");
+    pthread_t atiende_cliente_entradasalida;
+    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente);
+    pthread_detach(atiende_cliente_entradasalida);
+    }
 
+    return 0;
+}
 
 
 // t_instruccion *instrucciones[instrucciones_maximas];
@@ -257,12 +269,15 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
-    enviar_string(SOCKET_CLIENTE_ENTRADASALIDA,"hola desde memoria", MENSAJE);
+    //enviar_string(SOCKET_CLIENTE_ENTRADASALIDA,"hola desde memoria", MENSAJE);
 
     int codigoOperacion = 0;
     while (codigoOperacion != -1) {
          codigoOperacion = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
         switch (codigoOperacion) {
+            case MENSAJE:
+                recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_memoria);
+                break;
             case IO_FS_READ:
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);

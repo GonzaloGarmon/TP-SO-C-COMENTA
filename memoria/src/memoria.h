@@ -61,7 +61,7 @@ void finalizar_programa();
 void recibir_cpu(int SOCKET_CLIENTE_CPU);
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL);
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA);
-
+void esperar_cliente_especial(int socket_servidor_memoria_dispatch);
 
 void recibir_cpu1(int SOCKET_CLIENTE_CPU);
 void recibir_kernel1(int SOCKET_CLIENTE_KERNEL);
