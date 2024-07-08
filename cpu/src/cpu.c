@@ -8,11 +8,13 @@ int main(int argc, char* argv[]) {
 
     leer_config();
     
-    generar_conexiones();
-
-    socket_servidor_cpu_dispatch = iniciar_servidor(puerto_escucha_dispatch, log_cpu);
+    
+    establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
+    //generar_conexiones();
 
     log_info(log_cpu, "INICIO SERVIDOR DISPATCH");
+    socket_servidor_cpu_dispatch = iniciar_servidor(puerto_escucha_dispatch, log_cpu);
+
 
     pthread_t atiende_cliente_kernel_dispatch;
     log_info(log_cpu, "Listo para recibir a kernel dispatch");
@@ -27,10 +29,13 @@ int main(int argc, char* argv[]) {
     pthread_t atiende_cliente_kernel_interrupt;
     log_info(log_cpu, "Listo para recibir a kernel interrupt");
     socket_cliente_kernel_interrupt = esperar_cliente(socket_servidor_cpu_interrupt);
-   
-    pthread_create(&atiende_cliente_kernel_interrupt, NULL, (void *)recibir_kernel_interrupt, (void *) (intptr_t) socket_cliente_kernel_interrupt);
-    pthread_join(atiende_cliente_kernel_interrupt, NULL);
 
+
+    
+    pthread_create(&atiende_cliente_kernel_interrupt, NULL, (void *)recibir_kernel_interrupt, (void *) (intptr_t) socket_cliente_kernel_interrupt);
+    log_info(log_cpu, "Listo Hilos con kernel");
+    pthread_join(atiende_cliente_kernel_interrupt, NULL);
+    
     log_info(log_cpu, "Finalizo conexion con cliente");
     terminar_programa();
     
@@ -69,8 +74,8 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
     enviar_string(SOCKET_CLIENTE_KERNEL_DISPATCH, "hola desde cpu dispatch", MENSAJE);
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        op_code codigo = recibir_operacion(SOCKET_CLIENTE_KERNEL_DISPATCH);
-        switch (codigo)
+        int codOperacion = recibir_operacion(SOCKET_CLIENTE_KERNEL_DISPATCH);
+        switch (codOperacion)
         {
         case EXEC:
             log_trace(log_cpu, "llego contexto de ejecucion");
@@ -78,9 +83,10 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
             ejecutar_ciclo_de_instruccion();
             //sem_post(&sem_fin_de_ciclo);
             log_trace(log_cpu, "ejecute correctamente el ciclo de instruccion");
-            
             break;
-        
+        case -1:
+            noFinalizar=codOperacion;
+            break;
         default:
             break;
         }
@@ -91,15 +97,17 @@ void recibir_kernel_interrupt(int SOCKET_CLIENTE_KERNEL_INTERRUPT){
     enviar_string(SOCKET_CLIENTE_KERNEL_INTERRUPT, "hola desde cpu interrupt", MENSAJE);
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        op_code codigo = recibir_operacion(SOCKET_CLIENTE_KERNEL_INTERRUPT);
-        switch (codigo)
+        int codOperacion = recibir_operacion(SOCKET_CLIENTE_KERNEL_INTERRUPT);
+        switch (codOperacion)
         {
         case FIN_QUANTUM_RR:
             pid_interrupt = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL_INTERRUPT,log_cpu);
             hay_interrupcion = 1;
             log_trace(log_cpu,"recibi una interrupcion para el pid: %d", pid_interrupt);
             break;
-        
+        case -1:
+            noFinalizar=codOperacion;
+            break;
         default:
             break;
         }
@@ -119,11 +127,13 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
 
         exit(2);
     }
+
+   
     
-    //log_trace(loggs, "Todavía no recibí Op");
+    log_trace(loggs, "Todavía no recibí Op");
     recibir_operacion(conexion_memoria);
-    //log_trace(loggs, "Recibí Op");
-    recibir_string(conexion_memoria, loggs);
+    log_trace(loggs, "Recibí Op");
+    recibir_entero_uint32(conexion_memoria, loggs);
     
 }
 

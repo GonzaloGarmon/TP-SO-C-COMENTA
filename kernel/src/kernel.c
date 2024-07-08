@@ -14,22 +14,11 @@ int main(int argc, char* argv[]) {
 
 
     socket_servidor_kernel_dispatch = iniciar_servidor(puerto_escucha, log_kernel);
-    conexiones_io.socket_servidor_kernel_dispatch = socket_servidor_kernel_dispatch;
     log_info(log_kernel, "INICIO SERVIDOR");
-
-    
-    pthread_t cpu_dispatch;
-    pthread_create(&cpu_dispatch, NULL, (void *)recibir_cpu_dispatch, (void *) (intptr_t) conexion_kernel_cpu_dispatch);
-    pthread_detach(cpu_dispatch);
-
-    pthread_t cpu_interrupt;
-    pthread_create(&cpu_interrupt, NULL, (void *)recibir_cpu_interrupt, (void *) (intptr_t) conexion_kernel_cpu_interrupt);
-    pthread_detach(cpu_interrupt);
-
 
 
     log_info(log_kernel, "Listo para recibir a EntradaSalida");
-    //socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
+    socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
 
     //pthread_mutex_lock(&conexion);
     //list_add(conexiones_io.conexiones_io,socket_cliente_entradasalida);
@@ -92,6 +81,10 @@ void leer_config(){
 void generar_conexiones(){
 
     establecer_conexion_cpu_dispatch(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
+
+
+    sleep(3);
+
 
     establecer_conexion_cpu_interrupt(ip_cpu, puerto_cpu_interrupt, config_kernel, log_kernel);
     
@@ -412,7 +405,7 @@ void esperar_cliente_especial(int socket_servidor_kernel_dispatch)
     pthread_detach(atiende_cliente_entradasalida);
     }
 
-    return 0;
+ 
 }
 
 void iniciar_consola(){

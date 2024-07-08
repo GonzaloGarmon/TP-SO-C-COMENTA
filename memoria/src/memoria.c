@@ -12,11 +12,12 @@ int main(int argc, char* argv[]) {
 
     log_info(log_memoria, "Inicia el servidor de memoria");
     
-    pthread_t atiende_cliente_cpu, atiende_cliente_kernel, atiende_cliente_entradasalida;
+    pthread_t atiende_cliente_cpu, atiende_cliente_kernel;
 
     log_info(log_memoria, "Listo para recibir a CPU");
     socket_cliente_cpu = esperar_cliente(socket_servidor_memoria_dispatch);
-    
+
+
     pthread_create(&atiende_cliente_cpu, NULL, (void *)recibir_cpu, (void *) (intptr_t) socket_cliente_cpu);
     pthread_detach(atiende_cliente_cpu);
     
@@ -24,13 +25,19 @@ int main(int argc, char* argv[]) {
     socket_cliente_kernel = esperar_cliente(socket_servidor_memoria_dispatch);
 
     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibir_kernel, (void *) (intptr_t) socket_cliente_kernel);
-    pthread_detach(atiende_cliente_kernel);
-
-    log_info(log_memoria, "Listo para recibir a EntradaSalida");
-    //socket_cliente_entradasalida = esperar_cliente(socket_servidor_memoria_dispatch);
+    pthread_detach(atiende_cliente_kernel); 
     
-    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)esperar_cliente_especial, (void *) (intptr_t) socket_servidor_memoria_dispatch);
-    pthread_join(atiende_cliente_entradasalida, NULL);
+    while(1){
+        log_info(log_memoria, "Listo para recibir a EntradaSalida");
+        socket_cliente_entradasalida = esperar_cliente(socket_servidor_memoria_dispatch);
+        log_info(log_memoria, "seconecto entrada salida");
+
+        pthread_t atiende_cliente_entradasalida;
+        pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente_entradasalida);
+        pthread_detach(atiende_cliente_entradasalida);
+
+    }
+    //sem_wait(&finModulo);
 
     log_info(log_memoria, "Finalizo conexion con clientes");
     finalizar_programa();
@@ -38,7 +45,7 @@ int main(int argc, char* argv[]) {
 }
 
 void leer_config(){
-    config_memoria = iniciar_config("/so-deploy/tp-2024-1c-GoC/memoria/config/memoria.config");
+    config_memoria = iniciar_config("/home/utnso/tp-2024-1c-GoC/memoria/config/memoria.config");
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     tam_memoria = config_get_int_value(config_memoria, "TAM_MEMORIA");
@@ -57,19 +64,7 @@ void finalizar_programa(){
     config_destroy(config_memoria);
 }
 
-void esperar_cliente_especial(int socket_servidor_memoria_dispatch)
-{   int no_fin = 1;
-    while(no_fin != 0){
-    // Aceptamos un nuevo cliente
-    int socket_cliente = esperar_cliente(socket_servidor_memoria_dispatch);
-    log_trace(log_memoria, "conecte una interfaz");
-    pthread_t atiende_cliente_entradasalida;
-    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente);
-    pthread_detach(atiende_cliente_entradasalida);
-    }
 
-    return 0;
-}
 
 
 // t_instruccion *instrucciones[instrucciones_maximas];
@@ -134,7 +129,7 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
     enviar_string(socket_cliente_kernel,"hola desde memoria", MENSAJE);
     int codigoOperacion = 0;
     while(codigoOperacion != -1){
-        codigoOperacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+        int codOperacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
         switch (codigoOperacion)
         {
         case CREAR_PROCESO:
@@ -169,21 +164,26 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             // enviar_entero(SOCKET_CLIENTE_KERNEL, marco_correspondiente, /*ACA FALTA ALGO*/); //ver en kernel
             log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
             break;
+            case -1:
+            codigoOperacion=codOperacion;
         default:
-            log_trace(log_memoria, "2 Recibi el codigo de opreacion %d y entre en DEFAULT", codigoOperacion);
+            log_trace(log_memoria, "Recibi el codigo de opreacion %d y entre en DEFAULT", codigoOperacion);
             break;
         }
     }
     log_warning(log_memoria, "Se desconecto kernel");
 }
 
+
+
 void recibir_cpu(int SOCKET_CLIENTE_CPU){
 
-    enviar_string(SOCKET_CLIENTE_CPU,"hola desde memoria", MENSAJE);
+    
+    enviar_entero(SOCKET_CLIENTE_CPU,23, MENSAJE);
     int codigoOperacion = 0;
     while(codigoOperacion != -1){
-        codigoOperacion = recibir_operacion(SOCKET_CLIENTE_CPU);
-        switch (codigoOperacion)
+        int codOperacion = recibir_operacion(SOCKET_CLIENTE_CPU);
+        switch (codOperacion)
         {
         case PEDIR_INSTRUCCION_MEMORIA:
         sem_wait(&sem);
@@ -257,6 +257,10 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             // enviar_entero(SOCKET_CLIENTE_CPU, marco_correspondiente, /*ACA FALTA ALGO*/); //ver en kernel
             log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
             break;
+
+        case -1:
+        codigoOperacion=codOperacion;
+        break;
         default:
             
             log_trace(log_memoria, "1 Recibí el código de operación %d y entré en DEFAULT", codigoOperacion);
@@ -269,12 +273,16 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
 }
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
-    //enviar_string(SOCKET_CLIENTE_ENTRADASALIDA,"hola desde memoria", MENSAJE);
-
+    log_info(log_memoria, "eempece el hilo");
+    enviar_string(SOCKET_CLIENTE_ENTRADASALIDA,"hola desde memoria", MENSAJE);
+    log_info(log_memoria, "envie mensaje a entrada salida");
     int codigoOperacion = 0;
     while (codigoOperacion != -1) {
-         codigoOperacion = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
-        switch (codigoOperacion) {
+         int codOperacion = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
+
+        log_info(log_memoria, "mensaje %i", codOperacion);
+
+        switch (codOperacion) {
             case MENSAJE:
                 recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_memoria);
                 break;
@@ -331,8 +339,12 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 
                 // enviar_entero(SOCKET_CLIENTE_ENTRADASALIDA, marco_correspondiente, /*ACA FALTA ALGO*/); //ver en kernel
                 log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
-                break;    
+                break;
+            case -1:
+                codigoOperacion=codOperacion;
+                break;
             default:
+            codigoOperacion = -1;
                 log_trace(log_memoria, "Recibí el código de operación %d y entré en DEFAULT", codigoOperacion);
                 break;
         }

@@ -28,20 +28,20 @@ int main(int argc, char *argv[]){
     //}
 
     generar_conexiones();
-    pthread_t atiende_cliente_memoria; 
-    pthread_t atiende_cliente_kernel;
+    // pthread_t atiende_cliente_memoria; 
+    // pthread_t atiende_cliente_kernel;
 
-    if(tipo != GENERICA_I){
+    // if(tipo != GENERICA_I){
 
-        pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
-        pthread_detach(atiende_cliente_kernel);
+    //     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
+    //     pthread_detach(atiende_cliente_kernel);
    
-        pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_memoria);
-        pthread_join(atiende_cliente_memoria, NULL);
-    }else{
-        pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
-        pthread_join(atiende_cliente_kernel,NULL);
-    }
+    //     pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_memoria);
+    //     pthread_join(atiende_cliente_memoria, NULL);
+    // }else{
+    //     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
+    //     pthread_join(atiende_cliente_kernel,NULL);
+    // }
 
 
     //enviar_string(conexion_entradasalida_memoria, "hola", GENERICA_I);
@@ -286,10 +286,12 @@ void establecer_conexion_kernel(char *ip_kernel, char *puerto_kernel, t_config *
     }
     recibir_string(conexion_entradasalida_kernel, log_entradasalida);
     */
+    
+    enviar_string(conexion_entradasalida_kernel, "hola papito", MENSAJE);
+    log_trace(log_entradasalida, "mande un mensaje");
+
     sleep(3);
     enviar_string(conexion_entradasalida_kernel, tipo_interfaz_txt, IDENTIFICACION);
-    log_trace(log_entradasalida, "mande un mensaje");
-    enviar_string(conexion_entradasalida_kernel, "hola papito", tipo);
     log_trace(log_entradasalida, "mande un mensaje");
 }
 
@@ -309,9 +311,15 @@ void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_confi
         log_trace(loggs, "Error al recibir operación");
         exit(EXIT_FAILURE);
     }
-
-    recibir_string(conexion_entradasalida_memoria, log_entradasalida);
     */
+    sleep(3);
+    int operacion = recibir_operacion(conexion_entradasalida_memoria);
+    log_info(loggs, "Recibi operacion 1 %i", operacion);
+    char* palabra = recibir_string(conexion_entradasalida_memoria, log_entradasalida);
+    log_info(loggs, "Recibi operacion 2 %s", palabra);
+
+    enviar_string(conexion_entradasalida_memoria,"mando saludos", MENSAJE);
+    
 }
 
 void inicializar_interfaz_generica(t_config *config_entradasalida, const char *nombre){
