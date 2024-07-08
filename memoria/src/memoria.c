@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 }
 
 void leer_config(){
-    config_memoria = iniciar_config("/tp-2024-1c-GoC/memoria/config/memoria.config");
+    config_memoria = iniciar_config("/so-deploy/tp-2024-1c-GoC/memoria/config/memoria.config");
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     tam_memoria = config_get_int_value(config_memoria, "TAM_MEMORIA");
