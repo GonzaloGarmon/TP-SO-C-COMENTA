@@ -113,4 +113,6 @@ bool esta_en_esta_lista(t_list* lista, uint32_t pid_encontrar);
 void sacar_de_lista_mover_exit(t_list* lista,pthread_mutex_t mutex_lista, uint32_t pid);
 void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid);
 void enviar_interrupcion();
+int existe_interfaz_conectada(char* nombre_interfaz);
+int admite_operacion(char* nombre_interfaz, op_code codigo);
 #endif
