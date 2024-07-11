@@ -1,5 +1,7 @@
 #include "entradasalida.h"
 
+//REVISAR TODOS LOS LOGS
+
 int main(int argc, char *argv[]){
     log_entradasalida = log_create("./entradasalida.log", "ENTRADASALIDA", 1, LOG_LEVEL_TRACE);
     log_info(log_entradasalida, "INICIA EL MODULO DE ENTRADASALIDA");
@@ -24,7 +26,7 @@ int main(int argc, char *argv[]){
     
     pthread_t atiende_cliente_kernel;
     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
-    pthread_detach(atiende_cliente_kernel);
+    pthread_join(atiende_cliente_kernel,NULL);
    
     log_info(log_entradasalida, "Finalizo conexion con servidores");
     finalizar_programa();
@@ -76,88 +78,83 @@ void finalizar_programa(){
 void conexionRecMem(){
     pthread_t atiende_cliente_memoria; 
     pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpMemoria, (void *) (intptr_t) conexion_entradasalida_memoria);
-    pthread_join(atiende_cliente_memoria, NULL);
+    pthread_detach(atiende_cliente_memoria);
 }
 
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL){
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        //char* nombreRecibido = recibir_string(SOCKET_CLIENTE_KERNEL, log_entradasalida); //preguntar como usar funcion
-        op_code operacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);  
-            switch (operacion){
-            case IO_GEN_SLEEP:
-                if(es_operacion_compatible(tipo,operacion)){
-                    //ejemplo
-                    int unidades = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL,log_entradasalida);
-                    funcIoGenSleep(unidades);//ver como recibir los componentes
-                }
-            break;
-            case IO_STDIN_READ:
-                if(es_operacion_compatible(tipo,operacion)){
-                    funcIoStdRead(1,1);
-                }
-            break;
-            case IO_STDOUT_WRITE:
-                if(es_operacion_compatible(tipo,operacion)){
-                    funcIoStdWrite(1,1);
-                }
-            break;
-            case IO_FS_READ:
-                if(es_operacion_compatible(tipo,operacion)){
-                    funcIoFsRead();
-                }
-            break;
-            case IO_FS_WRITE:
-                if(es_operacion_compatible(tipo,operacion)){
-                    funcIoFsWrite();
-                }
-            break;
-            case IO_FS_CREATE:
-                if(es_operacion_compatible(tipo,operacion)){
-                    funcIoFsCreate();
-                }
-            break;
-            case IO_FS_DELETE:
-                if(es_operacion_compatible(tipo,operacion)){
-                    funcIoFsDelete();
-                }
-            case IO_FS_TRUNCATE:
-                if(es_operacion_compatible(tipo,operacion)){
-                    funcIoFsTruncate();
-                }
-            break;
-            default:
-                log_warning(log_entradasalida, "Operacion no compatible");
-                noFinalizar = -1;
-            break;
-            }
-    }
+        op_code operacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
+        char* nombre_recibido = ""; // nombre que recibo en el paquete con la
 
+        if(es_operacion_compatible(tipo,operacion) && nombre_interfaz == nombre_recibido){
+            switch (operacion){
+                case IO_GEN_SLEEP:
+                    int unidades = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL,log_entradasalida);
+                    funcIoGenSleep(unidades);
+                break;
+                case IO_STDIN_READ:
+                    funcIoStdRead(1,1);
+                break;
+                case IO_STDOUT_WRITE:
+                    funcIoStdWrite(1,1);
+                break;
+                case IO_FS_READ:
+                    funcIoFsRead();
+                break;
+                case IO_FS_WRITE:
+                    funcIoFsWrite();
+                break;
+                case IO_FS_CREATE:
+                    funcIoFsCreate();
+                break;
+                case IO_FS_DELETE:
+                    funcIoFsDelete();
+                case IO_FS_TRUNCATE:
+                    funcIoFsTruncate();
+                break;
+                default:
+                    log_warning(log_entradasalida, "Operacion no compatible");
+                    noFinalizar = -1;
+                break;
+            }
+        }
+    }
 }
 
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
     switch (operacion){
         case IO_STDOUT_WRITE_OK:
+            log_info(log_entradasalida, "Mensaje escrito correctamente");
         break;
         case IO_STDIN_READ_OK:
+            char* mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
+            log_info(log_entradasalida, "Mensaje escrito en esa direccion de memoria: %s",mensaje);
+        break;
+        case IO_FS_READ_OK:
+            log_info(log_entradasalida, "Mensaje escrito correctamente");
+        break;
+        case IO_FS_WRITE_OK:
+            log_info(log_entradasalida, "Mensaje escrito correctamente");
         break;
         default:
-        log_warning(log_entradasalida, "Operacion no compatible");
+            log_warning(log_entradasalida, "Operacion no compatible");
         break;
     }
 }
 
 void funcIoGenSleep(int unidades){
     enUso = true;
-    log_trace(log_entradasalida, "Esperando");
+    log_info(log_entradasalida, "Ejecutando operacion IO_GEN_Sleep...");
     sleep(unidades*tiempo_unidad_trabajo);
+    log_info(log_entradasalida, "Operacion completada");
     enUso = false;
 }
 
 void funcIoStdRead(int direccion, int tamaño){
     enUso = true;
-    log_trace(log_entradasalida, "Leyendo desde STDIN");
+    log_info(log_entradasalida, "PID: <PID> - Operacion: <OPERACION_A_REALIZAR>");
 
     char *buffer = (char *)malloc(tamaño + 1);
 
@@ -176,53 +173,43 @@ void funcIoStdRead(int direccion, int tamaño){
     }
 
     // Escribir el valor en la memoria. se encarga memoria yo solo le envio lo que escribio el usuario
-    enviar_string(conexion_entradasalida_memoria, buffer, GENERICA_I);//Ver 3er elemento de la funcion
-
+    enviar_string(conexion_entradasalida_memoria, buffer, IO_STDIN_READ_OK);
+    
     free(buffer);
     enUso = false;
 }
 
 void funcIoStdWrite(int direccion, int tamaño){
     enUso = true;
-    log_trace(log_entradasalida, "Leyendo desde memoria");
-    enviar_entero(conexion_entradasalida_memoria,direccion,GENERICA_I);//Ver 3er elemento de la funcion
-    enviar_entero(conexion_entradasalida_memoria,tamaño,GENERICA_I);//Ver 3er elemento de la funcion
-    recibirOpMemoria(conexion_entradasalida_memoria);//Ver si poner puerto o conexion
+    enviar_entero(conexion_entradasalida_memoria,direccion,IO_STDOUT_WRITE_OK);
+    conexionRecMem();
     enUso = false;
 }
 
 void funcIoFsRead(){
     enUso = true;
-    log_trace(log_entradasalida, "a");
-
+    conexionRecMem();
     enUso = false;
 }
 
 void funcIoFsWrite(){
     enUso = true;
-    log_trace(log_entradasalida, "a");
-
+    conexionRecMem();
     enUso = false;
 }
 
 void funcIoFsTruncate(){
     enUso = true;
-    log_trace(log_entradasalida, "a");
-
     enUso = false;
 }
 
 void funcIoFsCreate(){
     enUso = true;
-    log_trace(log_entradasalida, "a");
-
     enUso = false;
 }
 
 void funcIoFsDelete(){
     enUso = true;
-    log_trace(log_entradasalida, "a");
-
     enUso = false;
 }
 
@@ -252,16 +239,8 @@ void establecer_conexion_kernel(char *ip_kernel, char *puerto_kernel, t_config *
         log_error(loggs, "Error al conectar con Kernel. El servidor no está activo");
         return;
     }
-    /*
-    int operacion = recibir_operacion(conexion_entradasalida_kernel);
-
-    if (operacion == -1) {
-        log_trace(loggs, "Error al recibir operación");
-        exit(EXIT_FAILURE);
-    }
-    recibir_string(conexion_entradasalida_kernel, log_entradasalida);
-    */
     
+    //BORRAR
     enviar_string(conexion_entradasalida_kernel, "hola papito", MENSAJE);
     log_trace(log_entradasalida, "mande un mensaje");
 
@@ -278,14 +257,8 @@ void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_confi
         log_error(loggs, "Error al conectar con Memoria. El servidor no está activo");
         return;
     }
-    /*
-    int operacion = recibir_operacion(conexion_entradasalida_memoria);
 
-    if (operacion == -1) {
-        log_trace(loggs, "Error al recibir operación");
-        exit(EXIT_FAILURE);
-    }
-    */
+    //BORRAR
     sleep(3);
     int operacion = recibir_operacion(conexion_entradasalida_memoria);
     log_info(loggs, "Recibi operacion 1 %i", operacion);
@@ -389,8 +362,7 @@ void inicializar_interfaz_dialfs(t_config *config_entradasalida, const char *nom
 }
 
 bool es_operacion_compatible(op_code tipo, op_code operacion){
-    switch (tipo)
-    {
+    switch (tipo){
     case GENERICA_I:
         return operacion == IO_GEN_SLEEP;
     case STDIN_I:
@@ -404,10 +376,10 @@ bool es_operacion_compatible(op_code tipo, op_code operacion){
     }
 }
 
+//Ver si se necesita
 void esperar_interfaz_libre(){
     pthread_mutex_lock(&mutex);
-    while (true)
-    {
+    while (true){
         bool interfaz_libre = false;
         for (int i = 0; i < registro.cantidad; i++)
         {
@@ -432,6 +404,7 @@ void esperar_interfaz_libre(){
 
 // Función para inicializar el sistema de archivos DialFS
 void dialfs_init(DialFS *dialfs, int num_blocks) {
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
     dialfs->num_blocks = num_blocks;
 
     // Inicialización del bitmap de bloques
@@ -451,15 +424,18 @@ void dialfs_init(DialFS *dialfs, int num_blocks) {
     for (int i = 0; i < num_blocks; ++i) {
         dialfs->blocks[i].data = NULL; // Inicialmente los datos están vacíos
     }
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
 }
 
 // Función para destruir el sistema de archivos DialFS y liberar memoria
 void dialfs_destroy(DialFS *dialfs) {
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
     free(dialfs->bitmap);
     for (int i = 0; i < dialfs->num_blocks; ++i) {
         free(dialfs->blocks[i].data);
     }
     free(dialfs->blocks);
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
 }
 
 // Función para reservar un bloque
@@ -475,27 +451,34 @@ int dialfs_allocate_block(DialFS *fs) {
 
 // Función para liberar un bloque
 void dialfs_free_block(DialFS *fs, int block_index) {
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
     if (block_index >= 0 && block_index < fs->num_blocks) {
         fs->bitmap[block_index] = 0; // Marcar como libre
     }
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
 }
 
 // Función para escribir en un bloque
 void dialfs_write_block(DialFS *fs, int block_index, const uint8_t *data, size_t size) {
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
     if (block_index >= 0 && block_index < fs->num_blocks) {
         memcpy(fs->blocks[block_index].data, data, size);
     }
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
 }
 
 // Función para leer desde un bloque
 void dialfs_read_block(DialFS *fs, int block_index, uint8_t *buffer, size_t size) {
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
     if (block_index >= 0 && block_index < fs->num_blocks) {
         memcpy(buffer, fs->blocks[block_index].data, size);
     }
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
 }
 
 // Función para crear un archivo en DialFS
 int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, const uint8_t *datos, size_t size) {
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
     // Buscar un bloque libre para el archivo
     int bloque = dialfs_allocate_block(fs);
     if (bloque == -1) {
@@ -507,13 +490,13 @@ int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, const uint8_t *
     dialfs_write_block(fs, bloque, datos, size);
 
     // Aquí podrías implementar la lógica para mantener un registro de archivos creados, por ejemplo:
-    printf("Archivo '%s' creado exitosamente en el bloque %d.\n", nombre_archivo, bloque);
-
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
     return bloque;
 }
 
 // Función para redimensionar un archivo en DialFS
 void dialfs_redimensionar_archivo(DialFS *fs, int bloque_archivo, const uint8_t *nuevos_datos, size_t nuevo_size) {
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
     if (bloque_archivo < 0 || bloque_archivo >= fs->num_blocks) {
         fprintf(stderr, "El bloque de archivo proporcionado (%d) no es válido.\n", bloque_archivo);
         return;
@@ -522,11 +505,12 @@ void dialfs_redimensionar_archivo(DialFS *fs, int bloque_archivo, const uint8_t 
     // Escribir los nuevos datos en el bloque existente
     dialfs_write_block(fs, bloque_archivo, nuevos_datos, nuevo_size);
 
-    printf("Archivo en el bloque %d redimensionado exitosamente.\n", bloque_archivo);
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
 }
 
 // Función para compactar archivos en DialFS
 void dialfs_compactar_archivos(DialFS *fs) {
+    log_info(log_entradasalida, "DialFS - Inicio Compactación: PID: <PID> - Inicio Compactación.");
     int next_free_block = 0; // Siguiente bloque libre disponible
 
     // Recorrer todos los bloques del sistema de archivos
@@ -547,5 +531,6 @@ void dialfs_compactar_archivos(DialFS *fs) {
     // Actualizar el número total de bloques ocupados
     fs->num_blocks = next_free_block;
 
-    printf("Compactación de archivos realizada exitosamente.\n");
+    log_info(log_entradasalida, "DialFS - Fin Compactación: PID: <PID> - Fin Compactación.");
 }
+
