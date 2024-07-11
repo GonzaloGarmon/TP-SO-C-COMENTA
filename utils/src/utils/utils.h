@@ -246,13 +246,14 @@ t_instruccion* recibir_instruccion(int socket);
 t_list* recibir_doble_entero(int socket);
 
 void recibir_string_mas_contexto(int conexion_kernel_cpu_dispatch,t_contexto** pcb_wait,char** recurso_wait);
-void recibir_string_mas_u32(int conexion_kernel_cpu_dispatch,char** palabra,uint32_t* numero);
+void recibir_string_mas_u32_con_contexto(int conexion_kernel_cpu_dispatch,char** palabra,uint32_t* numero,t_contexto** contexto);
 void recibir_3_string(int conexion_kernel_cpu_dispatch, char** palabra1,char** palabra2, char** palabra3);
-void recibir_2_string(int conexion_kernel_cpu_dispatch, char** palabra1,char** palabra2);
+void recibir_2_string_con_contexto(int conexion_kernel_cpu_dispatch, char** palabra1,char** palabra2, t_contexto** contexto);
+t_string_2enteros* recibir_string_2enteros_con_contexto(int socket, t_contexto** contexto);
 t_2_enteros * recibir_2_enteros(int socket);
 t_string_2enteros* recibir_string_2enteros(int socket);
-void recibir_2_string_mas_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1);
-void recibir_2_string_mas_3_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1, uint32_t* valor2, uint32_t* valor3);
+void recibir_2_string_mas_u32_con_contexto(int socket, char** palabra1,char** palabra2, uint32_t* valor1, t_contexto** contexto);
+void recibir_2_string_mas_3_u32_con_contexto(int socket, char** palabra1,char** palabra2, uint32_t* valor1, uint32_t* valor2, uint32_t* valor3, t_contexto** contexto);
 
 
 #endif

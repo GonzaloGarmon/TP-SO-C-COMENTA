@@ -256,32 +256,38 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
         case EJECUTAR_IO_GEN_SLEEP:
             char* interfaz_gen_sleep;
             uint32_t tiempo_trabajo;
-            recibir_string_mas_u32(conexion_kernel_cpu_dispatch,&interfaz_gen_sleep, &tiempo_trabajo);
-
+            t_contexto* pcb_IO_GEN_SLEEP;
+            recibir_string_mas_u32_con_contexto(conexion_kernel_cpu_dispatch,&interfaz_gen_sleep, &tiempo_trabajo,&pcb_IO_GEN_SLEEP);
+            
             break;
         case EJECUTAR_IO_STDIN_READ:
             t_string_2enteros* parametros_stdin_read;
-            parametros_stdin_read = recibir_string_2enteros(conexion_kernel_cpu_dispatch);
+            t_contexto* pcb_IO_STDIN_READ;
+            parametros_stdin_read = recibir_string_2enteros_con_contexto(conexion_kernel_cpu_dispatch, &pcb_IO_STDIN_READ);
             break;
         case EJECUTAR_IO_STDOUT_WRITE:
             t_string_2enteros* parametros_stdin_write;
-            parametros_stdin_write = recibir_string_2enteros(conexion_kernel_cpu_dispatch);
+            t_contexto* pcb_IO_STDOUT_WRITE;
+            parametros_stdin_write = recibir_string_2enteros_con_contexto(conexion_kernel_cpu_dispatch,&pcb_IO_STDOUT_WRITE);
             break;
         case EJECUTAR_IO_FS_CREATE:
             char* interfaz_fs_create;
             char* nombre_archivo_create;
-            recibir_2_string(conexion_kernel_cpu_dispatch, &interfaz_fs_create, &nombre_archivo_create);
+            t_contexto* pcb_IO_FS_CREATE;
+            recibir_2_string_con_contexto(conexion_kernel_cpu_dispatch, &interfaz_fs_create, &nombre_archivo_create, &pcb_IO_FS_CREATE);
             break;
         case EJECUTAR_IO_FS_DELETE:
             char* interfaz_fs_delete;
             char* nombre_archivo_delete;
-            recibir_2_string(conexion_kernel_cpu_dispatch, &interfaz_fs_delete, &nombre_archivo_delete);
+            t_contexto* pcb_IO_FS_DELETE;
+            recibir_2_string_con_contexto(conexion_kernel_cpu_dispatch, &interfaz_fs_delete, &nombre_archivo_delete, &pcb_IO_FS_DELETE);
             break;
         case EJECUTAR_IO_FS_TRUNCATE:
             char* interfaz_fs_truncate;
             char* nombre_archivo_truncate;
             uint32_t registro1_truncate;
-            recibir_2_string_mas_u32(conexion_kernel_cpu_dispatch, &interfaz_fs_truncate, &nombre_archivo_truncate, &registro1_truncate);
+            t_contexto* pcb_IO_FS_TRUNCATE;
+            recibir_2_string_mas_u32_con_contexto(conexion_kernel_cpu_dispatch, &interfaz_fs_truncate, &nombre_archivo_truncate, &registro1_truncate, &pcb_IO_FS_TRUNCATE);
 
             break;
         case EJECUTAR_IO_FS_WRITE:
@@ -290,7 +296,8 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             uint32_t registro1_write;
             uint32_t registro2_write; 
             uint32_t registro3_write;
-            recibir_2_string_mas_3_u32(conexion_kernel_cpu_dispatch, &interfaz_fs_write, &nombre_archivo_write, &registro1_write, &registro2_write, &registro3_write);             
+            t_contexto* pcb_IO_FS_WRITE;
+            recibir_2_string_mas_3_u32_con_contexto(conexion_kernel_cpu_dispatch, &interfaz_fs_write, &nombre_archivo_write, &registro1_write, &registro2_write, &registro3_write, &pcb_IO_FS_WRITE);             
             break;
         case EJECUTAR_IO_FS_READ:
             char* interfaz_fs_read;
@@ -298,7 +305,8 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             uint32_t registro1_read;
             uint32_t registro2_read; 
             uint32_t registro3_read;
-            recibir_2_string_mas_3_u32(conexion_kernel_cpu_dispatch, &interfaz_fs_read, &nombre_archivo_read, &registro1_read, &registro2_read, &registro3_read);          
+            t_contexto* pcb_IO_FS_READ;
+            recibir_2_string_mas_3_u32_con_contexto(conexion_kernel_cpu_dispatch, &interfaz_fs_read, &nombre_archivo_read, &registro1_read, &registro2_read, &registro3_read, &pcb_IO_FS_READ);          
             break;
         default:
             break;
