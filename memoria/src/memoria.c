@@ -101,21 +101,27 @@ void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* in
             switch (param_count) {
                 case 0:
                     instruccion->parametros1 = strdup(token);
+                    log_info(log_memoria, "case instruccion %s", instruccion->parametros1);
                     break;
                 case 1:
                     instruccion->parametros2 = strdup(token);
+                    log_info(log_memoria, "parametro 1 %s", instruccion->parametros2);
                     break;
                 case 2:
                     instruccion->parametros3 = strdup(token);
+                    log_info(log_memoria, "parametro 2 %s", instruccion->parametros3);
                     break;
                 case 3:
                     instruccion->parametros4 = strdup(token);
+                    log_info(log_memoria, "parametro 3 %s", instruccion->parametros4);
                     break;
                 case 4:
                     instruccion->parametros5 = strdup(token);
+                    log_info(log_memoria, "parametro 4 %s", instruccion->parametros5);
                     break;
                 case 5:
                     instruccion->parametros6 = strdup(token);
+                    log_info(log_memoria, "parametro 5 %s", instruccion->parametros6);
                     break;
                 default:
                     break;
