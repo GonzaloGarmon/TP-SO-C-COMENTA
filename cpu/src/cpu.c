@@ -146,6 +146,17 @@ void ejecutar_ciclo_de_instruccion(t_log* loggs){
     op_code instruccion_nombre = decode(instruccion);
     log_info(loggs, "paso decode");
     execute(instruccion_nombre, instruccion);
+    log_info(log_cpu, "PID -> %i PC -> %i -> Registros -> AX:%i , BX:%i, CX:%i, DX:%i, EAX:%i, EBX:%i, ECX:%i, EDX:%i", 
+    contexto->pid, 
+    contexto->pc,
+    contexto->registros->AX,
+    contexto->registros->BX,
+    contexto->registros->CX,
+    contexto->registros->DX,
+    contexto->registros->EAX,
+    contexto->registros->EBX,
+    contexto->registros->ECX,
+    contexto->registros->EDX);
     contexto->pc++;
     if(seguir_ejecutando){
     checkInturrupt(contexto->pid);
