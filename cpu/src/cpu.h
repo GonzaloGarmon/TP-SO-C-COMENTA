@@ -60,7 +60,7 @@ void funcIoFsWrite(t_instruccion *instruccion);
 
 
 op_code decode(t_instruccion *instruccion);
-t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc); 
+t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc, t_log *logg); 
 void execute(op_code instruccion_nombre, t_instruccion* instruccion);
 uint8_t obtener_valor_registro_XX(char* parametro);
 uint32_t obtener_valor_registro_XXX(char* parametro);
@@ -68,4 +68,5 @@ t_instruccion* fetch(uint32_t pid, uint32_t pc);
 void checkInturrupt(uint32_t pid);
 void esperar_devolucion_pcb();
 uint32_t obtener_valor_registro(char* registro);
+void ejecutar_ciclo_de_instruccion(t_log *loggs);
 #endif

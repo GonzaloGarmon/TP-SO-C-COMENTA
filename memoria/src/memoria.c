@@ -71,17 +71,28 @@ void finalizar_programa(){
 // t_instruccion ins a enviar = instrucciones[pid];
 
 void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* instrucciones[instrucciones_maximas]) {
-    strcat(path_instrucciones,nombre_archivo);
-    FILE* archivo = fopen(path_instrucciones, "r");
+    log_info(log_memoria, "log 1 %s", nombre_archivo);
+    size_t path_len = strlen(path_instrucciones) + strlen(nombre_archivo) + 1;
+    char* path_compl = malloc(path_len);    
+    strcpy(path_compl, path_instrucciones);
+    strcat(path_compl, nombre_archivo); 
+    log_info(log_memoria, "log 2");
+    FILE* archivo = fopen(path_compl, "r");
+    
+    // Liberar path_compl ya que no se necesita más
+    free(path_compl);
+    log_info(log_memoria, "log 3");
     if (archivo == NULL) {
         perror("Error al abrir el archivo");
         exit(EXIT_FAILURE);
     }
-
+    log_info(log_memoria, "log 4");
     int indice_instruccion = 0;
     char linea[longitud_maxima];
+    log_info(log_memoria, "log 5");
 
     while (fgets(linea, longitud_maxima, archivo) != NULL && indice_instruccion < instrucciones_maximas) {
+        log_info(log_memoria, "log 6");
         t_instruccion* instruccion = malloc(sizeof(t_instruccion));
         char* token = strtok(linea, " \t\n");
         int param_count = 0;
@@ -125,14 +136,15 @@ void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* in
 //-----COMUNICACION ENTRE KERNEL, CPU, I/O-----
 
 void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
-
+    
     enviar_string(socket_cliente_kernel,"hola desde memoria", MENSAJE);
     int codigoOperacion = 0;
     while(codigoOperacion != -1){
         int codOperacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
-        switch (codigoOperacion)
+        switch (codOperacion)
         {
         case CREAR_PROCESO:
+            log_info(log_memoria, "Antes de levantar estruc admin");
             levantar_estructuras_administrativas();
             usleep(retardo_respuesta * 1000); // aca dice memoria_config.retardo rari
             uint32_t pid;
@@ -179,10 +191,11 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
 void recibir_cpu(int SOCKET_CLIENTE_CPU){
 
     
-    enviar_entero(SOCKET_CLIENTE_CPU,23, MENSAJE);
+    
     int codigoOperacion = 0;
     while(codigoOperacion != -1){
         int codOperacion = recibir_operacion(SOCKET_CLIENTE_CPU);
+        log_info(log_memoria, "codigo operacion es %i", codOperacion);
         switch (codOperacion)
         {
         case PEDIR_INSTRUCCION_MEMORIA:
@@ -354,6 +367,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
 }
 
 void levantar_estructuras_administrativas() {
+    log_info(log_memoria, "principio de todo el cod");
     ESPACIO_USUARIO = malloc(memoria_config.tam_memoria);
     ESPACIO_LIBRE_TOTAL = memoria_config.tam_memoria;
 
@@ -366,7 +380,7 @@ void levantar_estructuras_administrativas() {
 
     list_add(LISTA_ESPACIOS_LIBRES, espacio_inicial);
 
-    //cambios de nombre
+    log_info(log_memoria, "fin de todo el cod");
 }
 
 void crear_tabla_pagina(uint32_t pid_t, uint32_t cant_paginas){

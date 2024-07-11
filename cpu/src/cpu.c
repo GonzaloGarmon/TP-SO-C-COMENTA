@@ -80,7 +80,7 @@ void recibir_kernel_dispatch(int SOCKET_CLIENTE_KERNEL_DISPATCH){
         case EXEC:
             log_trace(log_cpu, "llego contexto de ejecucion");
             contexto = recibir_contexto(SOCKET_CLIENTE_KERNEL_DISPATCH);
-            ejecutar_ciclo_de_instruccion();
+            ejecutar_ciclo_de_instruccion(log_cpu);
             //sem_post(&sem_fin_de_ciclo);
             log_trace(log_cpu, "ejecute correctamente el ciclo de instruccion");
             break;
@@ -131,17 +131,20 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
    
     
     log_trace(loggs, "Todavía no recibí Op");
-    recibir_operacion(conexion_memoria);
+    //recibir_operacion(conexion_memoria);
     log_trace(loggs, "Recibí Op");
-    recibir_entero_uint32(conexion_memoria, loggs);
+    //recibir_entero_uint32(conexion_memoria, loggs);
     
 }
 
-void ejecutar_ciclo_de_instruccion(){
+void ejecutar_ciclo_de_instruccion(t_log* loggs){
     seguir_ejecutando = 1;
     while(seguir_ejecutando){
+    log_info(loggs, "paso el while");
     t_instruccion* instruccion = fetch(contexto->pid, contexto->pc);
+    log_info(loggs, "paso fetch");
     op_code instruccion_nombre = decode(instruccion);
+    log_info(loggs, "paso decode");
     execute(instruccion_nombre, instruccion);
     contexto->pc++;
     if(seguir_ejecutando){
@@ -155,7 +158,8 @@ void ejecutar_ciclo_de_instruccion(){
 //pedir a la memoria la proxima instruccion a ejecutar
 
 t_instruccion* fetch(uint32_t pid, uint32_t pc){
-    pedir_instruccion_memoria(pid, pc);
+    pedir_instruccion_memoria(pid, pc, log_cpu);
+    log_trace(log_cpu, "paso pedir instruccion");
     t_instruccion* instruccion = malloc(sizeof(t_instruccion));
     int codigo = recibir_operacion(conexion_memoria);
     log_trace(log_cpu, "pedi instruccion");
@@ -164,11 +168,12 @@ t_instruccion* fetch(uint32_t pid, uint32_t pc){
   return instruccion;
 }
 
-t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc){
+t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc, t_log *logg){
     t_paquete* paquete = crear_paquete_op(PEDIR_INSTRUCCION_MEMORIA);
     agregar_entero_a_paquete(paquete,pid);
     agregar_entero_a_paquete(paquete,pc);
     
+    log_info(logg, "serializacion %i %i", pid, pc);
     enviar_paquete(paquete,conexion_memoria);
     eliminar_paquete(paquete);
 
@@ -202,10 +207,10 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
         case EXIT:
             funcExit(instruccion);
         break;
-        /*case MOV_IN:
+        case MOV_IN:
             funcMovIn(instruccion);
             break;
-        case MOV_OUT:
+        /*case MOV_OUT:
             funcMovOut(instruccion);
             break;
         case RESIZE:
@@ -539,10 +544,9 @@ void funcExit(t_instruccion *instruccion) {
 }
 
 void funcIoStdinRead(t_instruccion *instruccion) {
-    uint32_t registro_direccion;
-    uint32_t registro_tamanio;
-    registro_direccion = obtener_valor_registro(instruccion->parametros3);
-    registro_tamanio = obtener_valor_registro(instruccion->parametros4);
+    
+    uint32_t registro_direccion = obtener_valor_registro(instruccion->parametros3);
+    uint32_t registro_tamanio = obtener_valor_registro(instruccion->parametros4);
     t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_STDIN_READ);
     agregar_entero_a_paquete(paquete,registro_direccion);
     agregar_entero_a_paquete(paquete,registro_tamanio);
@@ -552,10 +556,9 @@ void funcIoStdinRead(t_instruccion *instruccion) {
 }
 
 void funcIoStdOutWrite(t_instruccion *instruccion) {
-    uint32_t registro_direccion;
-    uint32_t registro_tamanio;
-    registro_direccion = obtener_valor_registro(instruccion->parametros3);
-    registro_tamanio = obtener_valor_registro(instruccion->parametros4);
+    
+    uint32_t registro_direccion = obtener_valor_registro(instruccion->parametros3);
+    uint32_t registro_tamanio = obtener_valor_registro(instruccion->parametros4);
     t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_STDOUT_WRITE);
     agregar_entero_a_paquete(paquete,registro_direccion);
     agregar_entero_a_paquete(paquete,registro_tamanio);
@@ -664,7 +667,7 @@ DireccionFisica traducirDireccion(DireccionLogica dirLogica, int tamano_pagina) 
 //EntradaTLB* TLB = malloc(cantidad_entradas_tlb * sizeof(EntradaTLB));
 //free(TLB);
 
-uint32_t traducirDireccion(uint32_t pid, uint32_t dirLogica, uint32_t tamanio_pagina) {
+uint32_t traducirDireccion(t_contexto *contexto, uint32_t dirLogica, uint32_t tamanio_pagina) {
 
     uint32_t numero_pagina = floor(dirLogica / tamanio_pagina);
     uint32_t desplazamiento = dirLogica - numero_pagina * tamanio_pagina;
@@ -672,7 +675,7 @@ uint32_t traducirDireccion(uint32_t pid, uint32_t dirLogica, uint32_t tamanio_pa
     
     //codigo para buscar en tlb
      for(int i=0; i < cantidad_entradas_tlb; i++){
-        if(pid == entrada_tlb[i].pid && numero_pagina == entrada_tlb[i].numero_de_pagina){ //TLB hit
+        if(contexto->pid == entrada_tlb[i].pid && numero_pagina == entrada_tlb[i].numero_de_pagina){ //TLB hit
         dirFisica = entrada_tlb[i].marco * tamanio_pagina + desplazamiento;
 
         return dirFisica;
@@ -698,13 +701,13 @@ uint32_t traducirDireccion(uint32_t pid, uint32_t dirLogica, uint32_t tamanio_pa
     return dirFisica;
 }
 
-void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina){ //actualizar tlb
+void agregar_entrada_tlb(t_contexto *contexto, uint32_t marco, uint32_t pagina){ //actualizar tlb
 
     bool  espacio_libre = false; //flag
     //chequo espacio vacio
-    for(int i=pid ;i < cantidad_entradas_tlb; i++){
+    for(int i=contexto->pid ;i < cantidad_entradas_tlb; i++){
         if(entrada_tlb[i].pid == NULL){
-            entrada_tlb[i].pid = pid;
+            entrada_tlb[i].pid = contexto->pid;
             entrada_tlb[i].numero_de_pagina = pagina;
             entrada_tlb[i].marco = marco;
             espacio_libre = true;
@@ -713,19 +716,19 @@ void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina){ //actua
     }
     if(!espacio_libre){
         if(algoritmo_tlb == "FIFO"){
-            reemplazarXFIFO(pid, marco, pagina);
+            reemplazarXFIFO(contexto->pid, marco, pagina);
          }else if (algoritmo_tlb == "LRU"){
-            reemplazarXLRU(pid, marco, pagina);
+            reemplazarXLRU(contexto->pid, marco, pagina);
         }
     }
 }
 
-void reemplazarXFIFO(uint32_t pid, uint32_t marco, uint32_t pagina){
+void reemplazarXFIFO(t_contexto *contexto, uint32_t marco, uint32_t pagina){
     int cantidad_entradas_tlb_valor = cantidad_entradas_tlb;  // Obtener el valor entero desde el puntero
     
     indice_frente = 0; // Obtener índice a reemplazar
 
-    entrada_tlb[indice_frente].pid = pid;
+    entrada_tlb[indice_frente].pid = contexto->pid;
     entrada_tlb[indice_frente].numero_de_pagina = pagina;
     entrada_tlb[indice_frente].marco = marco;
 
@@ -733,7 +736,7 @@ void reemplazarXFIFO(uint32_t pid, uint32_t marco, uint32_t pagina){
 }
 
 
-void reemplazarXLRU(uint32_t pid, uint32_t marco, uint32_t pagina){
+void reemplazarXLRU(t_contexto *contexto, uint32_t marco, uint32_t pagina){
     
     int indice_menos_reciente = 0;
     uint32_t menos_reciente = entrada_tlb[0].contador_reciente;
@@ -746,7 +749,7 @@ void reemplazarXLRU(uint32_t pid, uint32_t marco, uint32_t pagina){
     }
 
     //reemplazar la entrada menos reciente usada con la nueva entrada de la tlb
-    entrada_tlb[indice_menos_reciente].pid = pid;
+    entrada_tlb[indice_menos_reciente].pid = contexto->pid;
     entrada_tlb[indice_menos_reciente].numero_de_pagina = pagina;
     entrada_tlb[indice_menos_reciente].marco = marco;
 
@@ -758,5 +761,23 @@ void reemplazarXLRU(uint32_t pid, uint32_t marco, uint32_t pagina){
             entrada_tlb[i].contador_reciente++;
         }
     }
+
+}
+
+// MOV_IN (Registro Datos, Registro Dirección): 
+// Lee el valor de memoria correspondiente a la Dirección Lógica que se encuentra en el Registro Dirección 
+// y lo almacena en el Registro Datos.
+
+
+void funcMovIn(t_instruccion *instruccion) {
+
+    // char* regDatos = instruccion->parametros2;
+    // uint32_t regDireccion = atoi(instruccion->parametros3);
+    // // enviar_2_enteros();
+    // // uint32_t tamanio = recibir_entero_uint32(conexion_memoria);
+    // traducirDireccion(contexto->pid, regDireccion, tamanio);
+
+
+
 
 }

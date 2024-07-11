@@ -17,6 +17,7 @@ typedef struct {
 typedef struct {
     uint32_t numero_pagina;
     uint32_t numero_marco;
+    uint32_t presente; 
 } entrada_tabla_pagina_t;
 
 typedef struct {

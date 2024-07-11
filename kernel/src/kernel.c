@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     pthread_create(&atiende_nuevas_interfaces, NULL, (void *)esperar_cliente_especial, (void *) (intptr_t) socket_servidor_kernel_dispatch);
     pthread_detach(atiende_nuevas_interfaces);
 
-    planificar();
+    //planificar();
 
     iniciar_consola();
 
