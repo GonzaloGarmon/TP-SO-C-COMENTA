@@ -3,56 +3,35 @@
 int main(int argc, char *argv[]){
     log_entradasalida = log_create("./entradasalida.log", "ENTRADASALIDA", 1, LOG_LEVEL_TRACE);
     log_info(log_entradasalida, "INICIA EL MODULO DE ENTRADASALIDA");
-    inicializar_registro();
     
-    //Crear Interfaz
-    //printf("Crear Interfaz \"Nombre\" \"Nombre.config\"\n");
     nombre_interfaz = malloc(100 * sizeof(char));
     ruta_archivo = malloc(100 * sizeof(char));
-    //ruta_completa = malloc(100 * sizeof(char));
+
+    //ruta_completa = "/home/utnso/so-deploy/tp-2024-1c-GoC/entradasalida/config/";
     ruta_completa = "/home/utnso/tp-2024-1c-GoC/entradasalida/config/";
     printf("ingresa nombre interfaz: ");
     scanf("%99s", nombre_interfaz);
     printf("\n ingresa el config: ");
     scanf("%99s", ruta_archivo);
+
     char* ruta_final = malloc(strlen(ruta_completa) + strlen(ruta_archivo) + 1);
     strcpy(ruta_final,ruta_completa);
     strcat(ruta_final,ruta_archivo);
-    //if (scanf(" \"%255[^\"]\" \"%255[^\"]\"", nombre_interfaz, ruta_archivo) == 2) {
-      //  sprintf(ruta_completa, "/home/utnso/tp-2024-1c-GoC/entradasalida/config/%s", ruta_archivo);
 
-        crear_interfaz(nombre_interfaz, ruta_final);
-   // } else {
-     //   printf("Formato de entrada incorrecto. Uso: \"Nombre\" \"Nombre.config\"\n");
-       // printf("Reiniciar Interfaz\n");
-    //}
+    crear_interfaz(nombre_interfaz, ruta_final);
 
     generar_conexiones();
-    // pthread_t atiende_cliente_memoria; 
-    // pthread_t atiende_cliente_kernel;
-
-    // if(tipo != GENERICA_I){
-
-    //     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
-    //     pthread_detach(atiende_cliente_kernel);
+    
+    pthread_t atiende_cliente_kernel;
+    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
+    pthread_detach(atiende_cliente_kernel);
    
-    //     pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_memoria);
-    //     pthread_join(atiende_cliente_memoria, NULL);
-    // }else{
-    //     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
-    //     pthread_join(atiende_cliente_kernel,NULL);
-    // }
-
-
-    //enviar_string(conexion_entradasalida_memoria, "hola", GENERICA_I);
-
-
     log_info(log_entradasalida, "Finalizo conexion con servidores");
     finalizar_programa();
     return 0;
 }
 
-void crear_interfaz(char *nombre_interfaz, char *ruta_archivo) {
+void crear_interfaz(char *nombre_interfaz, char *ruta_archivo){
     if (nombre_interfaz == NULL || ruta_archivo == NULL) {
         log_error(log_entradasalida, "El nombre de la interfaz o la ruta del archivo es NULL");
         return;
@@ -75,19 +54,15 @@ void crear_interfaz(char *nombre_interfaz, char *ruta_archivo) {
     if (strcmp(tipo_interfaz_txt, "GENERICA") == 0) {
         // Inicializar la interfaz Generica
         inicializar_interfaz_generica(config_entradasalida, nombre_interfaz);
-        conectar_interfaz((char *)nombre_interfaz);
     } else if (strcmp(tipo_interfaz_txt, "STDIN") == 0) {
         // Inicializar la interfaz Stdin
         inicializar_interfaz_stdin(config_entradasalida, nombre_interfaz);
-        conectar_interfaz((char *)nombre_interfaz);
     } else if (strcmp(tipo_interfaz_txt, "STDOUT") == 0) {
         // Inicializar la interfaz Stdout
         inicializar_interfaz_stdout(config_entradasalida,nombre_interfaz);
-        conectar_interfaz((char *)nombre_interfaz);
     } else if (strcmp(tipo_interfaz_txt, "DIALFS") == 0) {
         // Inicializar la interfaz DialFS
         inicializar_interfaz_dialfs(config_entradasalida, nombre_interfaz);
-        conectar_interfaz((char *)nombre_interfaz);
     } else {
         log_warning(log_entradasalida, "Tipo de interfaz desconocido: %s", tipo_interfaz_txt);
     }
@@ -96,7 +71,12 @@ void crear_interfaz(char *nombre_interfaz, char *ruta_archivo) {
 void finalizar_programa(){
     log_destroy(log_entradasalida);
     config_destroy(config_entradasalida);
-    liberar_registro();
+}
+
+void conexionRecMem(){
+    pthread_t atiende_cliente_memoria; 
+    pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpMemoria, (void *) (intptr_t) conexion_entradasalida_memoria);
+    pthread_join(atiende_cliente_memoria, NULL);
 }
 
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL){
@@ -156,19 +136,15 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL){
 }
 
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
-    int noFinalizar = 0;
-    while(noFinalizar != -1){
-        op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
-        switch (operacion){
-            case IO_STDOUT_WRITE_OK:
-            break;
-            case IO_STDIN_READ_OK:
-            break;
-            default:
-                log_warning(log_entradasalida, "Operacion no compatible");
-                noFinalizar = -1;
-            break;
-        }
+    op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
+    switch (operacion){
+        case IO_STDOUT_WRITE_OK:
+        break;
+        case IO_STDIN_READ_OK:
+        break;
+        default:
+        log_warning(log_entradasalida, "Operacion no compatible");
+        break;
     }
 }
 
@@ -268,8 +244,7 @@ void generar_conexiones(){
     }
 }
 
-void establecer_conexion_kernel(char *ip_kernel, char *puerto_kernel, t_config *config_entradasalida, t_log *loggs)
-{
+void establecer_conexion_kernel(char *ip_kernel, char *puerto_kernel, t_config *config_entradasalida, t_log *loggs){
     log_trace(loggs, "Inicio como cliente Kernel");
 
     if ((conexion_entradasalida_kernel = crear_conexion(ip_kernel, puerto_kernel)) == -1)
@@ -295,8 +270,7 @@ void establecer_conexion_kernel(char *ip_kernel, char *puerto_kernel, t_config *
     log_trace(log_entradasalida, "mande un mensaje");
 }
 
-void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_config *config_entradasalida, t_log *loggs)
-{
+void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_config *config_entradasalida, t_log *loggs){
     log_trace(loggs, "Inicio como cliente Memoria");
 
     if ((conexion_entradasalida_memoria = crear_conexion(ip_memoria, puerto_memoria)) == -1)
@@ -318,8 +292,7 @@ void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_confi
     char* palabra = recibir_string(conexion_entradasalida_memoria, log_entradasalida);
     log_info(loggs, "Recibi operacion 2 %s", palabra);
 
-    enviar_string(conexion_entradasalida_memoria,"mando saludos", MENSAJE);
-    
+    enviar_string(conexion_entradasalida_memoria,"mando saludos", MENSAJE);  
 }
 
 void inicializar_interfaz_generica(t_config *config_entradasalida, const char *nombre){
@@ -415,17 +388,6 @@ void inicializar_interfaz_dialfs(t_config *config_entradasalida, const char *nom
     printf("  En uso: %s\n", enUso ? "true" : "false");
 }
 
-bool validar_interfaz(ListaIO *interfaces, int num_interfaces, char *nombre_solicitado){
-    for (int i = 0; i < num_interfaces; i++)
-    {
-        if (strcmp(interfaces[i].nombre, nombre_solicitado) == 0)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
 bool es_operacion_compatible(op_code tipo, op_code operacion){
     switch (tipo)
     {
@@ -440,64 +402,6 @@ bool es_operacion_compatible(op_code tipo, op_code operacion){
     default:
         return false;
     }
-}
-
-void inicializar_registro(){
-    registro.capacidad = 10;
-    registro.cantidad = 0;
-    registro.interfaces = malloc(registro.capacidad * sizeof(ListaIO));
-    if (registro.interfaces == NULL)
-    {
-        perror("Error al asignar memoria para registro.interfaces");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void liberar_registro(){
-    if (registro.interfaces == NULL)
-    {
-        fprintf(stderr, "Error: registro.interfaces no ha sido inicializado correctamente\n");
-        exit(EXIT_FAILURE);
-    }
-    for (int i = 0; i < registro.cantidad; i++)
-    {
-        free(registro.interfaces[i].nombre);
-    }
-    free(registro.interfaces);
-}
-
-void conectar_interfaz(char *nombre_interfaz){
-    if (registro.interfaces == NULL) {
-        fprintf(stderr, "Error: registro.interfaces no ha sido inicializado correctamente\n");
-        exit(EXIT_FAILURE);
-    }
-    for (int i = 0; i < registro.cantidad; i++) {
-        if (registro.interfaces[i].nombre != NULL && strcmp(registro.interfaces[i].nombre, nombre_interfaz) == 0) {
-            registro.interfaces[i].conectada = true;
-            break; // Salir del bucle al encontrar la interfaz
-        }
-    }
-}
-
-void desconectar_interfaz(char *nombre_interfaz){
-    for (int i = 0; i < registro.cantidad; i++)
-    {
-        if (strcmp(registro.interfaces[i].nombre, nombre_interfaz) == 0)
-        {
-            registro.interfaces[i].conectada = false;
-        }
-    }
-}
-
-bool interfaz_conectada(char *nombre_interfaz){
-    for (int i = 0; i < registro.cantidad; i++)
-    {
-        if (strcmp(registro.interfaces[i].nombre, nombre_interfaz) == 0)
-        {
-            return registro.interfaces[i].conectada;
-        }
-    }
-    return false;
 }
 
 void esperar_interfaz_libre(){

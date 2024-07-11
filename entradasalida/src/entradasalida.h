@@ -66,17 +66,9 @@ void inicializar_interfaz_generica(t_config *config_entradasalida, const char *n
 void inicializar_interfaz_stdin(t_config *config_entradasalida, const char *nombre);
 void inicializar_interfaz_stdout(t_config *config_entradasalida, const char *nombre);
 void inicializar_interfaz_dialfs(t_config *config_entradasalida, const char *nombre);
-bool validar_interfaz(ListaIO* interfaces, int num_interfaces, char* nombre_solicitado);
 bool es_operacion_compatible(op_code tipo, op_code operacion);
-void inicializar_registro();
-void liberar_registro();
 
-//funciones a terminar
-void conectar_interfaz(char* nombre_interfaz);
-void desconectar_interfaz(char* nombre_interfaz);
-bool interfaz_conectada(char* nombre_interfaz);
 void esperar_interfaz_libre();
-
 void dialfs_init(DialFS *dialfs, int num_blocks);
 void dialfs_destroy(DialFS *fs);
 int dialfs_allocate_block(DialFS *fs);
