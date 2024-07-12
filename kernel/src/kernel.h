@@ -114,5 +114,9 @@ void sacar_de_lista_mover_exit(t_list* lista,pthread_mutex_t mutex_lista, uint32
 void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid);
 void enviar_interrupcion();
 int existe_interfaz_conectada(char* nombre_interfaz);
-int admite_operacion(char* nombre_interfaz, op_code codigo);
+int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t entero32);
+int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t primer_entero32, uint32_t segundo_entero32);
+int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* palabra);
+int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t primer_entero32);
+int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo,char* palabra, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t tercer_entero32);
 #endif
