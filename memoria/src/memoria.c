@@ -275,7 +275,13 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             // enviar_entero(SOCKET_CLIENTE_CPU, marco_correspondiente, /*ACA FALTA ALGO*/); //ver en kernel
             log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
             break;
-
+        case COPY_STRING:
+            uint32_t tamaño = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
+            /*
+            copiar desde la direc q este en SI la cantidad de bytes "tamaño"
+            pegarlas en la direc q apunte el DI
+            */
+            break;
         case -1:
         codigoOperacion=codOperacion;
         break;
