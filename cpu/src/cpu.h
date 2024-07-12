@@ -48,6 +48,7 @@ void funcSum(t_instruccion *instruccion);
 void funcSub(t_instruccion *instruccion);
 void funcJnz(t_instruccion *instruccion);
 void funcWait(t_instruccion *instruccion);
+void funcMovIn(t_instruccion *instruccion);
 void funcSignal(t_instruccion *instruccion);
 void funcIoGenSleep(t_instruccion *instruccion);
 void funcIoStdinRead(t_instruccion *instruccion);
@@ -60,6 +61,10 @@ void funcIoFsWrite(t_instruccion *instruccion);
 
 
 op_code decode(t_instruccion *instruccion);
+void agregar_valor_a_registro(char *reg, char *val);
+void guardar_valor_en_registro(char *valor, char *registro);
+char *leer_valor_de_memoria(char* direccionFisica, t_contexto *contexto, uint32_t tamanio);
+uint32_t tamanio_registro(char *registro);
 t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc, t_log *logg); 
 void execute(op_code instruccion_nombre, t_instruccion* instruccion);
 uint8_t obtener_valor_registro_XX(char* parametro);
@@ -69,4 +74,5 @@ void checkInturrupt(uint32_t pid);
 void esperar_devolucion_pcb();
 uint32_t obtener_valor_registro(char* registro);
 void ejecutar_ciclo_de_instruccion(t_log *loggs);
+
 #endif

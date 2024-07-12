@@ -234,16 +234,19 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             usleep(retardo_respuesta * 1000); 
             pthread_mutex_lock(&mutex_memoria);
 
-            t_2_enteros* mov_in_data = recibir_2_enteros(SOCKET_CLIENTE_CPU);
+            t_string_2enteros* mov_in_data = recibir_string_2enteros(SOCKET_CLIENTE_CPU);
             uint32_t pid_mov = mov_in_data->entero1;
             uint32_t dir_fisica = mov_in_data->entero2;
+            char *tam_a_leer = mov_in_data->string;
 
-            char* valor = leer(dir_fisica, memoria_config.tam_pagina);
+            char* valor = leer(dir_fisica, tam_a_leer);
 
-            //enviar_paquete_string(SOCKET_CLIENTE_CPU, valor, MOV_IN_OK, memoria_config.tam_pagina);
+            log_trace(log_memoria,"El valor en memoria es: %s",valor);
+            enviar_paquete_string(SOCKET_CLIENTE_CPU, valor, MOV_IN_OK, tam_a_leer);
+
             free(valor);
             log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d - Origen: CPU",
-                        pid_mov, dir_fisica, memoria_config.tam_pagina);
+                        pid_mov, dir_fisica, tam_a_leer);
 
             pthread_mutex_unlock(&mutex_memoria);
             break;
