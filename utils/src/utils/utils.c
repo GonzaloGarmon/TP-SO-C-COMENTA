@@ -305,6 +305,14 @@ void enviar_codop(int conexion, op_code cod_op){
 
 }
 
+void enviar_paquete_string(int conexion, char* string, op_code codOP, int tamanio)
+{
+	t_paquete * paquete = crear_paquete_op(codOP);
+	agregar_a_paquete(paquete, string, tamanio);
+	enviar_paquete(paquete, conexion);
+	eliminar_paquete(paquete);
+}
+
 void enviar_codigo (t_paquete * codop, int socket_cliente){
 
     void *magic = malloc(sizeof(int));

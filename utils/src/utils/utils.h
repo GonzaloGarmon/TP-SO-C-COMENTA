@@ -227,6 +227,7 @@ void enviar_2_enteros(int conexion, t_2_enteros* enteros, int codop);
 void enviar_2_enteros_1_string(int conexion, t_string_2enteros* enteros_string, int codop);
 void enviar_codigo (t_paquete *codop, int socket_cliente);
 void enviar_codop(int conexion, op_code cod_op);
+void enviar_paquete_string(int conexion, char* string, op_code codOP, int tamanio);
 
 t_paquete* crear_paquete_op(op_code codop);
 

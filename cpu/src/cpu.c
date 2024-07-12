@@ -775,20 +775,113 @@ void reemplazarXLRU(t_contexto *contexto, uint32_t marco, uint32_t pagina){
 
 }
 
-// MOV_IN (Registro Datos, Registro Dirección): 
-// Lee el valor de memoria correspondiente a la Dirección Lógica que se encuentra en el Registro Dirección 
-// y lo almacena en el Registro Datos.
+uint32_t tamanio_registro(char *registro){
+    if (strcmp(registro, "AX") == 0) return 4;
+    else if (strcmp(registro, "BX") == 0) return 4;
+    else if (strcmp(registro, "CX") == 0) return 4;
+    else if (strcmp(registro, "DX") == 0) return 4;
+    else if (strcmp(registro, "EAX") == 0) return 8;
+    else if (strcmp(registro, "EBX") == 0) return 8;
+    else if (strcmp(registro, "ECX") == 0) return 8;
+    else if (strcmp(registro, "EDX") == 0) return 8;
+}
 
+char *leer_valor_de_memoria(char* direccionFisica, t_contexto *contexto, uint32_t tamanio) {
 
-void funcMovIn(t_instruccion *instruccion) {
+    t_paquete *paquete = crear_paquete_op(MOV_IN);
+    agregar_string_a_paquete(paquete, direccionFisica);
+    agregar_entero_a_paquete(paquete, contexto->pid);
+    agregar_entero_a_paquete(paquete, tamanio);
 
-    // char* regDatos = instruccion->parametros2;
-    // uint32_t regDireccion = atoi(instruccion->parametros3);
-    // // enviar_2_enteros();
-    // // uint32_t tamanio = recibir_entero_uint32(conexion_memoria);
-    // traducirDireccion(contexto->pid, regDireccion, tamanio);
+    enviar_paquete(paquete, conexion_memoria);
+    eliminar_paquete(paquete);
+    log_trace(log_cpu, "MOV IV enviado");
 
-
-
+    while(1) {
+        int cod_op = recibir_operacion(conexion_memoria);
+        switch (cod_op)
+        {
+        case 0:
+            log_error(log_cpu, "Llego codigo operacion 0");
+            break;
+        case MOV_IN_OK:
+            log_trace(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
+            char *valor_recibido = recibir_string(conexion_memoria, log_cpu);
+            log_trace(log_cpu, "Recibo string :%s", valor_recibido);
+            return valor_recibido;
+            break;
+        default:
+            log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", cod_op);
+            break;
+        }
+    }
 
 }
+
+void guardar_valor_en_registro(char *valor, char *registro) {
+
+    log_trace(log_cpu, "El registro %s quedara el valor: %s",registro ,valor);
+
+    agregar_valor_a_registro(registro, valor);
+
+}
+
+void agregar_valor_a_registro(char *reg, char *val) { 
+    
+    log_trace(log_cpu, "Caracteres a sumarle al registro %s", val);
+    if (strcmp(reg, "AX") == 0) {
+        strncpy(contexto->registros->AX , val, 1);
+    }
+    else if (strcmp(reg, "BX") == 0) {
+        strncpy(contexto->registros->BX, val, 1);
+    }
+    else if (strcmp(reg, "CX") == 0) {
+        strncpy(contexto->registros->CX, val, 1);
+    }
+    else if (strcmp(reg, "DX") == 0) {
+        strncpy(contexto->registros->DX, val, 1);
+    }
+    else if (strcmp(reg, "EAX") == 0) {
+        strncpy(contexto->registros->EAX, val, 4);
+    }
+    else if (strcmp(reg, "EBX") == 0) {
+        strncpy(contexto->registros->EBX, val, 4);
+    }
+    else if (strcmp(reg, "ECX") == 0) {
+        strncpy(contexto->registros->ECX, val, 4);
+    }
+    else if (strcmp(reg, "EDX") == 0) {
+        strncpy(contexto->registros->EDX, val, 4);
+    }
+    
+}
+
+void funcMovIn(t_instruccion *instruccion) { 
+    
+    // char* registroDatos = instruccion->registros[0];   
+    // char* registroDireccion = instruccion->registros[1]; 
+    // uint32_t direccionLogica = obtener_valor_registro_XXX(registroDireccion);
+    // uint32_t valorLeido = leer_valor_memoria(direccionLogica);
+    // set_valor_registro(registroDatos, valorLeido);
+
+    log_trace(log_cpu, "Instruccion MOV_IN ejecutada");
+    log_info(log_cpu, "PID: %d - Ejecutando: %s - %s - %s", contexto->pid, instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
+
+    char *registroDatos = instruccion->parametros2;
+    char *registroDireccionLogica = instruccion->parametros3;
+
+    //ahora tendria que traducir la direccion logica a fisica
+    int tamanio_regDatos = tamanio_registro(registroDatos);
+    uint32_t direccionFisica = traducirDireccion(contexto, registroDireccionLogica, tamanio_regDatos);
+
+    char *valor = leer_valor_de_memoria(direccionFisica, contexto, tamanio_regDatos);
+
+    //guardar el valor en registro datos
+    guardar_valor_en_registro(valor, registroDatos);
+    log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección Fisica: %d", contexto->pid, direccionFisica);
+    log_trace(log_cpu, "Valor guardado en registro");
+}
+
+
+
+
