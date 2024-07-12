@@ -24,11 +24,13 @@ t_list* cola_new;
 t_list* cola_ready;
 t_list* cola_exec;
 t_list* cola_exit;
+t_list* cola_block;
 
 pthread_mutex_t mutex_cola_new;
 pthread_mutex_t mutex_cola_ready;
 pthread_mutex_t mutex_cola_exec;
 pthread_mutex_t mutex_cola_exit;
+pthread_mutex_t mutex_cola_block;
 pthread_mutex_t conexion;
 
 sem_t sem_listos_para_ready;
@@ -114,9 +116,11 @@ void sacar_de_lista_mover_exit(t_list* lista,pthread_mutex_t mutex_lista, uint32
 void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid);
 void enviar_interrupcion();
 int existe_interfaz_conectada(char* nombre_interfaz);
-int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t entero32);
-int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t primer_entero32, uint32_t segundo_entero32);
-int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* palabra);
-int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t primer_entero32);
-int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo,char* palabra, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t tercer_entero32);
+int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t entero32, uint32_t pid);
+int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t pid);
+int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t pid);
+int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t primer_entero32, uint32_t pid);
+int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo,char* palabra, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t tercer_entero32, uint32_t pid);
+void bloquear_pcb(t_contexto* contexto);
+void desbloquear_proceso_block(uint32_t pid);
 #endif
