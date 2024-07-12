@@ -640,21 +640,6 @@ void funcIoFsRead(t_instruccion* instruccion) {
     eliminar_paquete(paquete);
 }
 
-// MOV_IN (Registro Datos, Registro Dirección): 
-// Lee el valor de memoria correspondiente a la Dirección Lógica que se encuentra en el Registro Dirección 
-// y lo almacena en el Registro Datos.
-
-
-void funcMovIn(t_instruccion *instruccion) {
-
-    // char* regDatos = instruccion->parametros2;
-    // uint32_t regDireccion = atoi(instruccion->parametros3);
-    // // enviar_2_enteros();
-    // // uint32_t tamanio = recibir_entero_uint32(conexion_memoria);
-    // traducirDireccion(contexto->pid, regDireccion, tamanio);
-
-}
-
 /*
 COPY_STRING (Tamaño): Toma del string apuntado por el registro SI y copia la cantidad de bytes indicadas
  en el parámetro tamaño a la posición de memoria apuntada por el registro DI. 
@@ -674,7 +659,9 @@ void funcCopyString(t_instruccion* instruccion){
     */
 
    //pedrile a memoria que copie a partir de la direc SI la cant que le especifique (tamaño), a partir la direc DI.
-   enviar_entero(/*aca no se si va socket_servidor_cpu_dispatch o socket_servidor_cpu_interrupt*/,instruccion->parametros2,COPY_STRING);//Armar en memoria el case correspondiente para recibir esto
+   //enviar_entero(/*aca no se si va socket_servidor_cpu_dispatch o socket_servidor_cpu_interrupt*/instruccion->parametros2,COPY_STRING);//Armar en memoria el case correspondiente para recibir esto
+   uint32_t tamanio;
+   enviar_entero(conexion_memoria, tamanio, COPY_STRING);
 }
 
 
@@ -919,7 +906,7 @@ void funcMovIn(t_instruccion *instruccion) {
     log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección Fisica: %d", contexto->pid, direccionFisica);
     log_trace(log_cpu, "Valor guardado en registro");
 
-
+}
 
 
 
