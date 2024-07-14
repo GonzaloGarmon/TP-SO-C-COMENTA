@@ -229,6 +229,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             uint32_t nuevo_tam = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
             ajustar_tamanio_proceso(nuevo_tam); // falta mostrar OUTOFMEMORY -> memoria llena
             log_info(log_memoria, "Ajuste de tamanio de proceso PID: %d - Nuevo tamanio: %d",nuevo_tam);
+            //Falta enviarle a kernel el contexto en el caso que no se pueda agrandar el proceso?
             break;
         case MOV_IN:
             usleep(retardo_respuesta * 1000); 

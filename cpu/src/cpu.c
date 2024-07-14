@@ -660,10 +660,20 @@ void funcCopyString(t_instruccion* instruccion){
 
    //pedrile a memoria que copie a partir de la direc SI la cant que le especifique (tamaño), a partir la direc DI.
    //enviar_entero(/*aca no se si va socket_servidor_cpu_dispatch o socket_servidor_cpu_interrupt*/instruccion->parametros2,COPY_STRING);//Armar en memoria el case correspondiente para recibir esto
-   uint32_t tamanio;
+   uint32_t tamanio; //el tamaño estaria en instruccion->parametros2
    enviar_entero(conexion_memoria, tamanio, COPY_STRING);
 }
 
+
+/*
+RESIZE (Tamaño): Solicitará a la Memoria ajustar el tamaño del proceso al tamaño pasado por parámetro
+En caso de que la respuesta de la memoria sea Out of Memory, se deberá devolver el contexto de ejecución al Kernel
+informando de esta situación.
+*/
+void funcResize(t_instruccion* instruccion){
+    uint32_t tamanio = instruccion->parametros2;
+    enviar_entero(conexion_memoria, tamanio, RESIZE);
+}
 
 uint32_t obtener_valor_registro(char* registro){
     uint32_t devolver;
