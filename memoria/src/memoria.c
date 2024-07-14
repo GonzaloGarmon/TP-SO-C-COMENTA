@@ -6,6 +6,8 @@ int main(int argc, char* argv[]) {
 
     log_info(log_memoria, "INICIA EL MODULO DE MEMORIA");
 
+    inicializar_memoria();
+
     leer_config();
 
     socket_servidor_memoria_dispatch = iniciar_servidor(puerto_escucha, log_memoria);
@@ -42,6 +44,10 @@ int main(int argc, char* argv[]) {
     log_info(log_memoria, "Finalizo conexion con clientes");
     finalizar_programa();
     return 0;
+}
+
+void inicializar_memoria() {
+    marcos_libres = memoria_config.tam_memoria / memoria_config.tam_pagina;
 }
 
 void leer_config(){
@@ -227,9 +233,10 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
         case RESIZE: // preguntar de donde viene
             usleep(retardo_respuesta * 1000);
             uint32_t nuevo_tam = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-            ajustar_tamanio_proceso(nuevo_tam); // falta mostrar OUTOFMEMORY -> memoria llena
-            log_info(log_memoria, "Ajuste de tamanio de proceso PID: %d - Nuevo tamanio: %d",nuevo_tam);
-            //Falta enviarle a kernel el contexto en el caso que no se pueda agrandar el proceso?
+            op_code res = ajustar_tamanio_proceso(nuevo_tam);
+            enviar_codop(SOCKET_CLIENTE_CPU, res);
+            log_info(log_memoria, "Se envio respuesta de memoria a cpu del Resize");
+            //log_info(log_memoria, "Ajuste de tamanio de proceso PID: %d - Nuevo tamanio: %d",nuevo_tam);
             break;
         case MOV_IN:
             usleep(retardo_respuesta * 1000); 
@@ -475,28 +482,45 @@ void finalizar_proceso(uint32_t proceso) {
     }
 }
 
-void ajustar_tamanio_proceso(uint32_t nuevo_tam) {
+op_code ajustar_tamanio_proceso(uint32_t nuevo_tam) {
+    op_code ret;
     for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
         tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, i);
         
             if (nuevo_tam > tabla->cantidad_paginas) {
-                // Ampliación del proceso
-                tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tam);
-                for (uint32_t j = tabla->cantidad_paginas; j < nuevo_tam; j++) {
-                    tabla->tabla_paginas[j].numero_pagina = j;
-                    tabla->tabla_paginas[j].numero_marco= (uint32_t)((char*)ESPACIO_USUARIO + (j * memoria_config.tam_pagina));
+                // aca se amplia el tamanio del proceso
+                uint32_t paginas_a_asignar = nuevo_tam - tabla->cantidad_paginas;
+                if(marcos_libres < paginas_a_asignar) {
+                    log_info(log_memoria, "No se pueden solicitar mas marcos -> Memoria llena");
+                    ret = OUT_OF_MEMORY;
+                    return ret; 
                 }
-            } else if (nuevo_tam < tabla->cantidad_paginas) {
-                // Reducción del proceso
-                for (uint32_t j = nuevo_tam; j < tabla->cantidad_paginas; j++) {
-                    tabla->tabla_paginas[j].numero_marco = 0; // Marca las páginas como libres
-                }
-                tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tam);
-            }
-            tabla->cantidad_paginas = nuevo_tam;
-            break;
-        
-    }
-}
 
-// retardo en peticiones OK
+                //hay marcos disponibles 
+                tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) *nuevo_tam);
+                for(uint32_t i = tabla->cantidad_paginas; i > nuevo_tam; i++) {
+                    tabla->tabla_paginas[i].numero_pagina = i;
+                    tabla->tabla_paginas[i].numero_marco = (uint32_t)((char*)ESPACIO_USUARIO + (i * memoria_config.tam_pagina));
+                }
+
+                //actualizo los marcos libres restando la cant de pag que tuve que asignar
+                marcos_libres -= paginas_a_asignar;
+
+            }else if(nuevo_tam < tabla->cantidad_paginas) {
+                // aca se reduce el tamanio del proceso
+                for(uint32_t i = nuevo_tam; i > tabla->cantidad_paginas; i++) {
+                    tabla->tabla_paginas[i].numero_marco = 0;
+                }
+                tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) *nuevo_tam);
+
+                //actualizo los marcos disponibles
+                marcos_libres += (tabla->cantidad_paginas - nuevo_tam);
+            }
+
+            tabla->cantidad_paginas = nuevo_tam;
+            ret = RESIZE_OK;
+
+            
+    }
+
+}

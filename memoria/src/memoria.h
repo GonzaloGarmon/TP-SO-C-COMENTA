@@ -53,6 +53,7 @@ int socket_cliente;
 uint32_t ESPACIO_LIBRE_TOTAL;
 t_list *LISTA_ESPACIOS_LIBRES;
 t_list *LISTA_TABLA_PAGINAS;
+uint32_t marcos_libres;
 
 void *ESPACIO_USUARIO;
 
@@ -67,7 +68,7 @@ void esperar_cliente_especial(int socket_servidor_memoria_dispatch);
 
 
 void finalizar_proceso(uint32_t proceso);
-void ajustar_tamanio_proceso(uint32_t nuevo_tam);
+op_code ajustar_tamanio_proceso(uint32_t nuevo_tam);
 void crear_tabla_pagina(uint32_t pid_t, uint32_t cant_paginas);
 
 void escribir(uint32_t dir_fisca, void* data, uint32_t size);

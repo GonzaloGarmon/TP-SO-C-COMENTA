@@ -670,9 +670,34 @@ RESIZE (Tamaño): Solicitará a la Memoria ajustar el tamaño del proceso al tam
 En caso de que la respuesta de la memoria sea Out of Memory, se deberá devolver el contexto de ejecución al Kernel
 informando de esta situación.
 */
+
 void funcResize(t_instruccion* instruccion){
+    t_contexto *pcb;
     uint32_t tamanio = instruccion->parametros2;
-    enviar_entero(conexion_memoria, tamanio, RESIZE);
+    //enviar_entero(conexion_memoria, tamanio, RESIZE);
+
+    t_paquete *paquete = crear_paquete_op(RESIZE);
+    agregar_entero_a_paquete(paquete, tamanio);
+    enviar_paquete(paquete, conexion_memoria);
+    eliminar_paquete(paquete);
+    log_info(log_cpu, "Tamanio enviado");
+
+    while(1) {
+        int cod_op = recibir_operacion(conexion_memoria);
+        switch(cod_op) {
+            case RESIZE_OK:
+            log_trace(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
+            log_info(log_cpu, "Se ajusta tamanio de proceso");
+            break;
+            case OUT_OF_MEMORY:
+            log_trace(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
+            enviar_contexto(socket_cliente_kernel_interrupt, pcb, cod_op);
+            break;
+            default:
+            log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", cod_op);
+            break;
+        }
+    }
 }
 
 uint32_t obtener_valor_registro(char* registro){
@@ -840,9 +865,9 @@ char *leer_valor_de_memoria(char* direccionFisica, t_contexto *contexto, uint32_
             log_error(log_cpu, "Llego codigo operacion 0");
             break;
         case MOV_IN_OK:
-            log_trace(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
+            log_info(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
             char *valor_recibido = recibir_string(conexion_memoria, log_cpu);
-            log_trace(log_cpu, "Recibo string :%s", valor_recibido);
+            log_info(log_cpu, "Recibo string :%s", valor_recibido);
             return valor_recibido;
             break;
         default:
@@ -892,14 +917,7 @@ void agregar_valor_a_registro(char *reg, char *val) {
 }
 
 void funcMovIn(t_instruccion *instruccion) { 
-    
-    // char* registroDatos = instruccion->registros[0];   
-    // char* registroDireccion = instruccion->registros[1]; 
-    // uint32_t direccionLogica = obtener_valor_registro_XXX(registroDireccion);
-    // uint32_t valorLeido = leer_valor_memoria(direccionLogica);
-    // set_valor_registro(registroDatos, valorLeido);
-
-    log_trace(log_cpu, "Instruccion MOV_IN ejecutada");
+    log_info(log_cpu, "Instruccion MOV_IN ejecutada");
     log_info(log_cpu, "PID: %d - Ejecutando: %s - %s - %s", contexto->pid, instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
 
     char *registroDatos = instruccion->parametros2;
@@ -911,11 +929,10 @@ void funcMovIn(t_instruccion *instruccion) {
 
     char *valor = leer_valor_de_memoria(direccionFisica, contexto, tamanio_regDatos);
 
-    //guardar el valor en registro datos
+    //guardo el valor en registro datos
     guardar_valor_en_registro(valor, registroDatos);
     log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección Fisica: %d", contexto->pid, direccionFisica);
-    log_trace(log_cpu, "Valor guardado en registro");
-
+    log_info(log_cpu, "Valor guardado en registro");
 }
 
 

@@ -135,7 +135,8 @@ typedef enum
     IO_FS_WRITE_OK,
     IO_FS_READ_OK,
     MOV_OUT_OK,
-    MOV_IN_OK
+    MOV_IN_OK,
+    RESIZE_OK
 
 }op_code;
 
