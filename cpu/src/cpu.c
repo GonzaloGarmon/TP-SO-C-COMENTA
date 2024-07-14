@@ -640,36 +640,33 @@ void funcIoFsRead(t_instruccion* instruccion) {
     eliminar_paquete(paquete);
 }
 
-/*
-COPY_STRING (Tamaño): Toma del string apuntado por el registro SI y copia la cantidad de bytes indicadas
- en el parámetro tamaño a la posición de memoria apuntada por el registro DI. 
-*/
-void funcCopyString(t_instruccion* instruccion){
-    uint32_t SI,DI; //estan en el utils.h (t_registros_cpu)
-    /*
-    SI (Source Index): Este registro contiene la dirección de memoria desde donde se va a copiar el string. Es decir, apunta al inicio del string que quieres copiar.
-    DI (Destination Index): Este registro contiene la dirección de memoria donde se va a copiar el string. Es decir, apunta al lugar en la memoria donde quieres que se almacene la copia del string.
-    Tamaño: Este parámetro indica la cantidad de bytes que se van a copiar desde la dirección apuntada por SI a la dirección apuntada por DI.
-    
-    entonces:
+// void funcCopyString(t_instruccion* instruccion){
+//     uint32_t SI,DI; //estan en el utils.h (t_registros_cpu)
+//     /*
+//     SI (Source Index): Este registro contiene la dirección de memoria desde donde se va a copiar el string. Es decir, apunta al inicio del string que quieres copiar.
+//     DI (Destination Index): Este registro contiene la dirección de memoria donde se va a copiar el string. Es decir, apunta al lugar en la memoria donde quieres que se almacene la copia del string.
+//     Tamaño: Este parámetro indica la cantidad de bytes que se van a copiar desde la dirección apuntada por SI a la dirección apuntada por DI.  
+//     entonces:
+//     SI: direc de origen
+//     DI: direc de destino
+//     tamaño: cant de bytes a copiar a partir del SI (y a pegar a partir del DI)
+//     */
+//    //pedrile a memoria que copie a partir de la direc SI la cant que le especifique (tamaño), a partir la direc DI.
+//    //enviar_entero(/*aca no se si va socket_servidor_cpu_dispatch o socket_servidor_cpu_interrupt*/instruccion->parametros2,COPY_STRING);//Armar en memoria el case correspondiente para recibir esto
+//    uint32_t tamanio; //el tamaño estaria en instruccion->parametros2
+//    enviar_entero(conexion_memoria, tamanio, COPY_STRING);
+// }
 
-    SI: direc de origen
-    DI: direc de destino
-    tamaño: cant de bytes a copiar a partir del SI (y a pegar a partir del DI)
-    */
+void funcCopyString(t_instruccion *instruccion) {
+    t_pcb *pcb_contexto;
+    uint32_t tamanio = instruccion->parametros2;
 
-   //pedrile a memoria que copie a partir de la direc SI la cant que le especifique (tamaño), a partir la direc DI.
-   //enviar_entero(/*aca no se si va socket_servidor_cpu_dispatch o socket_servidor_cpu_interrupt*/instruccion->parametros2,COPY_STRING);//Armar en memoria el case correspondiente para recibir esto
-   uint32_t tamanio; //el tamaño estaria en instruccion->parametros2
-   enviar_entero(conexion_memoria, tamanio, COPY_STRING);
+    t_paquete *paquete = crear_paquete_op(COPY_STRING);
+    agregar_entero_a_paquete(paquete, tamanio);
+    agregar_contexto_a_paquete(paquete, pcb_contexto->contexto);
+    enviar_paquete(paquete, conexion_memoria);
+    eliminar_paquete(paquete); 
 }
-
-
-/*
-RESIZE (Tamaño): Solicitará a la Memoria ajustar el tamaño del proceso al tamaño pasado por parámetro
-En caso de que la respuesta de la memoria sea Out of Memory, se deberá devolver el contexto de ejecución al Kernel
-informando de esta situación.
-*/
 
 void funcResize(t_instruccion* instruccion){
     t_contexto *pcb;

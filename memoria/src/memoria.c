@@ -287,11 +287,11 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
             break;
         case COPY_STRING:
-            uint32_t tamaño = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-            /*
-            copiar desde la direc q este en SI la cantidad de bytes "tamaño"
-            pegarlas en la direc q apunte el DI
-            */
+            usleep(retardo_respuesta * 1000);
+            uint32_t tamanio = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
+            t_contexto *contex = recibir_contexto(SOCKET_CLIENTE_CPU);
+            copiarBytes(tamanio, contex);
+            log_info(log_memoria, "Se copio tamanio del DI al SI con : %i", tamanio);
             break;
         case -1:
         codigoOperacion=codOperacion;
@@ -523,4 +523,16 @@ op_code ajustar_tamanio_proceso(uint32_t nuevo_tam) {
             
     }
 
+}
+
+
+void copiarBytes(uint32_t tamanio, t_contexto *contexto) {
+
+    uint32_t valorSI = contexto->registros->SI;
+    uint32_t valorDI = contexto->registros->DI;
+
+    char *origen = (char*)(uintptr_t)valorSI;
+    char *destino = (char*)(uintptr_t)valorDI;
+
+    memcpy(destino, origen, tamanio);
 }

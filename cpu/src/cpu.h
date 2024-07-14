@@ -48,6 +48,7 @@ void funcSum(t_instruccion *instruccion);
 void funcSub(t_instruccion *instruccion);
 void funcJnz(t_instruccion *instruccion);
 void funcWait(t_instruccion *instruccion);
+void funcCopyString(t_instruccion *instruccion);
 void funcMovIn(t_instruccion *instruccion);
 void funcSignal(t_instruccion *instruccion);
 void funcIoGenSleep(t_instruccion *instruccion);

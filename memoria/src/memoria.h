@@ -70,6 +70,7 @@ void esperar_cliente_especial(int socket_servidor_memoria_dispatch);
 void finalizar_proceso(uint32_t proceso);
 op_code ajustar_tamanio_proceso(uint32_t nuevo_tam);
 void crear_tabla_pagina(uint32_t pid_t, uint32_t cant_paginas);
+void copiarBytes(uint32_t tamanio, t_contexto *contexto);
 
 void escribir(uint32_t dir_fisca, void* data, uint32_t size);
 char* leer(uint32_t dir_fisca , uint32_t size);
