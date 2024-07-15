@@ -221,8 +221,8 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
         case MOV_IN:
             funcMovIn(instruccion);
             break;
-        /*case MOV_OUT:
-            funcMovOut(instruccion);
+        case MOV_OUT:
+            //funcMovOut(instruccion);
             break;
         case RESIZE:
             funcResize(instruccion);
@@ -230,7 +230,6 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
         case COPY_STRING:
             funcCopyString(instruccion);
             break;
-        */
         case IO_STDIN_READ:
             funcIoStdinRead(instruccion);
             break;
@@ -932,5 +931,26 @@ void funcMovIn(t_instruccion *instruccion) {
     log_info(log_cpu, "Valor guardado en registro");
 }
 
+
+void funcMovOut(t_instruccion* instruccion){
+    log_info(log_cpu, "Instruccion MOV_OUT ejecutada");
+    log_info(log_cpu, "PID: %d - Ejecutando: %s - %s - %s", contexto->pid, instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
+
+    char *registroDireccionLogica = instruccion->parametros2;
+    char *registroDatos = instruccion->parametros3;
+
+    // Traduzco la direc
+    int tamanio_regDatos = tamanio_registro(registroDatos);
+    uint32_t direccionFisica = traducirDireccion(contexto, registroDireccionLogica, tamanio_regDatos);
+
+    // Leer el valor del registro de datos
+    //char *valor = leer_valor_de_registro(registroDatos);
+
+    // Escribir el valor en memoria
+    //escribir_valor_en_memoria(direccionFisica, valor, contexto, tamanio_regDatos);
+
+    log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección Fisica: %d", contexto->pid, direccionFisica);
+    log_info(log_cpu, "Valor escrito en memoria");
+}
 
 
