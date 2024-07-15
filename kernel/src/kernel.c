@@ -99,6 +99,7 @@ void iniciar_semaforos(){
     pthread_mutex_init(&mutex_cola_exec, NULL);
     pthread_mutex_init(&mutex_cola_exit, NULL);
     pthread_mutex_init(&mutex_cola_block, NULL);
+    pthread_mutex_init(&mutex_cola_ready_aux, NULL);
     pthread_mutex_init(&conexion, NULL);
 
     sem_init(&sem_multiprogamacion, 0, grado_multiprogramacion);
@@ -112,6 +113,7 @@ void iniciar_semaforos(){
     cola_exec = list_create();
     cola_exit = list_create();
     cola_block = list_create();
+    cola_ready_aux = list_create();
 
     generador_pid = 0;
     conexiones_io.conexiones_io = list_create();
@@ -561,10 +563,18 @@ void iniciar_consola(){
     switch (eleccion)
     {
     case 1:
-        ejecutar_script();
+        char* nombre_script = malloc(100 * sizeof(char));
+        printf("\n ingrese el path del script: ");
+        scanf("%99s", nombre_script);
+        ejecutar_script(nombre_script);
         break;
     case 2:
-        iniciar_proceso();
+        char* path = malloc(30*sizeof(char));
+
+        printf("Por favor ingrese el path: ");
+        scanf("%s", path);
+
+        iniciar_proceso(path);
         break;
     case 3:
         uint32_t pid;
@@ -596,16 +606,33 @@ void iniciar_consola(){
 }
 
 
-void ejecutar_script(){
+void ejecutar_script(char* path){
+    FILE* archivo = fopen(path, "r");
 
+    if (archivo == NULL) {
+        perror("Error al abrir el archivo");
+        return EXIT_FAILURE;
+    }
+    char line[MAX_LINE_LENGTH];
+    char operacion[MAX_LINE_LENGTH];
+    char* path_operacion = malloc(100 * sizeof(char));
+
+        while (fgets(line, sizeof(line), archivo)) {
+        // Remover el salto de línea al final de la línea si existe
+        line[strcspn(line, "\n")] = 0;
+
+        // Dividir la línea en 'operacion' y 'path_operacion'
+        sscanf(line, "%s %s", operacion, path_operacion);
+        iniciar_proceso(path_operacion);
+        // Imprimir los resultados
+        printf("Operacion: %s, Path: %s\n", operacion, path_operacion);
+    }
+
+    fclose(archivo);
 }
 
-void iniciar_proceso(){
-    char* path = malloc(30*sizeof(char));
-
-    printf("Por favor ingrese el path: ");
-    scanf("%s", path);
-
+void iniciar_proceso(char* path){
+  
 
     //enviar_string(conexion_kernel_memoria,path,CREAR_PROCESO);
     
@@ -618,6 +645,7 @@ void iniciar_proceso(){
     pcb_nuevo->quantum_utilizado = quantum;
     pcb_nuevo->contexto->pid = generador_pid;
     pcb_nuevo->contexto->pc = 0;
+    pcb_nuevo->quantum = temporal_create();
     pcb_nuevo ->contexto->registros = registros;
     
     t_paquete* paquete = crear_paquete_op(CREAR_PROCESO);
@@ -641,6 +669,11 @@ void finalizar_proceso(uint32_t pid){
 
     if(esta_en_esta_lista(cola_ready, pid)){
         sacar_de_lista_mover_exit(cola_ready,mutex_cola_ready,pid);
+        sem_post(&sem_listos_para_exit);
+    }
+
+    if(esta_en_esta_lista(cola_ready_aux, pid)){
+        sacar_de_lista_mover_exit(cola_ready_aux,mutex_cola_ready_aux,pid);
         sem_post(&sem_listos_para_exit);
     }
 
@@ -750,8 +783,44 @@ void contador_quantum_RR(){
 
 void manejar_VRR(){
     sem_wait(&sem_empezar_quantum);
+    
+    
+    t_pcb* pcb_vrr = list_get(cola_exec,0);
+    
 
+    //destruyo el anterior y empiezo uno nuevo si es que se acabo
+    //se comparan milisegundos
+    if(pcb_vrr->quantum_utilizado<quantum){
 
+        temporal_resume(pcb_vrr->quantum);
+        
+    }else{
+         //destruyo el anterior y empiezo uno nuevo ya que se acabo
+         temporal_destroy(pcb_vrr->quantum);
+         //empiezo contador de nuevo
+         pcb_vrr->quantum = temporal_create();
+    }
+    corto_VRR = 1;
+    while(corto_VRR){
+        if(temporal_gettime(pcb_vrr->quantum) >= quantum){
+            corto_VRR = 0;
+            
+            enviar_interrupcion();
+        }
+    }
+
+    if(temporal_gettime(pcb_vrr->quantum) < quantum){
+        temporal_stop(pcb_vrr->quantum);
+        pcb_vrr->quantum_utilizado = temporal_gettime(pcb_vrr->quantum);
+    }
+
+    bool encontrar_pcb(t_pcb* pcb){
+        return pcb->contexto->pid == pcb_vrr->contexto->pid;
+    };
+
+    pthread_mutex_lock(&mutex_cola_exec);
+    list_replace_by_condition(cola_exec, (void*) encontrar_pcb, pcb_vrr);
+    pthread_mutex_unlock(&mutex_cola_exec);
 }
 
 void enviar_interrupcion(){
@@ -836,6 +905,15 @@ t_pcb* elegir_pcb_segun_algoritmo(){
         pthread_mutex_unlock(&mutex_cola_ready);
         break;
     case VRR:
+        if(list_is_empty(cola_ready_aux)){
+            pthread_mutex_lock(&mutex_cola_ready);
+            pcb_ejecutar = list_remove(cola_ready,0);
+            pthread_mutex_unlock(&mutex_cola_ready);
+        }else{
+            pthread_mutex_lock(&mutex_cola_ready_aux);
+            pcb_ejecutar = list_remove(cola_ready_aux,0);
+            pthread_mutex_unlock(&mutex_cola_ready_aux);
+        }
         break; 
     default:
         break;
@@ -854,11 +932,12 @@ void dispatch(t_pcb* pcb_enviar){
         //ENVIAR CONTEXTO DE EJECUCION A CPU
         enviar_contexto(conexion_kernel_cpu_dispatch, pcb_enviar->contexto,EXEC);
 
-
+        corto_VRR = 0;
         pthread_mutex_lock(&mutex_cola_exec);
         list_add(cola_exec, pcb_enviar);
         pthread_mutex_unlock(&mutex_cola_exec);
         sem_post(&sem_empezar_quantum);
+        
         
 }
 
@@ -946,10 +1025,12 @@ void actualizar_pcb_envia_ready(t_contexto* pcb_wait){
     list_remove_element(cola_exec,pcb_encontrado);
     pthread_mutex_unlock(&mutex_cola_exec);
     pcb_encontrado->contexto = pcb_wait;
+    //ver como setear el temporal
 
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb_encontrado);
     pthread_mutex_unlock(&mutex_cola_ready);
+    sem_post(&sem_listos_para_ready);
 }
 
 void desbloquear_proceso(t_list* lista_recurso_liberar){
