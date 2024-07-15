@@ -190,6 +190,7 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
             break;
         case IO_GEN_SLEEP:
             funcIoGenSleep(instruccion);
+            esperar_devolucion_pcb();
             break;
         case WAIT:
             funcWait(instruccion);
@@ -217,23 +218,30 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
         */
         case IO_STDIN_READ:
             funcIoStdinRead(instruccion);
+            esperar_devolucion_pcb();
             break;
         case IO_STDOUT_WRITE:
             funcIoStdOutWrite(instruccion);
+            esperar_devolucion_pcb();
         case IO_FS_CREATE:
             funcIoFsCreate(instruccion);
+            esperar_devolucion_pcb();
             break;
         case IO_FS_DELETE:
             funcIoFsDelete(instruccion);
+            esperar_devolucion_pcb();
             break;
         case IO_FS_TRUNCATE:
             funcIoFsTruncate(instruccion);
+            esperar_devolucion_pcb();
             break;
         case IO_FS_WRITE:
             funcIoFsWrite(instruccion);
+            esperar_devolucion_pcb();
             break;
         case IO_FS_READ:
             funcIoFsRead(instruccion);
+            esperar_devolucion_pcb();
             break;
         default:
             printf("Instrucción desconocida\n");
@@ -507,6 +515,7 @@ void funcIoGenSleep(t_instruccion *instruccion) {
     t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_GEN_SLEEP);
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3));
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
 
 }
@@ -547,6 +556,7 @@ void funcIoStdinRead(t_instruccion *instruccion) {
     agregar_entero_a_paquete(paquete,registro_direccion);
     agregar_entero_a_paquete(paquete,registro_tamanio);
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
@@ -560,7 +570,9 @@ void funcIoStdOutWrite(t_instruccion *instruccion) {
     agregar_entero_a_paquete(paquete,registro_direccion);
     agregar_entero_a_paquete(paquete,registro_tamanio);
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
 }
 
 void funcIoFsCreate(t_instruccion *instruccion) {
@@ -568,7 +580,9 @@ void funcIoFsCreate(t_instruccion *instruccion) {
     t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_FS_CREATE);  
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
     agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    
     eliminar_paquete(paquete);
 }
 
@@ -577,7 +591,9 @@ void funcIoFsDelete(t_instruccion *instruccion) {
     t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_FS_DELETE);
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
     agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    
     eliminar_paquete(paquete);
 }
 
@@ -588,6 +604,7 @@ void funcIoFsTruncate(t_instruccion *instruccion) {
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
     agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
     agregar_entero_a_paquete(paquete,registro_tamanio);
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
@@ -605,6 +622,7 @@ void funcIoFsWrite(t_instruccion* instruccion) {
     agregar_entero_a_paquete(paquete,registro_direccion);
     agregar_entero_a_paquete(paquete,registro_tamanio);
     agregar_entero_a_paquete(paquete,registro_puntero);
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
@@ -622,6 +640,7 @@ void funcIoFsRead(t_instruccion* instruccion) {
     agregar_entero_a_paquete(paquete,registro_direccion);
     agregar_entero_a_paquete(paquete,registro_tamanio);
     agregar_entero_a_paquete(paquete,registro_puntero);
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
