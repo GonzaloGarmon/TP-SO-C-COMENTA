@@ -114,7 +114,7 @@ void iniciar_semaforos(){
     cola_exit = list_create();
     cola_block = list_create();
     cola_ready_aux = list_create();
-
+    apagar_planificacion = 0;
     generador_pid = 0;
     conexiones_io.conexiones_io = list_create();
     conexiones_io.conexiones_io_nombres = list_create();
