@@ -69,6 +69,7 @@ int socket_cliente_entradasalida;
 int conexion_kernel_cpu_dispatch;
 int conexion_kernel_cpu_interrupt;
 int conexion_kernel_memoria;
+int apagar_planificacion;
 uint32_t generador_pid;
 
 /*

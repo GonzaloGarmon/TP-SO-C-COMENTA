@@ -693,15 +693,70 @@ void finalizar_proceso(uint32_t pid){
 }
 
 void iniciar_planificacion(){
-
+    apagar_planificacion = 0;
 }
 
 void detener_planificacion(){
-
+    apagar_planificacion = 1;
 }
 
 
 void listar_procesos_estado(){
+    if(!list_is_empty(cola_new)){
+        for(int i = 0; i < list_size(cola_new); i++){
+            t_pcb* pcb_listar = list_get(cola_new,i);
+            printf("El proceso con pid: %d esta en new \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en new \n");
+    }
+
+    if(!list_is_empty(cola_ready)){
+        for(int i = 0; i < list_size(cola_ready); i++){
+            t_pcb* pcb_listar = list_get(cola_ready,i);
+            printf("El proceso con pid: %d esta en ready \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en ready \n");
+    }
+
+    if(!list_is_empty(cola_exec)){
+        for(int i = 0; i < list_size(cola_exec); i++){
+            t_pcb* pcb_listar = list_get(cola_exec,i);
+            printf("El proceso con pid: %d esta en exec \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en exec \n");
+    }
+
+    if(!list_is_empty(cola_exit)){
+        for(int i = 0; i < list_size(cola_exit); i++){
+            t_pcb* pcb_listar = list_get(cola_exit,i);
+            printf("El proceso con pid: %d esta en exit \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en exit \n");
+    }
+
+    if(!list_is_empty(cola_block)){
+        for(int i = 0; i < list_size(cola_block); i++){
+            t_pcb* pcb_listar = list_get(cola_block,i);
+            printf("El proceso con pid: %d esta en block \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en block \n");
+    }
+
+    if(algoritmo_planificacion == VRR){
+    if(!list_is_empty(cola_ready_aux)){
+        for(int i = 0; i < list_size(cola_ready_aux); i++){
+            t_pcb* pcb_listar = list_get(cola_ready_aux,i);
+            printf("El proceso con pid: %d esta en ready aux \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en ready aux \n");
+    }
+    }
 
 }
 
@@ -721,6 +776,7 @@ t_registros_cpu* inicializar_registros(){
 }
 
 void planificar(){
+    apagar_planificacion = 0;
     planificar_largo_plazo();
     planificar_corto_plazo();
 
@@ -769,6 +825,7 @@ void planificar_corto_plazo(){
 
 void contador_quantum_RR(){
     while(1){
+        if(!apagar_planificacion){
         sem_wait(&sem_empezar_quantum);
         
         sleep(quantum / 1000);
@@ -776,12 +833,15 @@ void contador_quantum_RR(){
         {
             enviar_interrupcion();
         }
+        }
     }
 
     
 }
 
 void manejar_VRR(){
+    while(1){
+        if(!apagar_planificacion){
     sem_wait(&sem_empezar_quantum);
     
     
@@ -821,6 +881,8 @@ void manejar_VRR(){
     pthread_mutex_lock(&mutex_cola_exec);
     list_replace_by_condition(cola_exec, (void*) encontrar_pcb, pcb_vrr);
     pthread_mutex_unlock(&mutex_cola_exec);
+        }
+    }
 }
 
 void enviar_interrupcion(){
@@ -844,6 +906,7 @@ t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
 
 void pcb_exit(){
     while(1){
+    if (!apagar_planificacion){
     sem_wait(&sem_listos_para_exit);
     
     pthread_mutex_lock(&mutex_cola_exit);
@@ -856,22 +919,26 @@ void pcb_exit(){
     //sem_post(&sem_multiprogamacion);
     free(pcb_finaliza);   
     }
+    }
 }
 
 void exec_pcb()
 {
     while(1){
+        if(!apagar_planificacion){
         if(!list_is_empty(cola_ready)){
         sem_wait(&sem_listos_para_exec);
         t_pcb* pcb_enviar = elegir_pcb_segun_algoritmo();
 
         dispatch(pcb_enviar);
         }
+        }
     }
 }
 
 void pcb_ready(){
  while(1){
+    if (!apagar_planificacion){
     if (proceso_activos() < grado_multiprogramacion){
     sem_wait(&sem_listos_para_ready);
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
@@ -880,6 +947,8 @@ void pcb_ready(){
     list_add(cola_ready,pcb);
     pthread_mutex_unlock(&mutex_cola_ready);
     sem_post(&sem_listos_para_exec);
+    }
+
     }
  }
 }
