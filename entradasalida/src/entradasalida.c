@@ -91,7 +91,11 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL){
             switch (operacion){
                 case IO_GEN_SLEEP:
                     int unidades = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL,log_entradasalida);
-                    funcIoGenSleep(unidades);
+
+                    pthread_t ejecutar_sleep; 
+                    pthread_create(&ejecutar_sleep, NULL, (void *)funcIoGenSleep, (void *) (intptr_t) unidades);
+                    pthread_detach(ejecutar_sleep);
+                    //funcIoGenSleep(unidades);
                 break;
                 case IO_STDIN_READ:
                     funcIoStdRead(1,1);
