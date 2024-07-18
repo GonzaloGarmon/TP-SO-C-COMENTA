@@ -129,4 +129,7 @@ int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char*
 int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo,char* palabra, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t tercer_entero32, uint32_t pid);
 void bloquear_pcb(t_contexto* contexto);
 void desbloquear_proceso_block(uint32_t pid);
+char* motivo_exit_to_string(motivo_exit motivo);
+void cambio_estado(uint32_t pid, char* estado_anterior, char* estado_nuevo);
+void mostrar_motivo_block(uint32_t pid, char* motivo_block);
 #endif
