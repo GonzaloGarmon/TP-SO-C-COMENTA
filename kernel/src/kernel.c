@@ -747,6 +747,15 @@ void listar_procesos_estado(){
         printf("\n No hay ningun proceso en block \n");
     }
 
+    for(int i = 0; i < cantidad_recursos; i++){
+        if(!list_is_empty(lista_recurso[i])){
+            for(int j = 0; j < list_size(lista_recurso[i]); j++){
+            t_pcb* pcb_listar = list_get(lista_recurso[i],j);
+            printf("El proceso con pid: %d esta en block \n", pcb_listar->contexto->pid);
+            }
+        }
+    }
+
     if(algoritmo_planificacion == VRR){
     if(!list_is_empty(cola_ready_aux)){
         for(int i = 0; i < list_size(cola_ready_aux); i++){
