@@ -211,6 +211,14 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             sem_post(&sem_listos_para_exit);
             sem_post(&sem_listos_para_exec);
             break;
+        case OUT_OF_MEMORY:
+            t_contexto* contexto_finaliza_memory = malloc(sizeof(t_contexto));
+            contexto_finaliza_memory = recibir_contexto(conexion_kernel_cpu_dispatch);
+            
+            actualizar_pcb_envia_exit(contexto_finaliza_memory,OUT_OF_MEMORY);
+            sem_post(&sem_listos_para_exit);
+            sem_post(&sem_listos_para_exec);
+            break;
         case INTERRUPCION:
             t_contexto* pcb_interrumpido = malloc(sizeof(t_contexto));
             pcb_interrumpido = recibir_contexto(conexion_kernel_cpu_dispatch);
@@ -1107,7 +1115,7 @@ void actualizar_pcb_con_cambiar_lista(t_contexto* pcb_wait, t_list* lista_bloq_r
     list_add(lista_bloq_recurso,pcb_nuevo);
 }
 
-void actualizar_pcb_envia_exit(t_contexto* pcb_wait, op_code codigo){
+void actualizar_pcb_envia_exit(t_contexto* pcb_wait, motivo_exit codigo){
     
     bool encontrar_pcb(t_pcb* pcb){
         return pcb->contexto->pid == pcb_wait->pid;
