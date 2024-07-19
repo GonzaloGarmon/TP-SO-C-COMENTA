@@ -166,16 +166,13 @@ void ejecutar_ciclo_de_instruccion(t_log* loggs){
 
  }
 
-//pedir a la memoria la proxima instruccion a ejecutar
 
 t_instruccion* fetch(uint32_t pid, uint32_t pc){
     pedir_instruccion_memoria(pid, pc, log_cpu);
-    log_trace(log_cpu, "paso pedir instruccion");
+    log_info(log_cpu, "PID: %i - FETCH - Program Counter: %i", pid, pc);
     t_instruccion* instruccion = malloc(sizeof(t_instruccion));
     int codigo = recibir_operacion(conexion_memoria);
-    log_trace(log_cpu, "pedi instruccion");
     instruccion = recibir_instruccion(conexion_memoria);
-    log_trace(log_cpu, "recibi instruccion");
   return instruccion;
 }
 
@@ -193,25 +190,32 @@ t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc, t_log *logg)
 void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
     switch (instruccion_nombre) {
         case SET:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcSet(instruccion);
             break;
         case SUM:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcSum(instruccion);
             break;
         case SUB:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcSub(instruccion);
             break;
         case JNZ:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcJnz(instruccion);
             break;
         case IO_GEN_SLEEP:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcIoGenSleep(instruccion);
             break;
         case WAIT:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s", instruccion->parametros1, instruccion->parametros2);
             funcWait(instruccion);
             esperar_devolucion_pcb();
             break;
         case SIGNAL:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s", instruccion->parametros1, instruccion->parametros2);
             funcSignal(instruccion);
             esperar_devolucion_pcb();
             break;
@@ -219,35 +223,46 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
             funcExit(instruccion);
         break;
         case MOV_IN:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcMovIn(instruccion);
             break;
         case MOV_OUT:
-            //funcMovOut(instruccion);
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
+            funcMovOut(instruccion);
             break;
         case RESIZE:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s", instruccion->parametros1, instruccion->parametros2);
             funcResize(instruccion);
             break;
         case COPY_STRING:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s", instruccion->parametros1, instruccion->parametros2);
             funcCopyString(instruccion);
             break;
         case IO_STDIN_READ:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s - PARAMETRO 3: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3, instruccion->parametros4);
             funcIoStdinRead(instruccion);
             break;
         case IO_STDOUT_WRITE:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s - PARAMETRO 3: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3, instruccion->parametros4);
             funcIoStdOutWrite(instruccion);
         case IO_FS_CREATE:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcIoFsCreate(instruccion);
             break;
         case IO_FS_DELETE:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcIoFsDelete(instruccion);
             break;
         case IO_FS_TRUNCATE:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s - PARAMETRO 3: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3, instruccion->parametros4);
             funcIoFsTruncate(instruccion);
             break;
         case IO_FS_WRITE:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s - PARAMETRO 3: %s - PARAMETRO 4: %s - PARAMETRO 5: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3, instruccion->parametros4, instruccion->parametros5, instruccion->parametros6);
             funcIoFsWrite(instruccion);
             break;
         case IO_FS_READ:
+            log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s - PARAMETRO 3: %s - PARAMETRO 4: %s - PARAMETRO 5: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3, instruccion->parametros4, instruccion->parametros5, instruccion->parametros6);
             funcIoFsRead(instruccion);
             break;
         default:
@@ -639,41 +654,23 @@ void funcIoFsRead(t_instruccion* instruccion) {
     eliminar_paquete(paquete);
 }
 
-// void funcCopyString(t_instruccion* instruccion){
-//     uint32_t SI,DI; //estan en el utils.h (t_registros_cpu)
-//     /*
-//     SI (Source Index): Este registro contiene la dirección de memoria desde donde se va a copiar el string. Es decir, apunta al inicio del string que quieres copiar.
-//     DI (Destination Index): Este registro contiene la dirección de memoria donde se va a copiar el string. Es decir, apunta al lugar en la memoria donde quieres que se almacene la copia del string.
-//     Tamaño: Este parámetro indica la cantidad de bytes que se van a copiar desde la dirección apuntada por SI a la dirección apuntada por DI.  
-//     entonces:
-//     SI: direc de origen
-//     DI: direc de destino
-//     tamaño: cant de bytes a copiar a partir del SI (y a pegar a partir del DI)
-//     */
-//    //pedrile a memoria que copie a partir de la direc SI la cant que le especifique (tamaño), a partir la direc DI.
-//    //enviar_entero(/*aca no se si va socket_servidor_cpu_dispatch o socket_servidor_cpu_interrupt*/instruccion->parametros2,COPY_STRING);//Armar en memoria el case correspondiente para recibir esto
-//    uint32_t tamanio; //el tamaño estaria en instruccion->parametros2
-//    enviar_entero(conexion_memoria, tamanio, COPY_STRING);
-// }
-
 void funcCopyString(t_instruccion *instruccion) {
-    t_pcb *pcb_contexto;
+    
     uint32_t tamanio = instruccion->parametros2;
 
     t_paquete *paquete = crear_paquete_op(COPY_STRING);
     agregar_entero_a_paquete(paquete, tamanio);
-    agregar_contexto_a_paquete(paquete, pcb_contexto->contexto);
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete); 
 }
 
 void funcResize(t_instruccion* instruccion){
-    t_contexto *pcb;
     uint32_t tamanio = instruccion->parametros2;
-    //enviar_entero(conexion_memoria, tamanio, RESIZE);
 
     t_paquete *paquete = crear_paquete_op(RESIZE);
     agregar_entero_a_paquete(paquete, tamanio);
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete);
     log_info(log_cpu, "Tamanio enviado");
@@ -687,7 +684,7 @@ void funcResize(t_instruccion* instruccion){
             break;
             case OUT_OF_MEMORY:
             log_trace(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
-            enviar_contexto(socket_cliente_kernel_interrupt, pcb, cod_op);
+            enviar_contexto(socket_cliente_kernel_interrupt, contexto, cod_op);
             break;
             default:
             log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", cod_op);
@@ -743,18 +740,42 @@ uint32_t traducirDireccion(t_contexto *contexto, uint32_t dirLogica, uint32_t ta
     //codigo para buscar en tlb
      for(int i=0; i < cantidad_entradas_tlb; i++){
         if(contexto->pid == entrada_tlb[i].pid && numero_pagina == entrada_tlb[i].numero_de_pagina){ //TLB hit
+        log_info(log_cpu, "TLB Hit: “PID: %i - TLB HIT - Pagina: %i", contexto->pid, numero_pagina);
         dirFisica = entrada_tlb[i].marco * tamanio_pagina + desplazamiento;
 
         return dirFisica;
         }
     }
 
-    //codigo para buscar en tabla de paginas
+
+    //TLB miss
+    log_info(log_cpu, "TLB Hit: “PID: %i - TLB MISS - Pagina: %i", contexto->pid, numero_pagina);
+    t_2_enteros *algo;
+    algo->entero1 = numero_pagina;
+    algo->entero2 = contexto->pid;
+    enviar_2_enteros(conexion_memoria, algo, ACCESO_TABLA_PAGINAS);
+    uint32_t marco;
+
+    while(1) {
+        int cod_op = recibir_operacion(conexion_memoria);
+        switch (cod_op)
+        {
+        case 0:
+            log_error(log_cpu, "Llego codigo operacion 0");
+            break;
+        case ACCESO_TABLA_PAGINAS_OK:
+            log_info(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
+            marco = recibir_entero_uint32(conexion_memoria, log_cpu);
+            log_info(log_cpu, "Recibo marco :%i", marco);
+            break;
+        default:
+            log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", cod_op);
+            break;
+        }
+    }
+    log_info(log_cpu, "PID: %i - OBTENER MARCO - Página: %i - Marco: %i", contexto->pid, numero_pagina, marco);
     
-    //consultar a memoria por la tabla de paginas!!!
-    
-    //uint32_t numero_marco = obtener_marco_pagina
-    
+    //preguntarle a nico
     //if(numero_marco == -1) {//Fallo de pagina (page fault)
         //buscar en disco, no se como
         //manenjar ese page fault
@@ -762,7 +783,7 @@ uint32_t traducirDireccion(t_contexto *contexto, uint32_t dirLogica, uint32_t ta
     //}
     
     //actulalizar TLB
-    //agregar_entrada_tlb(); ver parametros
+    agregar_entrada_tlb(contexto, marco, numero_pagina);
     
 
     return dirFisica;
@@ -770,8 +791,13 @@ uint32_t traducirDireccion(t_contexto *contexto, uint32_t dirLogica, uint32_t ta
 
 void agregar_entrada_tlb(t_contexto *contexto, uint32_t marco, uint32_t pagina){ //actualizar tlb
 
+//PREGUNTAR NICO 
+// 
+// 
+// 
+//     
     bool  espacio_libre = false; //flag
-    //chequo espacio vacio
+    // todavia tengo espacios libres
     for(int i=contexto->pid ;i < cantidad_entradas_tlb; i++){
         if(entrada_tlb[i].pid == NULL){
             entrada_tlb[i].pid = contexto->pid;

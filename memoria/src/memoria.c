@@ -166,9 +166,11 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             //devolver tabla inicial de alguna manera
             log_info(log_memoria, "Creacion del proceso PID %d", pid);
             crear_tabla_pagina(pid, cant_paginas);
+            log_info(log_memoria, "PID: %i - Tamaño: %i", pid,cant_paginas);
             cargar_instrucciones_desde_archivo(path, &instrucciones);
             sem_post(&sem);
             enviar_mensaje("Proceso creado", SOCKET_CLIENTE_KERNEL);
+            
             break;
         case FINALIZAR_PROCESO:
             usleep(retardo_respuesta * 1000);
@@ -182,11 +184,11 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
         case ACCESO_TABLA_PAGINAS: 
             usleep(retardo_respuesta * 1000);
             uint32_t num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
-            pid = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
+            uint32_t pidr = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
             uint32_t marco_correspondiente = obtener_marco_pagina(pid, num_pagina);
             
-            // enviar_entero(SOCKET_CLIENTE_KERNEL, marco_correspondiente, /*ACA FALTA ALGO*/); //ver en kernel
-            log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
+            enviar_entero(SOCKET_CLIENTE_KERNEL, marco_correspondiente, ACCESO_TABLA_PAGINAS_OK);
+            log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pidr, num_pagina, marco_correspondiente);
             break;
             case -1:
             codigoOperacion=codOperacion;
@@ -210,33 +212,21 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
         switch (codOperacion)
         {
         case PEDIR_INSTRUCCION_MEMORIA:
-        sem_wait(&sem);
-        sleep(retardo_respuesta/1000);
-        t_list* enteros = recibir_doble_entero(SOCKET_CLIENTE_CPU);
-        //RECIBO PID Y PC PRIMERO HAY QUE IDENTIFICAR QUE INSTRUCCIONES CORRESPONDE A PID
-        //LUEGO HACER INSTRUCCIONES[PC], DEJO ESTO PARA PODER CONTINUAR CON LA EJECUCION
-        //PERO TODAVIA FALTA VER COMO HACER LO DE IDENTIFICAR
-        uint32_t ins = list_get(enteros,1);
-        enviar_instruccion(SOCKET_CLIENTE_CPU, instrucciones[ins],READY);
-            // uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-            // uint32_t pc = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-
-            // char *instruccion = obtener_instruccion(pid, pc);
-            // if(instruccion != NULL){
-            //     enviar_instruccion(SOCKET_CLIENTE_CPU, instruccion, READY);
-            // }else{
-            //     log_info(log_memoria, "No se encontro la instruccion para el PID: %d y PC %d", pid, pc);
-            //     enviar_mensaje("ERROR", SOCKET_CLIENTE_CPU);
-            // }
+            sem_wait(&sem);
+            sleep(retardo_respuesta/1000);
+            t_list* enteros = recibir_doble_entero(SOCKET_CLIENTE_CPU);
+            uint32_t ins = list_get(enteros,1);
+            enviar_instruccion(SOCKET_CLIENTE_CPU, instrucciones[ins],READY);
             sem_post(&sem);
         break;
-        case RESIZE: // preguntar de donde viene
+        case RESIZE: 
             usleep(retardo_respuesta * 1000);
             uint32_t nuevo_tam = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
+            t_contexto *contexto = recibir_contexto(SOCKET_CLIENTE_CPU);
             op_code res = ajustar_tamanio_proceso(nuevo_tam);
             enviar_codop(SOCKET_CLIENTE_CPU, res);
-            log_info(log_memoria, "Se envio respuesta de memoria a cpu del Resize");
-            //log_info(log_memoria, "Ajuste de tamanio de proceso PID: %d - Nuevo tamanio: %d",nuevo_tam);
+            //log_info(log_memoria, "PID: <PID> - %i: - Tamanio actual: %i - Tamanio a ampliar %i", contexto->pid, , nuevo_tam);
+
             break;
         case MOV_IN:
             usleep(retardo_respuesta * 1000); 
@@ -277,14 +267,29 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
 
             pthread_mutex_unlock(&mutex_memoria);
             break;
+        case ACCESO_ESPACIO_USUARIO:
+                usleep(retardo_respuesta * 1000);
+                uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
+                uint32_t num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
+                uint32_t offset = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
+                char *tam_a_leerr = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
+
+                //char *valor_t = leer_memoria(pid, num_pagina, offset, tam_a_leer); aca podriamos poner leer para leer memoria
+                //enviar_string(SOCKET_CLIENTE_CPU, valor_t, ACCESO); 
+                //“PID: <PID> - Accion: <LEER / ESCRIBIR> - Direccion fisica: <DIRECCION_FISICA>” - Tamaño <TAMAÑO A LEER / ESCRIBIR>
+                int direc_fisica;
+                char *accion;
+                log_info(log_memoria, "PID: %d - Accion: LEER/ESCRIBIR %s - Direccion Fisica: %i - Tamanio a leer/escribir : %s", pid, accion/*accion*/, direc_fisica, tam_a_leerr);
+                //free(valor_t);
+                break;
         case ACCESO_TABLA_PAGINAS: 
             usleep(retardo_respuesta * 1000);
-            uint32_t num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-            uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
+            uint32_t num_paginax = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
+            uint32_t pidx = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
             uint32_t marco_correspondiente = obtener_marco_pagina(pid, num_pagina);
             
-            // enviar_entero(SOCKET_CLIENTE_CPU, marco_correspondiente, /*ACA FALTA ALGO*/); //ver en kernel
-            log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
+            enviar_entero(SOCKET_CLIENTE_CPU, marco_correspondiente, ACCESO_TABLA_PAGINAS_OK);
+            log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pidx, num_paginax, marco_correspondiente);
             break;
         case COPY_STRING:
             usleep(retardo_respuesta * 1000);
@@ -363,7 +368,9 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
 
                 //char *valor_t = leer_memoria(pid, num_pagina, offset, tam_a_leer); aca podriamos poner leer para leer memoria
                 //enviar_string(SOCKET_CLIENTE_CPU, valor_t, ACCESO); 
-                log_info(log_memoria, "PID: %d - Accion: LEER - Numero de pagina: %d - offset: %d- Tamanio: %d - Origen: CPU", pid, num_pagina, offset, tam_a_leer);
+                int direc_fisica;
+                char *accion;
+                log_info(log_memoria, "PID: %d - Accion: LEER/ESCRIBIR %s - Direccion Fisica: %i - Tamanio a leer/escribir : %i", pid, accion/*accion*/, direc_fisica, tam_a_leer);
                 //free(valor_t);
                 break;
             case ACCESO_TABLA_PAGINAS: 

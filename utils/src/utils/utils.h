@@ -136,7 +136,8 @@ typedef enum
     IO_FS_READ_OK,
     MOV_OUT_OK,
     MOV_IN_OK,
-    RESIZE_OK
+    RESIZE_OK,
+    ACCESO_TABLA_PAGINAS_OK
 
 }op_code;
 
@@ -175,6 +176,13 @@ typedef struct {
     uint32_t entero1;
     uint32_t entero2;
 }t_2_enteros;
+
+typedef struct {
+    uint32_t entero1;
+    uint32_t entero2;
+    uint32_t entero3;
+}t_3_enteros;
+
 
 typedef struct {
     char *string;
@@ -220,11 +228,13 @@ void agregar_registros_a_paquete(t_paquete * paquete, t_registros_cpu * registro
 void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion * instruccion_nueva);
 void agregar_2_enteros_1_string_a_paquete(t_paquete *paquete, t_string_2enteros * enteros_string);
 void agregar_2_enteros_a_paquete(t_paquete *paquete, t_2_enteros * enteros);
+void agregar_3_enteros_a_paquete(t_paquete *paquete, t_3_enteros * enteros);
 void enviar_entero (int conexion, uint32_t numero, int codop);
 void enviar_string (int conexion, char* palabra, int codop);
 void enviar_contexto (int conexion, t_contexto* pcb, int codop);
 void enviar_instruccion (int conexion, t_instruccion* nueva_instruccion, int codop);
 void enviar_2_enteros(int conexion, t_2_enteros* enteros, int codop);
+void enviar_3_enteros(int conexion, t_3_enteros* enteros, int codop);
 void enviar_2_enteros_1_string(int conexion, t_string_2enteros* enteros_string, int codop);
 void enviar_codigo (t_paquete *codop, int socket_cliente);
 void enviar_codop(int conexion, op_code cod_op);
@@ -252,6 +262,7 @@ void recibir_string_mas_u32(int conexion_kernel_cpu_dispatch,char** palabra,uint
 void recibir_3_string(int conexion_kernel_cpu_dispatch, char** palabra1,char** palabra2, char** palabra3);
 void recibir_2_string(int conexion_kernel_cpu_dispatch, char** palabra1,char** palabra2);
 t_2_enteros * recibir_2_enteros(int socket);
+t_3_enteros* recibir_3_enteros(int socket);
 t_string_2enteros* recibir_string_2enteros(int socket);
 void recibir_2_string_mas_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1);
 void recibir_2_string_mas_3_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1, uint32_t* valor2, uint32_t* valor3);
