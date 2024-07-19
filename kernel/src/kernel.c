@@ -230,6 +230,13 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             sem_post(&sem_listos_para_exec);
             //log_trace(log_kernel,"recibi un pcb por fin de quantum");
             break;
+        case INTERRUPCION_USUARIO:
+            t_contexto* pcb_interrumpido_usuario = malloc(sizeof(t_contexto));
+            pcb_interrumpido_usuario = recibir_contexto(conexion_kernel_cpu_dispatch);
+            actualizar_pcb_envia_exit(pcb_interrumpido_usuario,INTERRUPTED_BY_USER);
+            sem_post(&sem_listos_para_exit);
+            sem_post(&sem_listos_para_exec);
+            break;
         case EJECUTAR_WAIT:
             t_contexto* pcb_wait;
             char* recurso_wait;
@@ -706,9 +713,13 @@ void finalizar_proceso(uint32_t pid){
     }
 
     if(esta_en_esta_lista(cola_exec, pid)){
-        sacar_de_lista_mover_exit(cola_exec,mutex_cola_exec,pid);
-        cambio_estado(pid,"EXEC", "EXIT");
-        sem_post(&sem_listos_para_exit);
+        enviar_interrupcion_fin_proceso();
+
+        //lo de abajo esta comentado ya que lo hace cuando recibe desde cpu el contexto
+
+        //sacar_de_lista_mover_exit(cola_exec,mutex_cola_exec,pid);
+        //cambio_estado(pid,"EXEC", "EXIT");
+        //sem_post(&sem_listos_para_exit);
     }
 
     if(esta_en_esta_lista(cola_block, pid)){
@@ -932,6 +943,16 @@ void manejar_VRR(){
 
 void enviar_interrupcion(){
     t_paquete* paquete = crear_paquete_op(FIN_QUANTUM_RR);
+    pthread_mutex_lock(&mutex_cola_exec);
+    t_pcb* pcb_interrumpir = list_get(cola_exec,0);
+    pthread_mutex_unlock(&mutex_cola_exec);
+    agregar_entero_a_paquete(paquete,pcb_interrumpir->contexto->pid);
+    enviar_paquete(paquete,conexion_kernel_cpu_interrupt);
+    eliminar_paquete(paquete);
+}
+
+void enviar_interrupcion_fin_proceso(){
+    t_paquete* paquete = crear_paquete_op(INTERRUPCION_USUARIO);
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_interrumpir = list_get(cola_exec,0);
     pthread_mutex_unlock(&mutex_cola_exec);

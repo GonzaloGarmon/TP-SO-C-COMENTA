@@ -121,6 +121,7 @@ bool esta_en_esta_lista(t_list* lista, uint32_t pid_encontrar);
 void sacar_de_lista_mover_exit(t_list* lista,pthread_mutex_t mutex_lista, uint32_t pid);
 void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid);
 void enviar_interrupcion();
+void enviar_interrupcion_fin_proceso();
 int existe_interfaz_conectada(char* nombre_interfaz);
 int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t entero32, uint32_t pid);
 int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t pid);

@@ -16,6 +16,7 @@ t_config* config_cpu;
 t_contexto *contexto;
 uint32_t pid_interrupt;
 int hay_interrupcion;
+int es_por_usuario;
 
 char* ip_memoria;
 char* puerto_memoria; 
