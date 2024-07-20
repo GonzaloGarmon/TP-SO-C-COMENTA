@@ -771,7 +771,7 @@ uint32_t traducirDireccion(uint32_t dirLogica, uint32_t tamanio_pagina) {
     return dirFisica;
 }
 
-void agregar_entrada_tlb(t_contexto *contexto, uint32_t marco, uint32_t pagina){ //actualizar tlb
+void agregar_entrada_tlb(uint32_t marco, uint32_t pagina){ //actualizar tlb
 
 //PREGUNTAR NICO 
 // 
