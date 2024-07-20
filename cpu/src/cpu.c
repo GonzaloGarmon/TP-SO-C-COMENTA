@@ -957,6 +957,13 @@ void funcMovIn(t_instruccion *instruccion) {
     log_info(log_cpu, "Valor guardado en registro");
 }
 
+char* leer_valor_de_registro(){
+
+}
+
+void escribir_valor_en_memoria(){
+
+}
 
 void funcMovOut(t_instruccion* instruccion){
     log_info(log_cpu, "Instruccion MOV_OUT ejecutada");
@@ -978,5 +985,3 @@ void funcMovOut(t_instruccion* instruccion){
     log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección Fisica: %d", contexto->pid, direccionFisica);
     log_info(log_cpu, "Valor escrito en memoria");
 }
-
-
