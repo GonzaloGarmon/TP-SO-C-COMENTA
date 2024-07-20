@@ -731,7 +731,7 @@ DireccionFisica traducirDireccion(DireccionLogica dirLogica, int tamano_pagina) 
 //EntradaTLB* TLB = malloc(cantidad_entradas_tlb * sizeof(EntradaTLB));
 //free(TLB);
 
-uint32_t traducirDireccion(t_contexto *contexto, uint32_t dirLogica, uint32_t tamanio_pagina) {
+uint32_t traducirDireccion(uint32_t dirLogica, uint32_t tamanio_pagina) {
 
     uint32_t numero_pagina = floor(dirLogica / tamanio_pagina);
     uint32_t desplazamiento = dirLogica - numero_pagina * tamanio_pagina;
@@ -868,7 +868,7 @@ uint32_t tamanio_registro(char *registro){
     else if (strcmp(registro, "EDX") == 0) return 8;
 }
 
-char *leer_valor_de_memoria(char* direccionFisica, t_contexto *contexto, uint32_t tamanio) {
+char *leer_valor_de_memoria(char* direccionFisica, uint32_t tamanio) {
 
     t_paquete *paquete = crear_paquete_op(MOV_IN);
     agregar_string_a_paquete(paquete, direccionFisica);
@@ -947,9 +947,9 @@ void funcMovIn(t_instruccion *instruccion) {
 
     //ahora tendria que traducir la direccion logica a fisica
     int tamanio_regDatos = tamanio_registro(registroDatos);
-    uint32_t direccionFisica = traducirDireccion(contexto, registroDireccionLogica, tamanio_regDatos);
+    uint32_t direccionFisica = traducirDireccion(registroDireccionLogica, tamanio_regDatos);
 
-    char *valor = leer_valor_de_memoria(direccionFisica, contexto, tamanio_regDatos);
+    char *valor = leer_valor_de_memoria(direccionFisica, tamanio_regDatos);
 
     //guardo el valor en registro datos
     guardar_valor_en_registro(valor, registroDatos);
@@ -957,11 +957,44 @@ void funcMovIn(t_instruccion *instruccion) {
     log_info(log_cpu, "Valor guardado en registro");
 }
 
-char* leer_valor_de_registro(){
-
+char *leer_valor_de_registro(char *registro) {
+    if (strcmp(registro, "AX") == 0) return contexto->registros->AX;
+    else if (strcmp(registro, "BX") == 0) return contexto->registros->BX;
+    else if (strcmp(registro, "CX") == 0) return contexto->registros->CX;
+    else if (strcmp(registro, "DX") == 0) return contexto->registros->DX;
+    else if (strcmp(registro, "EAX") == 0) return contexto->registros->EAX;
+    else if (strcmp(registro, "EBX") == 0) return contexto->registros->EBX;
+    else if (strcmp(registro, "ECX") == 0) return contexto->registros->ECX;
+    else if (strcmp(registro, "EDX") == 0) return contexto->registros->EDX;
+    return NULL;
 }
 
-void escribir_valor_en_memoria(){
+void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, int tamanio) {
+    t_paquete *paquete = crear_paquete_op(MOV_OUT);
+    agregar_string_a_paquete(paquete, direccionFisica);
+    agregar_string_a_paquete(paquete, valor);
+    agregar_entero_a_paquete(paquete, contexto->pid);
+    agregar_entero_a_paquete(paquete, tamanio);
+
+    enviar_paquete(paquete, conexion_memoria);
+    eliminar_paquete(paquete);
+    log_trace(log_cpu, "MOV OUT enviado");
+
+    while(1) {
+        int cod_op = recibir_operacion(conexion_memoria);
+        switch (cod_op) {
+        case 0:
+            log_error(log_cpu, "Llego código operación 0");
+            break;
+        case MOV_OUT_OK:
+            log_info(log_cpu, "Código de operación recibido en cpu: %d", cod_op);
+            log_info(log_cpu, "Valor escrito en memoria correctamente");
+            return;
+        default:
+            log_warning(log_cpu, "Llegó un código de operación desconocido, %d", cod_op);
+            break;
+        }
+    }
 
 }
 
@@ -974,13 +1007,13 @@ void funcMovOut(t_instruccion* instruccion){
 
     // Traduzco la direc
     int tamanio_regDatos = tamanio_registro(registroDatos);
-    uint32_t direccionFisica = traducirDireccion(contexto, registroDireccionLogica, tamanio_regDatos);
+    uint32_t direccionFisica = traducirDireccion(registroDireccionLogica, tamanio_regDatos);
 
     // Leer el valor del registro de datos
-    //char *valor = leer_valor_de_registro(registroDatos);
+    char *valor = leer_valor_de_registro(registroDatos);
 
     // Escribir el valor en memoria
-    //escribir_valor_en_memoria(direccionFisica, valor, contexto, tamanio_regDatos);
+    escribir_valor_en_memoria(direccionFisica, valor, tamanio_regDatos);
 
     log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección Fisica: %d", contexto->pid, direccionFisica);
     log_info(log_cpu, "Valor escrito en memoria");
