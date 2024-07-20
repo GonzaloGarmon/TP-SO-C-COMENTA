@@ -765,13 +765,13 @@ uint32_t traducirDireccion(uint32_t dirLogica, uint32_t tamanio_pagina) {
     //}
     
     //actulalizar TLB
-    agregar_entrada_tlb(contexto, marco, numero_pagina);
+    agregar_entrada_tlb(contexto->pid, marco, numero_pagina);
     
 
     return dirFisica;
 }
 
-void agregar_entrada_tlb(uint32_t marco, uint32_t pagina){ //actualizar tlb
+void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina){ //actualizar tlb
 
 //PREGUNTAR NICO 
 // 
@@ -780,25 +780,25 @@ void agregar_entrada_tlb(uint32_t marco, uint32_t pagina){ //actualizar tlb
 //     
     bool  espacio_libre = false; //flag
     // todavia tengo espacios libres
-    for(int i=contexto->pid ;i < cantidad_entradas_tlb; i++){
+    for(int i=pid ;i < cantidad_entradas_tlb; i++){
         if(entrada_tlb[i].pid == NULL){
-            entrada_tlb[i].pid = contexto->pid;
+            entrada_tlb[i].pid = pid;
             entrada_tlb[i].numero_de_pagina = pagina;
             entrada_tlb[i].marco = marco;
             espacio_libre = true;
             break;
         }
     }
-    if(!espacio_libre){
-        if(algoritmo_tlb == "FIFO"){
-            reemplazarXFIFO(contexto->pid, marco, pagina);
-         }else if (algoritmo_tlb == "LRU"){
-            reemplazarXLRU(contexto->pid, marco, pagina);
+    if(!espacio_libre) {
+        if(strcmp(algoritmo_tlb, "FIFO") == 0) {
+            reemplazarXFIFO(pid, marco, pagina);
+        } else if(strcmp(algoritmo_tlb, "LRU") == 0) {
+            reemplazarXLRU(pid, marco, pagina);
         }
     }
 }
 
-void reemplazarXFIFO(t_contexto *contexto, uint32_t marco, uint32_t pagina){
+void reemplazarXFIFO(uint32_t pid, uint32_t marco, uint32_t pagina){
     int cantidad_entradas_tlb_valor = cantidad_entradas_tlb;  // Obtener el valor entero desde el puntero
     
     indice_frente = 0; // Obtener índice a reemplazar
@@ -811,7 +811,7 @@ void reemplazarXFIFO(t_contexto *contexto, uint32_t marco, uint32_t pagina){
 }
 
 
-void reemplazarXLRU(t_contexto *contexto, uint32_t marco, uint32_t pagina){
+void reemplazarXLRU(uint32_t pid, uint32_t marco, uint32_t pagina){
     
     int indice_menos_reciente = 0;
     uint32_t menos_reciente = entrada_tlb[0].contador_reciente;
