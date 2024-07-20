@@ -121,19 +121,14 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
 
     log_trace(loggs,"Lei la IP %s , el Puerto Memoria %s ", ip_memoria, puerto_memoria);
 
-    // Enviamos al servidor el valor de ip como mensaje si es que levanta el cliente
     if((conexion_memoria = crear_conexion(ip_memoria, puerto_memoria)) == -1){
         log_trace(loggs, "Error al conectar con Memoria. El servidor no esta activo");
 
         exit(2);
     }
 
-   
-    
     log_trace(loggs, "Todavía no recibí Op");
-    //recibir_operacion(conexion_memoria);
     log_trace(loggs, "Recibí Op");
-    //recibir_entero_uint32(conexion_memoria, loggs);
     
 }
 
@@ -323,7 +318,7 @@ op_code decode(t_instruccion *instruccion) {
     } else if (strcmp(instruccion->parametros1, "EXIT") == 0) {
         return EXIT;
     }
-    // Agregar otras instrucciones según sea necesario
+    
     return -1; // Código de operación no válido
 }
 
@@ -717,19 +712,6 @@ uint32_t obtener_valor_registro(char* registro){
 
     return devolver;
 }
-
-
-/*
-DireccionFisica traducirDireccion(DireccionLogica dirLogica, int tamano_pagina) { //Obtener direc fisica
-    DireccionFisica dirFisica;
-    dirFisica.marco = floor(dirLogica.numero_pagina / tamano_pagina);
-    dirFisica.desplazamiento = dirLogica.numero_pagina - dirFisica.marco * tamano_pagina;
-    return dirFisica;
-}
-*/
-
-//EntradaTLB* TLB = malloc(cantidad_entradas_tlb * sizeof(EntradaTLB));
-//free(TLB);
 
 uint32_t traducirDireccion(uint32_t dirLogica, uint32_t tamanio_pagina) {
 
