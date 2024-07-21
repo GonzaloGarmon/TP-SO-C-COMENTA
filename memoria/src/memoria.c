@@ -166,7 +166,7 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             //devolver tabla inicial de alguna manera
             log_info(log_memoria, "Creacion del proceso PID %d", pid);
             crear_tabla_pagina(pid, cant_paginas);
-            log_info(log_memoria, "PID: %i - Tamaño: %i", pid,cant_paginas);
+            log_info(log_memoria, "PID: %i - Tamanio: %i", pid,cant_paginas);
             cargar_instrucciones_desde_archivo(path, &instrucciones);
             sem_post(&sem);
             enviar_mensaje("Proceso creado", SOCKET_CLIENTE_KERNEL);
@@ -379,7 +379,6 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
                 uint32_t marco_correspondiente = obtener_marco_pagina(pid, num_pagina);
                 
-                // enviar_entero(SOCKET_CLIENTE_ENTRADASALIDA, marco_correspondiente, /*ACA FALTA ALGO*/); //ver en kernel
                 log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
                 break;
             case -1:
