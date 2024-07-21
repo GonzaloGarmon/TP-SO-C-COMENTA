@@ -296,6 +296,14 @@ void enviar_2_enteros(int conexion, t_2_enteros* enteros, int codop){
     eliminar_paquete(paquete);
 }
 
+void enviar_3_enteros(int conexion, t_3_enteros* enteros, int codop){
+    t_paquete* paquete = crear_paquete_op(codop);
+
+    agregar_3_enteros_a_paquete(paquete,enteros);
+    enviar_paquete(paquete,conexion);
+    eliminar_paquete(paquete);
+}
+
 void enviar_codop(int conexion, op_code cod_op){
     t_paquete * codigo = crear_paquete_op(cod_op);
     
@@ -303,6 +311,14 @@ void enviar_codop(int conexion, op_code cod_op){
 
     eliminar_codigo(codigo);
 
+}
+
+void enviar_paquete_string(int conexion, char* string, op_code codOP, int tamanio)
+{
+	t_paquete * paquete = crear_paquete_op(codOP);
+	agregar_a_paquete(paquete, string, tamanio);
+	enviar_paquete(paquete, conexion);
+	eliminar_paquete(paquete);
 }
 
 void enviar_codigo (t_paquete * codop, int socket_cliente){
@@ -348,7 +364,8 @@ void agregar_registros_a_paquete(t_paquete * paquete, t_registros_cpu * registro
     agregar_entero_a_paquete(paquete,registros->EBX);
     agregar_entero_a_paquete(paquete,registros->ECX);
     agregar_entero_a_paquete(paquete,registros->EDX);
-
+    agregar_entero_a_paquete(paquete, registros->SI);
+    agregar_entero_a_paquete(paquete, registros->DI);
 }
 
 void agregar_entero_int_a_paquete(t_paquete *paquete, int numero){
@@ -375,6 +392,12 @@ void agregar_2_enteros_a_paquete(t_paquete *paquete, t_2_enteros * enteros){
 
 }
 
+void agregar_3_enteros_a_paquete(t_paquete *paquete, t_3_enteros * enteros){
+    agregar_entero_a_paquete(paquete, enteros->entero1);
+    agregar_entero_a_paquete(paquete, enteros->entero2);
+    agregar_entero_a_paquete(paquete, enteros->entero3);
+
+}
 
 void agregar_2_enteros_1_string_a_paquete(t_paquete *paquete, t_string_2enteros * enteros_string){
     agregar_entero_a_paquete(paquete, enteros_string->entero1);
@@ -554,6 +577,8 @@ t_contexto* recibir_contexto(int socket){
 	nuevo_contexto->registros->EBX = leer_entero_uint32(buffer,&desp);
 	nuevo_contexto->registros->ECX = leer_entero_uint32(buffer,&desp);
 	nuevo_contexto->registros->EDX = leer_entero_uint32(buffer,&desp);
+    nuevo_contexto->registros->SI = leer_entero_uint32(buffer,&desp);
+    nuevo_contexto->registros->DI = leer_entero_uint32(buffer,&desp);
 
 	free(buffer);
 	return nuevo_contexto;
@@ -722,6 +747,26 @@ t_2_enteros* recibir_2_enteros(int socket){
     free(buffer);
     return nuevos_enteros;
 }
+
+t_3_enteros* recibir_3_enteros(int socket){
+    
+    t_3_enteros* nuevos_enteros = malloc(sizeof(t_3_enteros));
+
+    int size = 0;
+    char* buffer;
+    int desp = 0;
+        
+    buffer = recibir_buffer(&size, socket);
+
+    nuevos_enteros->entero1  = leer_entero_uint32(buffer, &desp);
+    nuevos_enteros->entero2  = leer_entero_uint32(buffer, &desp);
+    nuevos_enteros->entero3  = leer_entero_uint32(buffer, &desp);
+    
+    
+    free(buffer);
+    return nuevos_enteros;
+}
+
 t_string_2enteros* recibir_string_2enteros(int socket){
     
     t_string_2enteros* nuevos_enteros_string = malloc(sizeof(t_string_2enteros));
@@ -740,15 +785,26 @@ t_string_2enteros* recibir_string_2enteros(int socket){
     return nuevos_enteros_string;
 }
 
-t_string_2enteros* recibir_string_2enteros_con_contexto(int socket, t_contexto** contexto){
+
+t_string_mas_entero* recibir_string_mas_entero(int socket, t_log *loggs){
     
-    t_string_2enteros* nuevos_enteros_string = malloc(sizeof(t_string_2enteros));
+    t_string_mas_entero* nuevos_entero_string = malloc(sizeof(t_string_mas_entero));
 
     int size = 0;
     char* buffer;
     int desp = 0;
         
     buffer = recibir_buffer(&size, socket);
+
+
+    nuevos_entero_string->entero1  = leer_entero_uint32(buffer, &desp);
+    nuevos_entero_string->string  = leer_string(buffer, &desp);
+    
+    free(buffer);
+    return nuevos_entero_string;
+}
+
+void recibir_2_string_mas_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1){
 
     nuevos_enteros_string->entero1  = leer_entero_uint32(buffer, &desp);
     nuevos_enteros_string->entero2  = leer_entero_uint32(buffer, &desp);
@@ -774,6 +830,7 @@ t_string_2enteros* recibir_string_2enteros_con_contexto(int socket, t_contexto**
 }
 
 void recibir_2_string_mas_u32_con_contexto(int socket, char** palabra1,char** palabra2, uint32_t* valor1, t_contexto** contexto){
+
     int size = 0;
 	char* buffer;
 	int desp = 0;

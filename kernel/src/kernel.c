@@ -14,7 +14,18 @@ int main(int argc, char* argv[]) {
 
 
     socket_servidor_kernel_dispatch = iniciar_servidor(puerto_escucha, log_kernel);
+    conexiones_io.socket_servidor_kernel_dispatch = socket_servidor_kernel_dispatch;
     log_info(log_kernel, "INICIO SERVIDOR");
+
+    pthread_t cpu_dispatch;
+    pthread_create(&cpu_dispatch,NULL,(void*) recibir_cpu_dispatch, (void*) (intptr_t) conexion_kernel_cpu_dispatch);
+    pthread_detach(cpu_dispatch);
+
+    pthread_t cpu_interrupt;
+    pthread_create(&cpu_interrupt,NULL,(void*) recibir_cpu_interrupt, (void*) (intptr_t) conexion_kernel_cpu_interrupt);
+    pthread_detach(cpu_interrupt);
+
+
 
 
     log_info(log_kernel, "Listo para recibir a EntradaSalida");
@@ -211,9 +222,11 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             //log_trace(log_kernel,"recibi un pcb por fin de quantum");
             break;
         case EJECUTAR_WAIT:
+            log_info(log_kernel,"log 1 ");
             t_contexto* pcb_wait;
             char* recurso_wait;
             recibir_string_mas_contexto(conexion_kernel_cpu_dispatch,&pcb_wait,&recurso_wait);
+            log_info(log_kernel,"log 2 %s", recurso_wait);
             
             if(existe_recurso(recurso_wait)){
 
@@ -658,6 +671,8 @@ void iniciar_proceso(char* path){
     list_add(cola_new, pcb_nuevo);
     pthread_mutex_unlock(&mutex_cola_new);
     sem_post(&sem_listos_para_ready);
+
+    recibir_mensaje(conexion_kernel_memoria, log_kernel);
 }
 
 void finalizar_proceso(uint32_t pid){
