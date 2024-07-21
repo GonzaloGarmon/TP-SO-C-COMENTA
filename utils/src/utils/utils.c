@@ -759,6 +759,23 @@ t_string_2enteros* recibir_string_2enteros(int socket){
     return nuevos_enteros_string;
 }
 
+t_string_mas_entero* recibir_string_mas_entero(int socket, t_log *loggs){
+    
+    t_string_mas_entero* nuevos_entero_string = malloc(sizeof(t_string_mas_entero));
+
+    int size = 0;
+    char* buffer;
+    int desp = 0;
+        
+    buffer = recibir_buffer(&size, socket);
+
+    nuevos_entero_string->entero1  = leer_entero_uint32(buffer, &desp);
+    nuevos_entero_string->string  = leer_string(buffer, &desp);
+    
+    free(buffer);
+    return nuevos_entero_string;
+}
+
 void recibir_2_string_mas_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1){
     int size = 0;
 	char* buffer;

@@ -159,9 +159,9 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             log_info(log_memoria, "Antes de levantar estruc admin");
             levantar_estructuras_administrativas();
             usleep(retardo_respuesta * 1000); // aca dice memoria_config.retardo rari
-            uint32_t pid;
-            char* path;
-            recibir_string_mas_u32(SOCKET_CLIENTE_KERNEL,&path,&pid);
+           t_string_mas_entero *data = recibir_string_mas_entero(SOCKET_CLIENTE_KERNEL, log_memoria);
+            uint32_t pid = data->entero1;
+            char *path = data->string;
             uint32_t cant_paginas = 5; //recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
             //devolver tabla inicial de alguna manera
             log_info(log_memoria, "Creacion del proceso PID %d", pid);

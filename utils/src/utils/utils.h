@@ -190,6 +190,11 @@ typedef struct {
     uint32_t entero2;
 }t_string_2enteros;
 
+typedef struct {
+    char *string;
+    uint32_t entero1;
+}t_string_mas_entero;
+
 /**
 * @fn    decir_hola
 * @brief Imprime un saludo al nombre que se pase por parámetro por consola.
@@ -264,6 +269,7 @@ void recibir_2_string(int conexion_kernel_cpu_dispatch, char** palabra1,char** p
 t_2_enteros * recibir_2_enteros(int socket);
 t_3_enteros* recibir_3_enteros(int socket);
 t_string_2enteros* recibir_string_2enteros(int socket);
+t_string_mas_entero* recibir_string_mas_entero(int socket, t_log *loggs);
 void recibir_2_string_mas_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1);
 void recibir_2_string_mas_3_u32(int socket, char** palabra1,char** palabra2, uint32_t* valor1, uint32_t* valor2, uint32_t* valor3);
 
