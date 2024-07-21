@@ -203,6 +203,7 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
         case IO_GEN_SLEEP:
             log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcIoGenSleep(instruccion);
+            esperar_devolucion_pcb();
             break;
         case WAIT:
             log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s", instruccion->parametros1, instruccion->parametros2);
@@ -236,29 +237,36 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
         case IO_STDIN_READ:
             log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s - PARAMETRO 3: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3, instruccion->parametros4);
             funcIoStdinRead(instruccion);
+            esperar_devolucion_pcb();
             break;
         case IO_STDOUT_WRITE:
             log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s - PARAMETRO 3: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3, instruccion->parametros4);
             funcIoStdOutWrite(instruccion);
+            esperar_devolucion_pcb();
         case IO_FS_CREATE:
             log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcIoFsCreate(instruccion);
+            esperar_devolucion_pcb();
             break;
         case IO_FS_DELETE:
             log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3);
             funcIoFsDelete(instruccion);
+            esperar_devolucion_pcb();
             break;
         case IO_FS_TRUNCATE:
             log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s - PARAMETRO 3: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3, instruccion->parametros4);
             funcIoFsTruncate(instruccion);
+            esperar_devolucion_pcb();
             break;
         case IO_FS_WRITE:
             log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s - PARAMETRO 3: %s - PARAMETRO 4: %s - PARAMETRO 5: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3, instruccion->parametros4, instruccion->parametros5, instruccion->parametros6);
             funcIoFsWrite(instruccion);
+            esperar_devolucion_pcb();
             break;
         case IO_FS_READ:
             log_info(log_cpu, "INSTRUCCION :%s - PARAMETRO 1: %s - PARAMETRO 2: %s - PARAMETRO 3: %s - PARAMETRO 4: %s - PARAMETRO 5: %s", instruccion->parametros1, instruccion->parametros2, instruccion->parametros3, instruccion->parametros4, instruccion->parametros5, instruccion->parametros6);
             funcIoFsRead(instruccion);
+            esperar_devolucion_pcb();
             break;
         default:
             printf("Instrucción desconocida\n");
@@ -532,6 +540,7 @@ void funcIoGenSleep(t_instruccion *instruccion) {
     t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_GEN_SLEEP);
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3));
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
 
 }
@@ -571,6 +580,7 @@ void funcIoStdinRead(t_instruccion *instruccion) {
     agregar_entero_a_paquete(paquete,registro_direccion);
     agregar_entero_a_paquete(paquete,registro_tamanio);
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
@@ -583,7 +593,9 @@ void funcIoStdOutWrite(t_instruccion *instruccion) {
     agregar_entero_a_paquete(paquete,registro_direccion);
     agregar_entero_a_paquete(paquete,registro_tamanio);
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
 }
 
 void funcIoFsCreate(t_instruccion *instruccion) {
@@ -591,7 +603,9 @@ void funcIoFsCreate(t_instruccion *instruccion) {
     t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_FS_CREATE);  
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
     agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    
     eliminar_paquete(paquete);
 }
 
@@ -600,7 +614,9 @@ void funcIoFsDelete(t_instruccion *instruccion) {
     t_paquete *paquete = crear_paquete_op(EJECUTAR_IO_FS_DELETE);
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
     agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
+    
     eliminar_paquete(paquete);
 }
 
@@ -611,6 +627,7 @@ void funcIoFsTruncate(t_instruccion *instruccion) {
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1); //interfaz
     agregar_a_paquete(paquete,instruccion->parametros3, strlen(instruccion->parametros3)+1); //nombre archivo
     agregar_entero_a_paquete(paquete,registro_tamanio);
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
@@ -628,6 +645,7 @@ void funcIoFsWrite(t_instruccion* instruccion) {
     agregar_entero_a_paquete(paquete,registro_direccion);
     agregar_entero_a_paquete(paquete,registro_tamanio);
     agregar_entero_a_paquete(paquete,registro_puntero);
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }
@@ -645,6 +663,7 @@ void funcIoFsRead(t_instruccion* instruccion) {
     agregar_entero_a_paquete(paquete,registro_direccion);
     agregar_entero_a_paquete(paquete,registro_tamanio);
     agregar_entero_a_paquete(paquete,registro_puntero);
+    agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete, socket_cliente_kernel_dispatch);
     eliminar_paquete(paquete);
 }

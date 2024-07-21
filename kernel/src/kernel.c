@@ -109,6 +109,8 @@ void iniciar_semaforos(){
     pthread_mutex_init(&mutex_cola_new, NULL);
     pthread_mutex_init(&mutex_cola_exec, NULL);
     pthread_mutex_init(&mutex_cola_exit, NULL);
+    pthread_mutex_init(&mutex_cola_block, NULL);
+    pthread_mutex_init(&mutex_cola_ready_aux, NULL);
     pthread_mutex_init(&conexion, NULL);
 
     sem_init(&sem_multiprogamacion, 0, grado_multiprogramacion);
@@ -121,6 +123,9 @@ void iniciar_semaforos(){
     cola_ready = list_create();
     cola_exec = list_create();
     cola_exit = list_create();
+    cola_block = list_create();
+    cola_ready_aux = list_create();
+    apagar_planificacion = 0;
     generador_pid = 0;
     conexiones_io.conexiones_io = list_create();
     conexiones_io.conexiones_io_nombres = list_create();
@@ -174,6 +179,10 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
         case DIALFS_I:
             log_trace(log_kernel, "entre a DIALFS_I");
             recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
+            break;
+        case TERMINO_INTERFAZ:
+            uint32_t  pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
+            desbloquear_proceso_block(pid);
             break;                                      
         case -1:
         log_trace(log_kernel, "se desconecto un modulo io");
@@ -269,33 +278,128 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
         case EJECUTAR_IO_GEN_SLEEP:
             char* interfaz_gen_sleep;
             uint32_t tiempo_trabajo;
-            recibir_string_mas_u32(conexion_kernel_cpu_dispatch,&interfaz_gen_sleep, &tiempo_trabajo);
+            t_contexto* pcb_IO_GEN_SLEEP;
+            recibir_string_mas_u32_con_contexto(conexion_kernel_cpu_dispatch,&interfaz_gen_sleep, &tiempo_trabajo,&pcb_IO_GEN_SLEEP);
+            
+            if(existe_interfaz_conectada(interfaz_gen_sleep)){
+                if (admite_operacion_con_u32(interfaz_gen_sleep, IO_GEN_SLEEP,tiempo_trabajo, pcb_IO_GEN_SLEEP->pid)){
+                    bloquear_pcb(pcb_IO_GEN_SLEEP);
+                }else{
+                    actualizar_pcb_envia_exit(pcb_IO_GEN_SLEEP,INVALID_INTERFACE);
+                    enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_GEN_SLEEP,EXIT);
+                    sem_post(&sem_listos_para_exec);
+                }
+
+            }else{
+                actualizar_pcb_envia_exit(pcb_IO_GEN_SLEEP,INVALID_INTERFACE);
+                enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_GEN_SLEEP,EXIT);
+                sem_post(&sem_listos_para_exec);
+            }
 
             break;
         case EJECUTAR_IO_STDIN_READ:
             t_string_2enteros* parametros_stdin_read;
-            parametros_stdin_read = recibir_string_2enteros(conexion_kernel_cpu_dispatch);
+            t_contexto* pcb_IO_STDIN_READ;
+            parametros_stdin_read = recibir_string_2enteros_con_contexto(conexion_kernel_cpu_dispatch, &pcb_IO_STDIN_READ);
+            if(existe_interfaz_conectada(parametros_stdin_read->string)){
+                if (admite_operacion_con_2u32(parametros_stdin_read->string, IO_STDIN_READ,parametros_stdin_read->entero1, parametros_stdin_read->entero2, pcb_IO_STDIN_READ->pid)){
+                    bloquear_pcb(pcb_IO_STDIN_READ);
+                }else{
+                    actualizar_pcb_envia_exit(pcb_IO_STDIN_READ,INVALID_INTERFACE);
+                    enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_STDIN_READ,EXIT);
+                    sem_post(&sem_listos_para_exec);
+                }
+
+            }else{
+                actualizar_pcb_envia_exit(pcb_IO_STDIN_READ,INVALID_INTERFACE);
+                enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_STDIN_READ,EXIT);
+                sem_post(&sem_listos_para_exec);
+            }            
             break;
         case EJECUTAR_IO_STDOUT_WRITE:
             t_string_2enteros* parametros_stdin_write;
-            parametros_stdin_write = recibir_string_2enteros(conexion_kernel_cpu_dispatch);
+            t_contexto* pcb_IO_STDOUT_WRITE;
+            parametros_stdin_write = recibir_string_2enteros_con_contexto(conexion_kernel_cpu_dispatch,&pcb_IO_STDOUT_WRITE);
+            if(existe_interfaz_conectada(parametros_stdin_write->string)){
+                if (admite_operacion_con_2u32(parametros_stdin_write->string, IO_STDOUT_WRITE, parametros_stdin_write->entero1, parametros_stdin_write->entero2, pcb_IO_STDOUT_WRITE->pid)){
+                    bloquear_pcb(pcb_IO_STDOUT_WRITE);
+                }else{
+                    actualizar_pcb_envia_exit(pcb_IO_STDOUT_WRITE,INVALID_INTERFACE);
+                    enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_STDOUT_WRITE,EXIT);
+                    sem_post(&sem_listos_para_exec);
+                }
+
+            }else{
+                actualizar_pcb_envia_exit(pcb_IO_STDOUT_WRITE,INVALID_INTERFACE);
+                enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_STDOUT_WRITE,EXIT);
+                sem_post(&sem_listos_para_exec);
+            }            
             break;
         case EJECUTAR_IO_FS_CREATE:
             char* interfaz_fs_create;
             char* nombre_archivo_create;
-            recibir_2_string(conexion_kernel_cpu_dispatch, &interfaz_fs_create, &nombre_archivo_create);
+            t_contexto* pcb_IO_FS_CREATE;
+            recibir_2_string_con_contexto(conexion_kernel_cpu_dispatch, &interfaz_fs_create, &nombre_archivo_create, &pcb_IO_FS_CREATE);
+            if(existe_interfaz_conectada(interfaz_fs_create)){
+                if (admite_operacion_con_string(interfaz_fs_create, IO_FS_CREATE,nombre_archivo_create, pcb_IO_FS_CREATE->pid)){
+                    bloquear_pcb(pcb_IO_FS_CREATE);
+                }else{
+                    actualizar_pcb_envia_exit(pcb_IO_FS_CREATE,INVALID_INTERFACE);
+                    enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_CREATE,EXIT);
+                    sem_post(&sem_listos_para_exec);
+                }
+
+            }else{
+                actualizar_pcb_envia_exit(pcb_IO_FS_CREATE,INVALID_INTERFACE);
+                enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_CREATE,EXIT);
+                sem_post(&sem_listos_para_exec);
+
+            }            
             break;
         case EJECUTAR_IO_FS_DELETE:
             char* interfaz_fs_delete;
             char* nombre_archivo_delete;
-            recibir_2_string(conexion_kernel_cpu_dispatch, &interfaz_fs_delete, &nombre_archivo_delete);
+            t_contexto* pcb_IO_FS_DELETE;
+            recibir_2_string_con_contexto(conexion_kernel_cpu_dispatch, &interfaz_fs_delete, &nombre_archivo_delete, &pcb_IO_FS_DELETE);
+            if(existe_interfaz_conectada(interfaz_fs_delete)){
+                if (admite_operacion_con_string(interfaz_fs_delete, IO_FS_DELETE,nombre_archivo_delete, pcb_IO_FS_DELETE->pid)){
+                    bloquear_pcb(pcb_IO_FS_DELETE);
+                }else{
+                    actualizar_pcb_envia_exit(pcb_IO_FS_DELETE,INVALID_INTERFACE);
+                    enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_DELETE,EXIT);
+                    sem_post(&sem_listos_para_exec);
+
+                }
+
+            }else{
+                actualizar_pcb_envia_exit(pcb_IO_FS_DELETE,INVALID_INTERFACE);
+                enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_DELETE,EXIT);
+                sem_post(&sem_listos_para_exec);
+
+            }            
             break;
         case EJECUTAR_IO_FS_TRUNCATE:
             char* interfaz_fs_truncate;
             char* nombre_archivo_truncate;
             uint32_t registro1_truncate;
-            recibir_2_string_mas_u32(conexion_kernel_cpu_dispatch, &interfaz_fs_truncate, &nombre_archivo_truncate, &registro1_truncate);
+            t_contexto* pcb_IO_FS_TRUNCATE;
+            recibir_2_string_mas_u32_con_contexto(conexion_kernel_cpu_dispatch, &interfaz_fs_truncate, &nombre_archivo_truncate, &registro1_truncate, &pcb_IO_FS_TRUNCATE);
+            if(existe_interfaz_conectada(interfaz_fs_truncate)){
+                if (admite_operacion_con_string_u32(interfaz_fs_truncate, IO_FS_TRUNCATE, nombre_archivo_truncate, registro1_truncate, pcb_IO_FS_TRUNCATE->pid)){
+                    bloquear_pcb(pcb_IO_FS_TRUNCATE);
+                }else{
+                    actualizar_pcb_envia_exit(pcb_IO_FS_TRUNCATE,INVALID_INTERFACE);
+                    enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_TRUNCATE,EXIT);
+                    sem_post(&sem_listos_para_exec);
 
+                }
+
+            }else{
+                actualizar_pcb_envia_exit(pcb_IO_FS_TRUNCATE,INVALID_INTERFACE);
+                enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_TRUNCATE,EXIT);
+                sem_post(&sem_listos_para_exec);
+
+            }
             break;
         case EJECUTAR_IO_FS_WRITE:
             char* interfaz_fs_write;
@@ -303,7 +407,24 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             uint32_t registro1_write;
             uint32_t registro2_write; 
             uint32_t registro3_write;
-            recibir_2_string_mas_3_u32(conexion_kernel_cpu_dispatch, &interfaz_fs_write, &nombre_archivo_write, &registro1_write, &registro2_write, &registro3_write);             
+            t_contexto* pcb_IO_FS_WRITE;
+            recibir_2_string_mas_3_u32_con_contexto(conexion_kernel_cpu_dispatch, &interfaz_fs_write, &nombre_archivo_write, &registro1_write, &registro2_write, &registro3_write, &pcb_IO_FS_WRITE);             
+            if(existe_interfaz_conectada(interfaz_fs_write)){
+                if (admite_operacion_con_string_3u32(interfaz_fs_write, IO_FS_WRITE, nombre_archivo_write, registro1_write, registro2_write, registro3_write, pcb_IO_FS_WRITE->pid)){
+                    bloquear_pcb(pcb_IO_FS_WRITE);
+                }else{
+                    actualizar_pcb_envia_exit(pcb_IO_FS_WRITE,INVALID_INTERFACE);
+                    enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_WRITE,EXIT);
+                    sem_post(&sem_listos_para_exec);
+
+                }
+
+            }else{
+                actualizar_pcb_envia_exit(pcb_IO_FS_WRITE,INVALID_INTERFACE);
+                enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_WRITE,EXIT);
+                sem_post(&sem_listos_para_exec);
+
+            }            
             break;
         case EJECUTAR_IO_FS_READ:
             char* interfaz_fs_read;
@@ -311,7 +432,24 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             uint32_t registro1_read;
             uint32_t registro2_read; 
             uint32_t registro3_read;
-            recibir_2_string_mas_3_u32(conexion_kernel_cpu_dispatch, &interfaz_fs_read, &nombre_archivo_read, &registro1_read, &registro2_read, &registro3_read);          
+            t_contexto* pcb_IO_FS_READ;
+            recibir_2_string_mas_3_u32_con_contexto(conexion_kernel_cpu_dispatch, &interfaz_fs_read, &nombre_archivo_read, &registro1_read, &registro2_read, &registro3_read, &pcb_IO_FS_READ);          
+            if(existe_interfaz_conectada(interfaz_fs_read)){
+                if (admite_operacion_con_string_3u32(interfaz_fs_read, IO_FS_READ, nombre_archivo_read, registro1_read, registro2_read, registro3_read, pcb_IO_FS_READ->pid)){
+                    bloquear_pcb(pcb_IO_FS_READ);
+                }else{
+                    actualizar_pcb_envia_exit(pcb_IO_FS_READ,INVALID_INTERFACE);
+                    enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_READ,EXIT);
+                    sem_post(&sem_listos_para_exec);
+
+                }
+
+            }else{
+                actualizar_pcb_envia_exit(pcb_IO_FS_READ,INVALID_INTERFACE);
+                enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_GEN_SLEEP,EXIT);
+                sem_post(&sem_listos_para_exec);
+
+            }            
             break;
         default:
             break;
@@ -438,10 +576,18 @@ void iniciar_consola(){
     switch (eleccion)
     {
     case 1:
-        ejecutar_script();
+        char* nombre_script = malloc(100 * sizeof(char));
+        printf("\n ingrese el path del script: ");
+        scanf("%99s", nombre_script);
+        ejecutar_script(nombre_script);
         break;
     case 2:
-        iniciar_proceso();
+        char* path = malloc(30*sizeof(char));
+
+        printf("Por favor ingrese el path: ");
+        scanf("%s", path);
+
+        iniciar_proceso(path);
         break;
     case 3:
         uint32_t pid;
@@ -473,16 +619,33 @@ void iniciar_consola(){
 }
 
 
-void ejecutar_script(){
+void ejecutar_script(char* path){
+    FILE* archivo = fopen(path, "r");
 
+    if (archivo == NULL) {
+        perror("Error al abrir el archivo");
+        return EXIT_FAILURE;
+    }
+    char line[MAX_LINE_LENGTH];
+    char operacion[MAX_LINE_LENGTH];
+    char* path_operacion = malloc(100 * sizeof(char));
+
+        while (fgets(line, sizeof(line), archivo)) {
+        // Remover el salto de línea al final de la línea si existe
+        line[strcspn(line, "\n")] = 0;
+
+        // Dividir la línea en 'operacion' y 'path_operacion'
+        sscanf(line, "%s %s", operacion, path_operacion);
+        iniciar_proceso(path_operacion);
+        // Imprimir los resultados
+        printf("Operacion: %s, Path: %s\n", operacion, path_operacion);
+    }
+
+    fclose(archivo);
 }
 
-void iniciar_proceso(){
-    char* path = malloc(30*sizeof(char));
-
-    printf("Por favor ingrese el path: ");
-    scanf("%s", path);
-
+void iniciar_proceso(char* path){
+  
 
     //enviar_string(conexion_kernel_memoria,path,CREAR_PROCESO);
     
@@ -495,6 +658,7 @@ void iniciar_proceso(){
     pcb_nuevo->quantum_utilizado = quantum;
     pcb_nuevo->contexto->pid = generador_pid;
     pcb_nuevo->contexto->pc = 0;
+    pcb_nuevo->quantum = temporal_create();
     pcb_nuevo ->contexto->registros = registros;
     
     t_paquete* paquete = crear_paquete_op(CREAR_PROCESO);
@@ -523,6 +687,11 @@ void finalizar_proceso(uint32_t pid){
         sem_post(&sem_listos_para_exit);
     }
 
+    if(esta_en_esta_lista(cola_ready_aux, pid)){
+        sacar_de_lista_mover_exit(cola_ready_aux,mutex_cola_ready_aux,pid);
+        sem_post(&sem_listos_para_exit);
+    }
+
     if(esta_en_esta_lista(cola_exec, pid)){
         sacar_de_lista_mover_exit(cola_exec,mutex_cola_exec,pid);
         sem_post(&sem_listos_para_exit);
@@ -539,15 +708,79 @@ void finalizar_proceso(uint32_t pid){
 }
 
 void iniciar_planificacion(){
-
+    apagar_planificacion = 0;
 }
 
 void detener_planificacion(){
-
+    apagar_planificacion = 1;
 }
 
 
 void listar_procesos_estado(){
+    if(!list_is_empty(cola_new)){
+        for(int i = 0; i < list_size(cola_new); i++){
+            t_pcb* pcb_listar = list_get(cola_new,i);
+            printf("El proceso con pid: %d esta en new \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en new \n");
+    }
+
+    if(!list_is_empty(cola_ready)){
+        for(int i = 0; i < list_size(cola_ready); i++){
+            t_pcb* pcb_listar = list_get(cola_ready,i);
+            printf("El proceso con pid: %d esta en ready \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en ready \n");
+    }
+
+    if(!list_is_empty(cola_exec)){
+        for(int i = 0; i < list_size(cola_exec); i++){
+            t_pcb* pcb_listar = list_get(cola_exec,i);
+            printf("El proceso con pid: %d esta en exec \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en exec \n");
+    }
+
+    if(!list_is_empty(cola_exit)){
+        for(int i = 0; i < list_size(cola_exit); i++){
+            t_pcb* pcb_listar = list_get(cola_exit,i);
+            printf("El proceso con pid: %d esta en exit \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en exit \n");
+    }
+
+    if(!list_is_empty(cola_block)){
+        for(int i = 0; i < list_size(cola_block); i++){
+            t_pcb* pcb_listar = list_get(cola_block,i);
+            printf("El proceso con pid: %d esta en block \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en block \n");
+    }
+
+    for(int i = 0; i < cantidad_recursos; i++){
+        if(!list_is_empty(lista_recurso[i])){
+            for(int j = 0; j < list_size(lista_recurso[i]); j++){
+            t_pcb* pcb_listar = list_get(lista_recurso[i],j);
+            printf("El proceso con pid: %d esta en block \n", pcb_listar->contexto->pid);
+            }
+        }
+    }
+
+    if(algoritmo_planificacion == VRR){
+    if(!list_is_empty(cola_ready_aux)){
+        for(int i = 0; i < list_size(cola_ready_aux); i++){
+            t_pcb* pcb_listar = list_get(cola_ready_aux,i);
+            printf("El proceso con pid: %d esta en ready aux \n", pcb_listar->contexto->pid);
+        }
+    }else{
+        printf("\n No hay ningun proceso en ready aux \n");
+    }
+    }
 
 }
 
@@ -567,6 +800,7 @@ t_registros_cpu* inicializar_registros(){
 }
 
 void planificar(){
+    apagar_planificacion = 0;
     planificar_largo_plazo();
     planificar_corto_plazo();
 
@@ -615,6 +849,7 @@ void planificar_corto_plazo(){
 
 void contador_quantum_RR(){
     while(1){
+        if(!apagar_planificacion){
         sem_wait(&sem_empezar_quantum);
         
         sleep(quantum / 1000);
@@ -622,15 +857,56 @@ void contador_quantum_RR(){
         {
             enviar_interrupcion();
         }
+        }
     }
 
     
 }
 
 void manejar_VRR(){
+    while(1){
+        if(!apagar_planificacion){
     sem_wait(&sem_empezar_quantum);
+    
+    
+    t_pcb* pcb_vrr = list_get(cola_exec,0);
+    
 
+    //destruyo el anterior y empiezo uno nuevo si es que se acabo
+    //se comparan milisegundos
+    if(pcb_vrr->quantum_utilizado<quantum){
 
+        temporal_resume(pcb_vrr->quantum);
+        
+    }else{
+         //destruyo el anterior y empiezo uno nuevo ya que se acabo
+         temporal_destroy(pcb_vrr->quantum);
+         //empiezo contador de nuevo
+         pcb_vrr->quantum = temporal_create();
+    }
+    corto_VRR = 1;
+    while(corto_VRR){
+        if(temporal_gettime(pcb_vrr->quantum) >= quantum){
+            corto_VRR = 0;
+            
+            enviar_interrupcion();
+        }
+    }
+
+    if(temporal_gettime(pcb_vrr->quantum) < quantum){
+        temporal_stop(pcb_vrr->quantum);
+        pcb_vrr->quantum_utilizado = temporal_gettime(pcb_vrr->quantum);
+    }
+
+    bool encontrar_pcb(t_pcb* pcb){
+        return pcb->contexto->pid == pcb_vrr->contexto->pid;
+    };
+
+    pthread_mutex_lock(&mutex_cola_exec);
+    list_replace_by_condition(cola_exec, (void*) encontrar_pcb, pcb_vrr);
+    pthread_mutex_unlock(&mutex_cola_exec);
+        }
+    }
 }
 
 void enviar_interrupcion(){
@@ -654,6 +930,7 @@ t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
 
 void pcb_exit(){
     while(1){
+    if (!apagar_planificacion){
     sem_wait(&sem_listos_para_exit);
     
     pthread_mutex_lock(&mutex_cola_exit);
@@ -666,22 +943,26 @@ void pcb_exit(){
     //sem_post(&sem_multiprogamacion);
     free(pcb_finaliza);   
     }
+    }
 }
 
 void exec_pcb()
 {
     while(1){
+        if(!apagar_planificacion){
         if(!list_is_empty(cola_ready)){
         sem_wait(&sem_listos_para_exec);
         t_pcb* pcb_enviar = elegir_pcb_segun_algoritmo();
 
         dispatch(pcb_enviar);
         }
+        }
     }
 }
 
 void pcb_ready(){
  while(1){
+    if (!apagar_planificacion){
     if (proceso_activos() < grado_multiprogramacion){
     sem_wait(&sem_listos_para_ready);
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
@@ -690,6 +971,8 @@ void pcb_ready(){
     list_add(cola_ready,pcb);
     pthread_mutex_unlock(&mutex_cola_ready);
     sem_post(&sem_listos_para_exec);
+    }
+
     }
  }
 }
@@ -715,6 +998,15 @@ t_pcb* elegir_pcb_segun_algoritmo(){
         pthread_mutex_unlock(&mutex_cola_ready);
         break;
     case VRR:
+        if(list_is_empty(cola_ready_aux)){
+            pthread_mutex_lock(&mutex_cola_ready);
+            pcb_ejecutar = list_remove(cola_ready,0);
+            pthread_mutex_unlock(&mutex_cola_ready);
+        }else{
+            pthread_mutex_lock(&mutex_cola_ready_aux);
+            pcb_ejecutar = list_remove(cola_ready_aux,0);
+            pthread_mutex_unlock(&mutex_cola_ready_aux);
+        }
         break; 
     default:
         break;
@@ -733,11 +1025,12 @@ void dispatch(t_pcb* pcb_enviar){
         //ENVIAR CONTEXTO DE EJECUCION A CPU
         enviar_contexto(conexion_kernel_cpu_dispatch, pcb_enviar->contexto,EXEC);
 
-
+        corto_VRR = 0;
         pthread_mutex_lock(&mutex_cola_exec);
         list_add(cola_exec, pcb_enviar);
         pthread_mutex_unlock(&mutex_cola_exec);
         sem_post(&sem_empezar_quantum);
+        
         
 }
 
@@ -825,10 +1118,12 @@ void actualizar_pcb_envia_ready(t_contexto* pcb_wait){
     list_remove_element(cola_exec,pcb_encontrado);
     pthread_mutex_unlock(&mutex_cola_exec);
     pcb_encontrado->contexto = pcb_wait;
+    //ver como setear el temporal
 
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb_encontrado);
     pthread_mutex_unlock(&mutex_cola_ready);
+    sem_post(&sem_listos_para_ready);
 }
 
 void desbloquear_proceso(t_list* lista_recurso_liberar){
@@ -889,3 +1184,134 @@ void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid){
     pthread_mutex_unlock(&mutex_cola_exit);
 }
 
+int existe_interfaz_conectada(char* nombre_interfaz){
+
+    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
+           return 1;
+         }
+        }
+    return 0;
+}
+
+int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t entero32, uint32_t pid){
+    int devolver;
+
+    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
+           t_paquete* paquete = crear_paquete_op(codigo);
+           agregar_entero_a_paquete(paquete, pid);
+           agregar_entero_a_paquete(paquete, entero32);
+           enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
+           eliminar_paquete(paquete);
+           devolver = recibir_operacion(list_get(conexiones_io.conexiones_io,i));
+           return devolver;
+         }
+        }
+}
+
+int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t pid){
+    int devolver;
+
+    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
+           t_paquete* paquete = crear_paquete_op(codigo);
+           agregar_entero_a_paquete(paquete, pid);
+           agregar_entero_a_paquete(paquete, primer_entero32);
+           agregar_entero_a_paquete(paquete, segundo_entero32);
+           enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
+           eliminar_paquete(paquete);
+           devolver = recibir_operacion(list_get(conexiones_io.conexiones_io,i));
+           return devolver;
+         }
+        }
+}
+
+int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t pid){
+    int devolver;
+
+    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
+           t_paquete* paquete = crear_paquete_op(codigo);
+           agregar_entero_a_paquete(paquete, pid);
+           agregar_a_paquete(paquete, palabra, strlen(palabra+1));
+           enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
+           eliminar_paquete(paquete);
+           devolver = recibir_operacion(list_get(conexiones_io.conexiones_io,i));
+           return devolver;
+         }
+        }
+}
+
+int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t primer_entero32, uint32_t pid){
+    int devolver;
+
+    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
+           t_paquete* paquete = crear_paquete_op(codigo);
+           agregar_entero_a_paquete(paquete, pid);
+           agregar_a_paquete(paquete, palabra, strlen(palabra+1));
+           agregar_entero_a_paquete(paquete, primer_entero32);
+           enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
+           eliminar_paquete(paquete);
+           devolver = recibir_operacion(list_get(conexiones_io.conexiones_io,i));
+           return devolver;
+         }
+        }
+}
+
+int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo,char* palabra, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t tercer_entero32, uint32_t pid){
+    int devolver;
+
+    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
+           t_paquete* paquete = crear_paquete_op(codigo);
+           agregar_entero_a_paquete(paquete, pid);
+           agregar_a_paquete(paquete, palabra, strlen(palabra+1));
+           agregar_entero_a_paquete(paquete, primer_entero32);
+           agregar_entero_a_paquete(paquete, segundo_entero32);
+           agregar_entero_a_paquete(paquete, tercer_entero32);
+           enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
+           eliminar_paquete(paquete);
+           devolver = recibir_operacion(list_get(conexiones_io.conexiones_io,i));
+           return devolver;
+         }
+        }
+}
+
+void bloquear_pcb(t_contexto* contexto){
+        bool encontrar_pcb(t_pcb* pcb){
+        return pcb->contexto->pid == contexto->pid;
+        };
+    
+
+    pthread_mutex_lock(&mutex_cola_exec);
+    t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
+    list_remove_element(cola_exec,pcb_encontrado);
+    free(pcb_encontrado);
+    t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
+    pcb_nuevo->contexto = contexto;
+    //pcb_nuevo->quantum = pcb_encontrado->quantum;
+    pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
+    pthread_mutex_unlock(&mutex_cola_exec);
+
+    pthread_mutex_lock(&mutex_cola_block);
+    list_add(cola_block,pcb_nuevo);
+    pthread_mutex_unlock(&mutex_cola_block);
+}
+
+void desbloquear_proceso_block(uint32_t pid){
+         bool encontrar_pcb(t_pcb* pcb){
+        return pcb->contexto->pid == pid;
+        };
+    
+
+    pthread_mutex_lock(&mutex_cola_block);
+    t_pcb* pcb_encontrado = list_find(cola_block, (void*) encontrar_pcb);
+    list_remove_element(cola_block,pcb_encontrado);
+    pthread_mutex_unlock(&mutex_cola_block);
+
+    pthread_mutex_lock(&mutex_cola_ready);
+    list_add(cola_ready,pcb_encontrado);
+    pthread_mutex_unlock(&mutex_cola_ready);   
+}

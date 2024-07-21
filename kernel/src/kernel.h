@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_LINE_LENGTH 256
+
 typedef struct{
  int socket_servidor_kernel_dispatch;
  t_list* conexiones_io;
@@ -22,13 +24,17 @@ t_log* log_kernel;
 t_config* config_kernel;
 t_list* cola_new;
 t_list* cola_ready;
+t_list* cola_ready_aux;
 t_list* cola_exec;
 t_list* cola_exit;
+t_list* cola_block;
 
 pthread_mutex_t mutex_cola_new;
 pthread_mutex_t mutex_cola_ready;
+pthread_mutex_t mutex_cola_ready_aux;
 pthread_mutex_t mutex_cola_exec;
 pthread_mutex_t mutex_cola_exit;
+pthread_mutex_t mutex_cola_block;
 pthread_mutex_t conexion;
 
 sem_t sem_listos_para_ready;
@@ -48,6 +54,7 @@ char* puerto_cpu_dispatch;
 char* algoritmo;
 t_algoritmo algoritmo_planificacion;
 int quantum;
+int corto_VRR;
 t_conexiones_kernel_io conexiones_io;
 char** recursos;
 int* instancias_recursos;
@@ -62,6 +69,7 @@ int socket_cliente_entradasalida;
 int conexion_kernel_cpu_dispatch;
 int conexion_kernel_cpu_interrupt;
 int conexion_kernel_memoria;
+int apagar_planificacion;
 uint32_t generador_pid;
 
 /*
@@ -81,8 +89,8 @@ void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_conf
 void establecer_conexion_cpu_dispatch(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* logger);
 void establecer_conexion_cpu_interrupt(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* logger);
 void iniciar_consola();
-void ejecutar_script();
-void iniciar_proceso();
+void ejecutar_script(char* path);
+void iniciar_proceso(char* path);
 void finalizar_proceso(uint32_t pid);
 void iniciar_planificacion();
 void detener_planificacion();
@@ -113,4 +121,12 @@ bool esta_en_esta_lista(t_list* lista, uint32_t pid_encontrar);
 void sacar_de_lista_mover_exit(t_list* lista,pthread_mutex_t mutex_lista, uint32_t pid);
 void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid);
 void enviar_interrupcion();
+int existe_interfaz_conectada(char* nombre_interfaz);
+int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t entero32, uint32_t pid);
+int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t pid);
+int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t pid);
+int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t primer_entero32, uint32_t pid);
+int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo,char* palabra, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t tercer_entero32, uint32_t pid);
+void bloquear_pcb(t_contexto* contexto);
+void desbloquear_proceso_block(uint32_t pid);
 #endif
