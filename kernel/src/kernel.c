@@ -35,6 +35,14 @@ int main(int argc, char* argv[]) {
     //list_add(conexiones_io.conexiones_io,socket_cliente_entradasalida);
     //pthread_mutex_unlock(&conexion);
 
+    pthread_t atiende_cpu_dispatch;
+    pthread_create(&atiende_cpu_dispatch, NULL, (void *)recibir_cpu_dispatch, (void *) (intptr_t) conexion_kernel_cpu_dispatch);
+    pthread_detach(atiende_cpu_dispatch);
+
+    pthread_t atiende_cpu_interrupt;
+    pthread_create(&atiende_cpu_interrupt, NULL, (void *)recibir_cpu_interrupt, (void *) (intptr_t) conexion_kernel_cpu_interrupt);
+    pthread_detach(atiende_cpu_interrupt);
+
     pthread_t atiende_nuevas_interfaces;
     pthread_create(&atiende_nuevas_interfaces, NULL, (void *)esperar_cliente_especial, (void *) (intptr_t) socket_servidor_kernel_dispatch);
     pthread_detach(atiende_nuevas_interfaces);
@@ -214,12 +222,31 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             sem_post(&sem_listos_para_exit);
             sem_post(&sem_listos_para_exec);
             break;
+        case OUT_OF_MEMORY:
+            t_contexto* contexto_finaliza_memory = malloc(sizeof(t_contexto));
+            contexto_finaliza_memory = recibir_contexto(conexion_kernel_cpu_dispatch);
+            
+            actualizar_pcb_envia_exit(contexto_finaliza_memory,OUT_OF_MEMORY);
+            sem_post(&sem_listos_para_exit);
+            sem_post(&sem_listos_para_exec);
+            break;
         case INTERRUPCION:
             t_contexto* pcb_interrumpido = malloc(sizeof(t_contexto));
             pcb_interrumpido = recibir_contexto(conexion_kernel_cpu_dispatch);
+
+            //LOG OBLIGATORIO
+            log_info(log_kernel,"PID: %d - Desalojado por fin de Quantum");
+
             actualizar_pcb_envia_ready(pcb_interrumpido);
             sem_post(&sem_listos_para_exec);
             //log_trace(log_kernel,"recibi un pcb por fin de quantum");
+            break;
+        case INTERRUPCION_USUARIO:
+            t_contexto* pcb_interrumpido_usuario = malloc(sizeof(t_contexto));
+            pcb_interrumpido_usuario = recibir_contexto(conexion_kernel_cpu_dispatch);
+            actualizar_pcb_envia_exit(pcb_interrumpido_usuario,INTERRUPTED_BY_USER);
+            sem_post(&sem_listos_para_exit);
+            sem_post(&sem_listos_para_exec);
             break;
         case EJECUTAR_WAIT:
             log_info(log_kernel,"log 1 ");
@@ -240,6 +267,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                         }else{
                             
                             actualizar_pcb_con_cambiar_lista(pcb_wait, lista_recurso[i]);
+                            mostrar_motivo_block(pcb_wait->pid,recursos[i]);
                             enviar_contexto(conexion_kernel_cpu_dispatch,pcb_wait,BLOCK);
                             sem_post(&sem_listos_para_exec);
                             
@@ -661,6 +689,10 @@ void iniciar_proceso(char* path){
     pcb_nuevo->quantum = temporal_create();
     pcb_nuevo ->contexto->registros = registros;
     
+    //LOG OBLIGATORIO
+    log_info(log_kernel,"Se crea el proceso pid: %d en NEW",pcb_nuevo->contexto->pid);
+    
+
     t_paquete* paquete = crear_paquete_op(CREAR_PROCESO);
     agregar_a_paquete(paquete,path, strlen(path)+1);
     agregar_entero_a_paquete(paquete,pcb_nuevo->contexto->pid);
@@ -679,21 +711,35 @@ void finalizar_proceso(uint32_t pid){
     
     if(esta_en_esta_lista(cola_new, pid)){
         sacar_de_lista_mover_exit(cola_new,mutex_cola_new,pid);
+        cambio_estado(pid,"NEW", "EXIT");
         sem_post(&sem_listos_para_exit);
     }
 
     if(esta_en_esta_lista(cola_ready, pid)){
         sacar_de_lista_mover_exit(cola_ready,mutex_cola_ready,pid);
+        cambio_estado(pid,"READY", "EXIT");
         sem_post(&sem_listos_para_exit);
     }
 
     if(esta_en_esta_lista(cola_ready_aux, pid)){
         sacar_de_lista_mover_exit(cola_ready_aux,mutex_cola_ready_aux,pid);
+        cambio_estado(pid,"READY", "EXIT");
         sem_post(&sem_listos_para_exit);
     }
 
     if(esta_en_esta_lista(cola_exec, pid)){
-        sacar_de_lista_mover_exit(cola_exec,mutex_cola_exec,pid);
+        enviar_interrupcion_fin_proceso();
+
+        //lo de abajo esta comentado ya que lo hace cuando recibe desde cpu el contexto
+
+        //sacar_de_lista_mover_exit(cola_exec,mutex_cola_exec,pid);
+        //cambio_estado(pid,"EXEC", "EXIT");
+        //sem_post(&sem_listos_para_exit);
+    }
+
+    if(esta_en_esta_lista(cola_block, pid)){
+        sacar_de_lista_mover_exit(cola_block,mutex_cola_block,pid);
+        cambio_estado(pid,"BLOCK", "EXIT");
         sem_post(&sem_listos_para_exit);
     }
 
@@ -701,6 +747,7 @@ void finalizar_proceso(uint32_t pid){
         if(esta_en_esta_lista(lista_recurso[i],pid)) {
 
            sacar_de_lista_mover_exit_recurso(lista_recurso[i],pid);
+           cambio_estado(pid,"BLOCK", "EXIT");
            sem_post(&sem_listos_para_exit);
          }
         }
@@ -919,6 +966,16 @@ void enviar_interrupcion(){
     eliminar_paquete(paquete);
 }
 
+void enviar_interrupcion_fin_proceso(){
+    t_paquete* paquete = crear_paquete_op(INTERRUPCION_USUARIO);
+    pthread_mutex_lock(&mutex_cola_exec);
+    t_pcb* pcb_interrumpir = list_get(cola_exec,0);
+    pthread_mutex_unlock(&mutex_cola_exec);
+    agregar_entero_a_paquete(paquete,pcb_interrumpir->contexto->pid);
+    enviar_paquete(paquete,conexion_kernel_cpu_interrupt);
+    eliminar_paquete(paquete);
+}
+
 t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
 {
     t_pcb* pcbDelProceso = malloc(sizeof(t_pcb));
@@ -936,6 +993,10 @@ void pcb_exit(){
     pthread_mutex_lock(&mutex_cola_exit);
     t_pcb_exit* pcb_finaliza = list_remove(cola_exit,0);
     pthread_mutex_unlock(&mutex_cola_exit);
+
+    //LOG OBLIGATORIO
+    log_info(log_kernel, "Finaliza el proceso pid: %d - Motivo: %s", pcb_finaliza->pcb->contexto->pid, motivo_exit_to_string(pcb_finaliza->motivo));
+    
     t_paquete* paquete = crear_paquete_op(FINALIZAR_PROCESO);
     agregar_entero_a_paquete(paquete,pcb_finaliza->pcb->contexto->pid);
     enviar_paquete(paquete,conexion_kernel_memoria);
@@ -967,9 +1028,15 @@ void pcb_ready(){
     sem_wait(&sem_listos_para_ready);
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
     //sem_wait(&sem_multiprogamacion);
+    cambio_estado(pcb->contexto->pid, "NEW", "READY");
+    
+
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb);
     pthread_mutex_unlock(&mutex_cola_ready);
+
+    mostrar_prioridad_ready();
+
     sem_post(&sem_listos_para_exec);
     }
 
@@ -1026,6 +1093,8 @@ void dispatch(t_pcb* pcb_enviar){
         enviar_contexto(conexion_kernel_cpu_dispatch, pcb_enviar->contexto,EXEC);
 
         corto_VRR = 0;
+        cambio_estado(pcb_enviar->contexto->pid, "READY", "EXEC");
+
         pthread_mutex_lock(&mutex_cola_exec);
         list_add(cola_exec, pcb_enviar);
         pthread_mutex_unlock(&mutex_cola_exec);
@@ -1078,11 +1147,11 @@ void actualizar_pcb_con_cambiar_lista(t_contexto* pcb_wait, t_list* lista_bloq_r
     //pcb_nuevo->quantum = pcb_encontrado->quantum;
     pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
     pthread_mutex_unlock(&mutex_cola_exec);
-
+    cambio_estado(pcb_nuevo->contexto->pid, "EXEC", "BLOCK");
     list_add(lista_bloq_recurso,pcb_nuevo);
 }
 
-void actualizar_pcb_envia_exit(t_contexto* pcb_wait, op_code codigo){
+void actualizar_pcb_envia_exit(t_contexto* pcb_wait, motivo_exit codigo){
     
     bool encontrar_pcb(t_pcb* pcb){
         return pcb->contexto->pid == pcb_wait->pid;
@@ -1101,6 +1170,7 @@ void actualizar_pcb_envia_exit(t_contexto* pcb_wait, op_code codigo){
     pcb_exit_ok->pcb->quantum_utilizado = pcb_encontrado->quantum_utilizado;
     pcb_exit_ok->motivo = codigo;
     //free(pcb_encontrado);
+    cambio_estado(pcb_exit_ok->pcb->contexto->pid, "EXEC", "EXIT");
     pthread_mutex_lock(&mutex_cola_exit);
     list_add(cola_exit,pcb_exit_ok);
     pthread_mutex_unlock(&mutex_cola_exit);
@@ -1119,10 +1189,13 @@ void actualizar_pcb_envia_ready(t_contexto* pcb_wait){
     pthread_mutex_unlock(&mutex_cola_exec);
     pcb_encontrado->contexto = pcb_wait;
     //ver como setear el temporal
-
+    cambio_estado(pcb_encontrado->contexto->pid, "EXEC", "READY");
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb_encontrado);
     pthread_mutex_unlock(&mutex_cola_ready);
+
+    mostrar_prioridad_ready();
+
     sem_post(&sem_listos_para_ready);
 }
 
@@ -1130,9 +1203,12 @@ void desbloquear_proceso(t_list* lista_recurso_liberar){
     if (!list_is_empty(lista_recurso_liberar)){
         
         t_pcb* pcb_desbloqueado = list_get(lista_recurso_liberar,0);
+        cambio_estado(pcb_desbloqueado->contexto->pid, "BLOCK", "READY");
         pthread_mutex_lock(&mutex_cola_ready);
         list_add(lista_recurso_liberar,pcb_desbloqueado);
         pthread_mutex_unlock(&mutex_cola_ready);
+
+        mostrar_prioridad_ready();
         sem_post(&sem_listos_para_ready);
     }
 }
@@ -1157,9 +1233,12 @@ void sacar_de_lista_mover_exit(t_list* lista, pthread_mutex_t mutex_lista, uint3
     list_remove_element(lista,pcb_encontrado);
     pthread_mutex_unlock(&mutex_lista);
 
+
     t_pcb_exit* pcb_exit_ok = malloc(sizeof(t_pcb_exit));
     pcb_exit_ok->pcb = pcb_encontrado;
     pcb_exit_ok->motivo = INTERRUPTED_BY_USER;
+
+    
     pthread_mutex_lock(&mutex_cola_exit);
     list_add(cola_exit,pcb_exit_ok);
     pthread_mutex_unlock(&mutex_cola_exit);
@@ -1295,6 +1374,9 @@ void bloquear_pcb(t_contexto* contexto){
     pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
     pthread_mutex_unlock(&mutex_cola_exec);
 
+    cambio_estado(pcb_nuevo->contexto->pid, "EXEC", "BLOCK");
+    mostrar_motivo_block(pcb_nuevo->contexto->pid, "INTEFAZ");
+
     pthread_mutex_lock(&mutex_cola_block);
     list_add(cola_block,pcb_nuevo);
     pthread_mutex_unlock(&mutex_cola_block);
@@ -1310,8 +1392,78 @@ void desbloquear_proceso_block(uint32_t pid){
     t_pcb* pcb_encontrado = list_find(cola_block, (void*) encontrar_pcb);
     list_remove_element(cola_block,pcb_encontrado);
     pthread_mutex_unlock(&mutex_cola_block);
-
+    cambio_estado(pcb_encontrado->contexto->pid,"BLOCK", "READY");
     pthread_mutex_lock(&mutex_cola_ready);
     list_add(cola_ready,pcb_encontrado);
-    pthread_mutex_unlock(&mutex_cola_ready);   
+    pthread_mutex_unlock(&mutex_cola_ready); 
+
+    mostrar_prioridad_ready(); 
+
+    sem_post(&sem_listos_para_ready);
+}
+
+char* motivo_exit_to_string(motivo_exit motivo){
+    switch (motivo)
+    {
+    case SUCCESS:
+        return "SUCCESS";
+    case INVALID_RESOURCE:
+        return "INVALID_RESOURCE";
+    case OUT_OF_MEMORY:
+        return "OUT_OF_MEMORY";
+    case INVALID_INTERFACE:
+        return "INVALID_INTERFACE";
+    case INTERRUPTED_BY_USER:
+        return "INTERRUPTED_BY_USER";
+    default:
+        return "INDETERMINADO";
+    }
+}
+
+void cambio_estado(uint32_t pid, char* estado_anterior, char* estado_nuevo){
+
+    //LOG OBLIGATORIO
+    log_info(log_kernel, "PID: %d - Estado Anterior: %s - Estado Actual: %s", pid, estado_anterior, estado_nuevo);
+}
+
+void mostrar_motivo_block(uint32_t pid, char* motivo_block){
+    //LOG OBLIGATORIO
+    log_info(log_kernel, "PID: %d - Bloqueado por: %s ", pid, motivo_block);
+}
+
+void mostrar_prioridad_ready(){
+    char* procesos_ready = malloc(200 * sizeof(char));
+    procesos_ready = "";
+
+    if(algoritmo_planificacion == VRR){
+    if(!list_is_empty(cola_ready_aux)){
+        for(int i = 0; i < list_size(cola_ready_aux); i++){
+            t_pcb* pcb_listar = list_get(cola_ready_aux,i);
+            char* proceso = malloc(100 * sizeof(char));
+            proceso = "";
+            sprintf(proceso,"%u",pcb_listar->contexto->pid);
+            strcat(proceso, ", ");
+            strcat(procesos_ready, proceso);
+
+            free(proceso);
+        }
+    }
+    }
+
+    if(!list_is_empty(cola_ready)){
+        for(int i = 0; i < list_size(cola_ready); i++){
+            t_pcb* pcb_listar = list_get(cola_ready,i);
+            char* proceso = malloc(100 * sizeof(char));
+            proceso = "";
+            sprintf(proceso,"%u",pcb_listar->contexto->pid);
+            strcat(proceso, ", ");
+            strcat(procesos_ready, proceso);
+
+            free(proceso);
+        }
+    }
+
+    //LOG OBLIGATORIO
+    log_info(log_kernel,"Cola Ready / Ready prioridad: [ %s ]", procesos_ready);
+
 }

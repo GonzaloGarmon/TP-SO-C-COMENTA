@@ -105,6 +105,10 @@ void recibir_kernel_interrupt(int SOCKET_CLIENTE_KERNEL_INTERRUPT){
             hay_interrupcion = 1;
             log_trace(log_cpu,"recibi una interrupcion para el pid: %d", pid_interrupt);
             break;
+        case INTERRUPCION_USUARIO:
+            pid_interrupt = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL_INTERRUPT,log_cpu);
+            hay_interrupcion = 1;
+            es_por_usuario = 1;        
         case -1:
             noFinalizar=codOperacion;
             break;
@@ -281,7 +285,11 @@ void checkInturrupt(uint32_t pid){
         hay_interrupcion = 0;
         if(contexto->pid = pid_interrupt){
             seguir_ejecutando = 0;
+            if(!es_por_usuario){
             enviar_contexto(socket_cliente_kernel_dispatch, contexto,INTERRUPCION);
+            }else{
+            enviar_contexto(socket_cliente_kernel_dispatch, contexto,INTERRUPCION_USUARIO);
+            }
         }
     }
 }
