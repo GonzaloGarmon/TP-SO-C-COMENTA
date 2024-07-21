@@ -75,7 +75,7 @@ uint32_t generador_pid;
 /*
 ------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
 */
-void leer_config();
+void leer_config(char* path);
 void generar_conexiones();
 void iniciar_semaforos();
 void finalizar_programa();

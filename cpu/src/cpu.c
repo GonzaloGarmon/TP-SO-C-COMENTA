@@ -1,12 +1,15 @@
 #include <cpu.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
     
     log_cpu = log_create("./cpu.log", "CPU", 1, LOG_LEVEL_TRACE);
 
     log_info(log_cpu, "INICIA EL MODULO DE CPU");
 
-    leer_config();
+
+    //para poner un config es:
+    // ./bin/cpu ./config/MemoriaTLB
+    leer_config(argv[1]);
     
     
     establecer_conexion(ip_memoria,puerto_memoria, config_cpu, log_cpu);
@@ -43,8 +46,8 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void leer_config(){
-    config_cpu = iniciar_config("/home/utnso/tp-2024-1c-GoC/cpu/config/cpu.config");
+void leer_config(char* path){
+    config_cpu = iniciar_config(path);
 
     ip_memoria = config_get_string_value(config_cpu, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_cpu, "PUERTO_MEMORIA");
@@ -52,6 +55,7 @@ void leer_config(){
     puerto_escucha_interrupt = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_INTERRUPT");
     cantidad_entradas_tlb = config_get_int_value(config_cpu, "CANTIDAD_ENTRADAS_TLB");
     algoritmo_tlb = config_get_string_value(config_cpu, "ALGORITMO_TLB");
+    
     tlb entrada_tlb[cantidad_entradas_tlb]; //verificar que funcione asi
     log_info(log_cpu, "levanto la configuracion del cpu");
 }

@@ -57,7 +57,7 @@ uint32_t marcos_libres;
 
 void *ESPACIO_USUARIO;
 
-void leer_config();
+void leer_config(char* path);
 void finalizar_programa();
 
 void recibir_cpu(int SOCKET_CLIENTE_CPU);

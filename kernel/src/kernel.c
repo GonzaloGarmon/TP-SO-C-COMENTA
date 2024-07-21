@@ -1,15 +1,17 @@
 #include <kernel.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char **argv) {
 
     log_kernel = log_create("./kernel.log", "KERNEL", 1, LOG_LEVEL_TRACE);
 
     log_info(log_kernel, "INICIA EL MODULO DE KERNEL");
 
-    leer_config();
+    //para poner un config es:
+    // ./bin/kernel ./config/Planificacion-FIFO
+    leer_config(argv[1]);
     
     iniciar_semaforos();
-
+    
     generar_conexiones();
 
 
@@ -61,8 +63,8 @@ int main(int argc, char* argv[]) {
 ------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
 */
 
-void leer_config(){
-    config_kernel = iniciar_config("/home/utnso/tp-2024-1c-GoC/kernel/config/kernel.config");
+void leer_config(char* path){
+    config_kernel = iniciar_config(path);
         
     puerto_escucha = config_get_string_value(config_kernel, "PUERTO_ESCUCHA");
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
@@ -89,7 +91,7 @@ void leer_config(){
         log_error(log_kernel, "El algoritmo no es valido");
     }
     quantum = config_get_int_value(config_kernel, "QUANTUM");
-
+    log_info(log_kernel, "quantum: %d", quantum);
     recursos = config_get_array_value(config_kernel, "RECURSOS");
     instancias_recursos = convertirArrayDeNumeros(config_get_array_value(config_kernel, "INSTANCIAS_RECURSOS"));
     grado_multiprogramacion = config_get_int_value(config_kernel, "GRADO_MULTIPROGRAMACION");
@@ -648,6 +650,7 @@ void iniciar_consola(){
 
 
 void ejecutar_script(char* path){
+    printf("path: %s", path);
     FILE* archivo = fopen(path, "r");
 
     if (archivo == NULL) {

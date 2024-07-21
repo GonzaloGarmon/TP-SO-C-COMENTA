@@ -34,7 +34,7 @@ int conexion_memoria;
 int seguir_ejecutando;
 int indice_frente;
 
-void leer_config();
+void leer_config(char* path);
 
 void generar_conexiones();
 

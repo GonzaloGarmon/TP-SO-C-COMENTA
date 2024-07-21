@@ -1,14 +1,19 @@
 #include <memoria.h>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
     
     log_memoria = log_create("./memoria.log", "MEMORIA", 1, LOG_LEVEL_TRACE);
 
     log_info(log_memoria, "INICIA EL MODULO DE MEMORIA");
 
+
+    //para poner un config es:
+    //./bin/memoria ./config/PruebaFS
+    leer_config(argv[1]);
+
     inicializar_memoria();
 
-    leer_config();
+    
 
     socket_servidor_memoria_dispatch = iniciar_servidor(puerto_escucha, log_memoria);
 
@@ -50,12 +55,13 @@ void inicializar_memoria() {
     marcos_libres = memoria_config.tam_memoria / memoria_config.tam_pagina;
 }
 
-void leer_config(){
-    config_memoria = iniciar_config("/home/utnso/tp-2024-1c-GoC/memoria/config/memoria.config");
+void leer_config(char* path){
+    config_memoria = iniciar_config(path);
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     tam_memoria = config_get_int_value(config_memoria, "TAM_MEMORIA");
     tam_pagina = config_get_int_value(config_memoria, "TAM_PAGINA");
+    
     path_instrucciones = config_get_string_value(config_memoria, "PATH_INSTRUCCIONES");
     retardo_respuesta = config_get_int_value(config_memoria, "RETARDO_RESPUESTA");
     sem_init(&sem, 0, 0);
