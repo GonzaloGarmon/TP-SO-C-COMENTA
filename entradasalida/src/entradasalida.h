@@ -65,7 +65,6 @@ char* path_base_dialfs;
 int block_size;
 int block_count;
 int retraso_compactacion;
-bool enUso;
 
 int conexion_entradasalida_kernel;
 int conexion_entradasalida_memoria;
