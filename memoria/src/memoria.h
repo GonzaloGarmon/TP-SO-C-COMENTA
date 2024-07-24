@@ -20,6 +20,13 @@ typedef struct {
     uint32_t presente; 
 } entrada_tabla_pagina_t;
 
+typedef struct{
+ 
+ t_list* pids;
+ t_list* nombres_archivos;
+
+}t_pids_archivos;
+
 typedef struct {
     uint32_t pid;
     entrada_tabla_pagina_t *tabla_paginas;
@@ -38,6 +45,7 @@ char* path_instrucciones;
 int retardo_respuesta;
 pthread_mutex_t mutex_memoria;
 sem_t sem;
+t_pids_archivos pids_archivos;
 
 //Chequear los tamanios maximos de todo.
 int longitud_maxima = 100;

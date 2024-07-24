@@ -53,6 +53,9 @@ int main(int argc, char** argv) {
 
 void inicializar_memoria() {
     marcos_libres = memoria_config.tam_memoria / memoria_config.tam_pagina;
+
+    pids_archivos.nombres_archivos = list_create();
+    pids_archivos.pids = list_create();
 }
 
 void leer_config(char* path){
@@ -173,7 +176,9 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             log_info(log_memoria, "Creacion del proceso PID %d", pid);
             crear_tabla_pagina(pid, cant_paginas);
             log_info(log_memoria, "PID: %i - Tamanio: %i", pid,cant_paginas);
-            cargar_instrucciones_desde_archivo(path, &instrucciones);
+            list_add(pids_archivos.nombres_archivos,path);
+            list_add(pids_archivos.pids,pid);
+            //cargar_instrucciones_desde_archivo(path, &instrucciones);
             sem_post(&sem);
             enviar_mensaje("Proceso creado", SOCKET_CLIENTE_KERNEL);
             
@@ -222,6 +227,13 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             sleep(retardo_respuesta/1000);
             t_list* enteros = recibir_doble_entero(SOCKET_CLIENTE_CPU);
             uint32_t ins = list_get(enteros,1);
+            for (int i = 0; i < list_size(pids_archivos.nombres_archivos); i++)
+            {
+                if (list_get(pids_archivos.pids, i) == list_get(enteros,0)){
+                    cargar_instrucciones_desde_archivo(list_get(pids_archivos.nombres_archivos, i),&instrucciones);
+                }
+            }
+            
             enviar_instruccion(SOCKET_CLIENTE_CPU, instrucciones[ins],READY);
             sem_post(&sem);
         break;
