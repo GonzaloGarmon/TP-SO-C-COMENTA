@@ -35,15 +35,7 @@ int main(int argc, char **argv) {
 
     //pthread_mutex_lock(&conexion);
     //list_add(conexiones_io.conexiones_io,socket_cliente_entradasalida);
-    //pthread_mutex_unlock(&conexion);
-
-    pthread_t atiende_cpu_dispatch;
-    pthread_create(&atiende_cpu_dispatch, NULL, (void *)recibir_cpu_dispatch, (void *) (intptr_t) conexion_kernel_cpu_dispatch);
-    pthread_detach(atiende_cpu_dispatch);
-
-    pthread_t atiende_cpu_interrupt;
-    pthread_create(&atiende_cpu_interrupt, NULL, (void *)recibir_cpu_interrupt, (void *) (intptr_t) conexion_kernel_cpu_interrupt);
-    pthread_detach(atiende_cpu_interrupt);
+    //pthread_mutex_unlock(&conexion)
 
     pthread_t atiende_nuevas_interfaces;
     pthread_create(&atiende_nuevas_interfaces, NULL, (void *)esperar_cliente_especial, (void *) (intptr_t) socket_servidor_kernel_dispatch);
@@ -641,7 +633,7 @@ void iniciar_consola(){
         break;
     default:
         printf("Opción no valida intente de nuevo!\n");
-        iniciar_consola();
+        //iniciar_consola();
         break;
     }
     
@@ -697,8 +689,9 @@ void iniciar_proceso(char* path){
     
 
     t_paquete* paquete = crear_paquete_op(CREAR_PROCESO);
-    agregar_a_paquete(paquete,path, strlen(path)+1);
+    
     agregar_entero_a_paquete(paquete,pcb_nuevo->contexto->pid);
+    agregar_a_paquete(paquete,path, strlen(path)+1);
     enviar_paquete(paquete,conexion_kernel_memoria);
     eliminar_paquete(paquete);
 

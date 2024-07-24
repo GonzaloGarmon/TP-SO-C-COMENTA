@@ -183,17 +183,25 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
 }
 
 void recibir_y_procesar_paquete(int socket_cliente) {
+    /*
     t_list* valores = recibir_paquete(socket_cliente);
     if (valores == NULL) {
         printf("Error al recibir el paquete\n");
         return;
     }
+*/
+    t_list* valores = list_create();
+    int size;
+    int desplazamiento = 0;
+    void * buffer;
+
+    operacionActual = recibir_operacion(socket_cliente);
+    list_add(lista_operaciones, &operacionActual);
 
     pidRecibido = *(int*)list_remove(valores, 0);
     list_add(lista_pids, &pidRecibido);
 
-    operacionActual = *(op_code*)list_remove(valores, 0);
-    list_add(lista_operaciones, &operacionActual);
+
 
     switch (operacionActual) {
         case IO_GEN_SLEEP:
@@ -385,12 +393,12 @@ void establecer_conexion_kernel(char *ip_kernel, char *puerto_kernel, t_config *
     }
     
     //BORRAR
-    enviar_string(conexion_entradasalida_kernel, "hola papito", MENSAJE);
-    log_trace(log_entradasalida, "mande un mensaje");
+    //enviar_string(conexion_entradasalida_kernel, "hola papito", MENSAJE);
+    //log_trace(log_entradasalida, "mande un mensaje");
 
-    sleep(3);
+    //sleep(3);
     enviar_string(conexion_entradasalida_kernel, tipo_interfaz_txt, IDENTIFICACION);
-    log_trace(log_entradasalida, "mande un mensaje");
+    //log_trace(log_entradasalida, "mande un mensaje");
 }
 
 void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_config *config_entradasalida, t_log *loggs){
@@ -403,13 +411,13 @@ void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_confi
     }
 
     //BORRAR
-    sleep(3);
-    int operacion = recibir_operacion(conexion_entradasalida_memoria);
-    log_info(loggs, "Recibi operacion 1 %i", operacion);
-    char* palabra = recibir_string(conexion_entradasalida_memoria, log_entradasalida);
-    log_info(loggs, "Recibi operacion 2 %s", palabra);
+    //sleep(3);
+    //int operacion = recibir_operacion(conexion_entradasalida_memoria);
+    //log_info(loggs, "Recibi operacion 1 %i", operacion);
+    //char* palabra = recibir_string(conexion_entradasalida_memoria, log_entradasalida);
+    //log_info(loggs, "Recibi operacion 2 %s", palabra);
 
-    enviar_string(conexion_entradasalida_memoria,"mando saludos", MENSAJE);  
+    //enviar_string(conexion_entradasalida_memoria,"mando saludos", MENSAJE);  
 }
 
 void inicializar_interfaz_generica(t_config *config_entradasalida, const char *nombre){

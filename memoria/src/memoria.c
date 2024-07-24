@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
 }
 
 void inicializar_memoria() {
-    marcos_libres = memoria_config.tam_memoria / memoria_config.tam_pagina;
+    marcos_libres = tam_memoria / tam_pagina;
 
     pids_archivos.nombres_archivos = list_create();
     pids_archivos.pids = list_create();
