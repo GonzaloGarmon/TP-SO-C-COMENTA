@@ -205,37 +205,37 @@ void recibir_y_procesar_paquete(int socket_cliente) {
         case IO_STDIN_READ:
         case IO_STDOUT_WRITE:
             nombreInterfazRecibido = (char*)list_remove(valores, 0);
-            direccionArchivoRecibida = *(int*)list_remove(valores, 0);
-            tamañoArchivoRecibido = *(int*)list_remove(valores, 0);
+            direccionRecibida = *(int*)list_remove(valores, 0);
+            tamañoRecibido = *(int*)list_remove(valores, 0);
             list_add(lista_datos, nombreInterfazRecibido);
-            list_add(lista_datos, &direccionArchivoRecibida);
-            list_add(lista_datos, &tamañoArchivoRecibido);
+            list_add(lista_datos, &direccionRecibida);
+            list_add(lista_datos, &tamañoRecibido);
             break;
         case IO_FS_CREATE:
         case IO_FS_DELETE:
             nombreInterfazRecibido = (char*)list_remove(valores, 0);
-            NombreArchivoRecibido = (char*)list_remove(valores, 0);
+            nombreArchivoRecibido = (char*)list_remove(valores, 0);
             list_add(lista_datos, nombreInterfazRecibido);
-            list_add(lista_datos, NombreArchivoRecibido);
+            list_add(lista_datos, nombreArchivoRecibido);
             break;
         case IO_FS_TRUNCATE:
             nombreInterfazRecibido = (char*)list_remove(valores, 0);
-            NombreArchivoRecibido = (char*)list_remove(valores, 0);
+            nombreArchivoRecibido = (char*)list_remove(valores, 0);
             tamañoArchivoRecibido = *(int*)list_remove(valores, 0);
             list_add(lista_datos, nombreInterfazRecibido);
-            list_add(lista_datos, NombreArchivoRecibido);
+            list_add(lista_datos, nombreArchivoRecibido);
             list_add(lista_datos, &tamañoArchivoRecibido);
             break;
         case IO_FS_WRITE:
         case IO_FS_READ:
             nombreInterfazRecibido = (char*)list_remove(valores, 0);
-            NombreArchivoRecibido = (char*)list_remove(valores, 0);
-            direccionArchivoRecibida = *(int*)list_remove(valores, 0);
+            nombreArchivoRecibido = (char*)list_remove(valores, 0);
+            direccionRecibida = *(int*)list_remove(valores, 0);
             tamañoArchivoRecibido = *(int*)list_remove(valores, 0);
             RegistroPunteroArchivoRecibido = *(int*)list_remove(valores, 0);
             list_add(lista_datos, nombreInterfazRecibido);
-            list_add(lista_datos, NombreArchivoRecibido);
-            list_add(lista_datos, &direccionArchivoRecibida);
+            list_add(lista_datos, nombreArchivoRecibido);
+            list_add(lista_datos, &direccionRecibida);
             list_add(lista_datos, &tamañoArchivoRecibido);
             list_add(lista_datos, &RegistroPunteroArchivoRecibido);
             break;
@@ -246,6 +246,7 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     list_destroy_and_destroy_elements(valores, free);
 }
 
+//UNICA FUNCION QUE FALTA. LOS RECIBIR ETC
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
     switch (operacion){
@@ -275,72 +276,81 @@ void funcIoGenSleep(){
 void funcIoStdRead(){
     log_info(log_entradasalida, "Stdin: PID: <%d> - Leer.",pidRecibido);
 
-    char *buffer = (char *)malloc(tamañoArchivoRecibido + 1);
+    char *buffer = (char *)malloc(tamañoRecibido + 1);
 
     // Leer entrada del usuario
-    if (fgets(buffer, tamañoArchivoRecibido + 1, stdin) == NULL) {
+    if (fgets(buffer, tamañoRecibido + 1, stdin) == NULL) {
         log_error(log_entradasalida, "Error al leer desde STDIN");
         free(buffer);
         return;
     }
 
     // Validar que el tamaño de la entrada no exceda el tamaño especificado
-    if (strlen(buffer) > tamañoArchivoRecibido) {
+    if (strlen(buffer) > tamañoRecibido) {
         log_warning(log_entradasalida, "El texto ingresado es mayor al tamaño permitido. Se truncará.");
-        buffer[tamañoArchivoRecibido] = '\0';
+        buffer[tamañoRecibido] = '\0';
     }
 
+    t_string_2enteros *mensaje = malloc(sizeof(t_string_2enteros));
+    mensaje->entero1=direccionRecibida;
+    mensaje->entero2=tamañoRecibido;
+    mensaje->string=buffer;
     // Escribir el valor en la memoria. se encarga memoria yo solo le envio lo que escribio el usuario
-    enviar_string(conexion_entradasalida_memoria, buffer, IO_STDIN_READ);
-    
+    enviar_2_enteros_1_string(conexion_entradasalida_memoria, mensaje, IO_STDIN_READ);
+    //Devolver un OK
+    conexionRecMem();
     free(buffer);
 }
 
 void funcIoStdWrite(){
     log_info(log_entradasalida, "Stdin: PID: <%d> - Escribir.",pidRecibido);
-    enviar_entero(conexion_entradasalida_memoria,direccionArchivoRecibida,IO_STDOUT_WRITE);
+
+    t_2_enteros *mensaje = malloc(sizeof(t_2_enteros));
+    mensaje->entero1=direccionRecibida;
+    mensaje->entero2=tamañoRecibido;
+    enviar_2_enteros(conexion_entradasalida_memoria,mensaje,IO_STDOUT_WRITE);
+    //Que memoria me pase lo leido y yo lo muestro en pantalla
     conexionRecMem();
 }
 
 void funcIoFsWrite(){
     log_info(log_entradasalida, "DialFS: PID: <%d> - Leer archivo.",pidRecibido);
     //envio a memoria un paquete con el RegistroTamaño y el RegistroDireccion recibidos de kernel
-    tamañoYDireccionRecibidos->entero1 = tamañoArchivoRecibido;
-    tamañoYDireccionRecibidos->entero2 = direccionArchivoRecibida;
-    enviar_2_enteros(conexion_entradasalida_memoria,tamañoYDireccionRecibidos,IO_FS_READ);
-    //recibo el mensaje leido en esa direccion y lo guardo en mensajeLeido
-    conexionRecMem();
-    //funcion para escribir el mensaje recibido de memoria en mi archivo fs a partir del RegistroPunteroArchivo
-    //dialfs_write_block();
-}
 
+    t_3_enteros *mensaje = malloc(sizeof(t_3_enteros));
+    mensaje->entero1 = tamañoArchivoRecibido;
+    mensaje->entero2 = direccionRecibida;
+    mensaje->entero3 = RegistroPunteroArchivoRecibido;
+    enviar_3_enteros(conexion_entradasalida_memoria,mensaje,IO_FS_WRITE);
+    //recibo un OK de memoria o podemos hacer que se muestre lo que se escribio
+    conexionRecMem();
+}
 
 void funcIoFsRead(){
     log_info(log_entradasalida, "DialFS: PID: <%d> - Escribir Archivo.",pidRecibido);
-    //leer archivo a partir del valor del Registro Puntero Archivo la cantidad de bytes indicada por Registro Tamaño y guardar en mensajeLeido
-    //dialfs_read_block();
 
     //envio a memoria un paquete con el RegistroTamaño y el RegistroDireccion recibidos de kernel
-    stringLeidoYDireccionRecibida->string = mensajeLeido;
-    stringLeidoYDireccionRecibida->entero1 = direccionArchivoRecibida;
-    enviar_2_enteros_1_string(conexion_entradasalida_memoria,stringLeidoYDireccionRecibida,IO_FS_READ);
+    t_3_enteros *mensaje = malloc(sizeof(t_3_enteros));
+    mensaje->entero1 = tamañoArchivoRecibido;
+    mensaje->entero2 = direccionRecibida;
+    mensaje->entero3 = RegistroPunteroArchivoRecibido;
+    enviar_3_enteros(conexion_entradasalida_memoria,mensaje,IO_FS_READ);
+    //recibo un OK de memoria o podemos hacer que se muestre lo que se escribio
     conexionRecMem();
 }
 
-
-
 void funcIoFsTruncate() {
-    dialfs_truncar_archivo(&fs, NombreArchivoRecibido, tamañoArchivoRecibido);
+    dialfs_truncar_archivo(&fs, nombreArchivoRecibido, tamañoArchivoRecibido);
 }
 
 void funcIoFsCreate() {
-    int bloque = dialfs_crear_archivo(&fs, NombreArchivoRecibido, tamañoArchivoRecibido);
+    int bloque = dialfs_crear_archivo(&fs, nombreArchivoRecibido, tamañoArchivoRecibido);
 
     if (bloque == -1) {
         return;
     }
 
-    log_info(log_entradasalida, "Archivo creado con éxito: %s en bloque %d", NombreArchivoRecibido, bloque);
+    log_info(log_entradasalida, "Archivo creado con éxito: %s en bloque %d", nombreArchivoRecibido, bloque);
 }
 
 void funcIoFsDelete() {
@@ -570,20 +580,6 @@ int dialfs_allocate_block(DialFS *fs) {
 void dialfs_free_block(DialFS *fs, int block_index) {
     if (block_index >= 0 && block_index < fs->num_blocks) {
         fs->bitmap[block_index] = 0; // Marcar como libre
-    }
-}
-
-// Función para escribir en un bloque
-void dialfs_write_block(DialFS *fs, int block_index, const uint8_t *data, size_t size) {
-    if (block_index >= 0 && block_index < fs->num_blocks) {
-        memcpy(fs->blocks[block_index].data, data, size);
-    }
-}
-
-// Función para leer desde un bloque
-void dialfs_read_block(DialFS *fs, int block_index, uint8_t *buffer, size_t size) {
-    if (block_index >= 0 && block_index < fs->num_blocks) {
-        memcpy(buffer, fs->blocks[block_index].data, size);
     }
 }
 

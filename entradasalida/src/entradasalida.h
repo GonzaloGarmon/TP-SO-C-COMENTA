@@ -33,13 +33,20 @@ char* ruta_archivo;
 char* ruta_completa;
 
 //Datos recibidos de kernel
+//Todas
 char* nombreInterfazRecibido;
+int pidRecibido;
+//Generica
 int unidadesRecibidas;
-int direccionArchivoRecibida;
-char* NombreArchivoRecibido;
+//Stdin Stdout
+int tamañoRecibido;
+int direccionRecibida;
+//FS
+char* nombreArchivoRecibido;
 int tamañoArchivoRecibido;
 int RegistroPunteroArchivoRecibido;
-int pidRecibido;
+
+
 op_code operacionActual;
 
 DialFS fs;
@@ -48,8 +55,6 @@ t_list* lista_operaciones;
 t_list* lista_pids;
 t_list* lista_datos;
 
-t_string_2enteros* stringLeidoYDireccionRecibida;
-t_2_enteros* tamañoYDireccionRecibidos;
 char* mensajeLeido;
 
 //Caracteristicas de la interfaz
@@ -86,8 +91,6 @@ void dialfs_init(DialFS *dialfs, int block_size, int block_count);
 void dialfs_destroy(DialFS *fs);
 int dialfs_allocate_block(DialFS *fs);
 void dialfs_free_block(DialFS *fs, int block_index);
-void dialfs_write_block(DialFS *fs, int block_index, const uint8_t *data, size_t size);
-void dialfs_read_block(DialFS *fs, int block_index, uint8_t *buffer, size_t size);
 int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, size_t tamaño);
 void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo_size);
 void dialfs_compactar_archivos(DialFS *fs);
