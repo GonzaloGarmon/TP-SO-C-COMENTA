@@ -43,6 +43,7 @@ sem_t sem_listos_para_exec;
 sem_t sem_listos_para_exit;
 sem_t sem_empezar_quantum;
 sem_t sem_iniciar_consola;
+sem_t esta_ejecutando;
 
 char* puerto_escucha;
 char* ip_memoria;
