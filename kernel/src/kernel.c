@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 
 
     log_info(log_kernel, "Listo para recibir a EntradaSalida");
-    socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);
+    /*socket_cliente_entradasalida = esperar_cliente(socket_servidor_kernel_dispatch);*/
 
     //pthread_mutex_lock(&conexion);
     //list_add(conexiones_io.conexiones_io,socket_cliente_entradasalida);

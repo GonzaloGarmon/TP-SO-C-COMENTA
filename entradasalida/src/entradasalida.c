@@ -175,7 +175,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                 }
                 break;
             default:
-                log_warning(log_entradasalida, "Operacion no compatible");
+                //log_warning(log_entradasalida, "Operacion no compatible");
                 break;
         }
 
@@ -426,7 +426,6 @@ void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_confi
 
 void inicializar_interfaz_generica(t_config *config_entradasalida, const char *nombre){
     // Inicializar atributos de la interfaz genérica
-    nombre = strdup(nombre);
     tipoInterfaz = GENERICA_I;
     tiempo_unidad_trabajo = config_get_int_value(config_entradasalida, "TIEMPO_UNIDAD_TRABAJO");
     ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
@@ -443,7 +442,6 @@ void inicializar_interfaz_generica(t_config *config_entradasalida, const char *n
 
 void inicializar_interfaz_stdin(t_config *config_entradasalida, const char *nombre){
     // Inicializar atributos de la interfaz stdin
-    nombre = strdup(nombre);
     tipoInterfaz = STDIN_I;
     tiempo_unidad_trabajo = config_get_int_value(config_entradasalida, "TIEMPO_UNIDAD_TRABAJO");
     ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
@@ -464,7 +462,6 @@ void inicializar_interfaz_stdin(t_config *config_entradasalida, const char *nomb
 void inicializar_interfaz_stdout(t_config *config_entradasalida, const char *nombre){
     // Inicializar atributos de la interfaz stdout
     tipoInterfaz = STDOUT_I;
-    nombre = strdup(nombre);
     tiempo_unidad_trabajo = config_get_int_value(config_entradasalida, "TIEMPO_UNIDAD_TRABAJO");
     ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
     puerto_kernel = config_get_string_value(config_entradasalida, "PUERTO_KERNEL");
@@ -483,7 +480,6 @@ void inicializar_interfaz_stdout(t_config *config_entradasalida, const char *nom
 
 void inicializar_interfaz_dialfs(t_config *config_entradasalida, const char *nombre){
     // Inicializar atributos de la interfaz stdout
-    nombre = strdup(nombre);
     tipoInterfaz = DIALFS_I;
     tiempo_unidad_trabajo = config_get_int_value(config_entradasalida, "TIEMPO_UNIDAD_TRABAJO");
     ip_kernel = config_get_string_value(config_entradasalida, "IP_KERNEL");
