@@ -241,28 +241,28 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             usleep(retardo_respuesta * 1000);
             uint32_t nuevo_tam = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
             t_contexto *contexto = recibir_contexto(SOCKET_CLIENTE_CPU);
-            op_code res = ajustar_tamanio_proceso(nuevo_tam);
+            op_code res = ajustar_tamanio_proceso(nuevo_tam,contexto->pid);
             enviar_codop(SOCKET_CLIENTE_CPU, res);
-            //log_info(log_memoria, "PID: <PID> - %i: - Tamanio actual: %i - Tamanio a ampliar %i", contexto->pid, , nuevo_tam);
-
+            
             break;
         case MOV_IN:
             usleep(retardo_respuesta * 1000); 
             pthread_mutex_lock(&mutex_memoria);
 
-            t_string_2enteros* mov_in_data = recibir_string_2enteros(SOCKET_CLIENTE_CPU);
-            uint32_t pid_mov = mov_in_data->entero1;
-            uint32_t dir_fisica = mov_in_data->entero2;
-            char *tam_a_leer = mov_in_data->string;
+            t_3_enteros* mov_in_data = recibir_3_enteros(SOCKET_CLIENTE_CPU);
+            uint32_t dir_fisica = mov_in_data->entero1;
+            uint32_t pid_mov = mov_in_data->entero2;
+            uint32_t tam_a_leer = mov_in_data->entero3;
 
-            char* valor = leer(dir_fisica, tam_a_leer);
+            char* valor_mov_in = leer(dir_fisica, tam_a_leer);
 
-            log_trace(log_memoria,"El valor en memoria es: %s",valor);
-            enviar_paquete_string(SOCKET_CLIENTE_CPU, valor, MOV_IN_OK, tam_a_leer);
 
-            free(valor);
-            log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d - Origen: CPU",
+            log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
                         pid_mov, dir_fisica, tam_a_leer);
+            enviar_paquete_string(SOCKET_CLIENTE_CPU, valor_mov_in, MOV_IN_OK, tam_a_leer);
+
+            free(valor_mov_in);
+            
 
             pthread_mutex_unlock(&mutex_memoria);
             break;
@@ -270,41 +270,33 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             usleep(retardo_respuesta * 1000);
             pthread_mutex_lock(&mutex_memoria);
 
-            t_string_2enteros* mov_out_data = recibir_string_2enteros(SOCKET_CLIENTE_CPU);
+            t_string_3enteros* mov_out_data = recibir_string_3_enteros(SOCKET_CLIENTE_CPU);
             uint32_t direccion_fisica = mov_out_data->entero1; // Cambiado el nombre de dir_fisica a direccion_fisica
             uint32_t pid_mov_out = mov_out_data->entero2;
+            uint32_t tam_a_escribir = mov_out_data->entero2;
             char* escritura = mov_out_data->string;
 
+            char* valor_mov_out = malloc(tam_a_escribir);
+
+            strcpy(valor_mov_out,escritura);
+
             // Escribir en la dirección física
-            escribir(direccion_fisica, escritura, strlen(escritura));
+            escribir(direccion_fisica, escritura, tam_a_escribir);  
+
+            log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu",
+                        pid_mov_out, direccion_fisica, tam_a_escribir);
 
             enviar_codop(SOCKET_CLIENTE_CPU, MOV_OUT_OK);
-
-            log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu - Origen: CPU",
-                        pid_mov_out, direccion_fisica, strlen(escritura));
-
+            
+            free(valor_mov_out);
+            
             pthread_mutex_unlock(&mutex_memoria);
             break;
-        case ACCESO_ESPACIO_USUARIO:
-                usleep(retardo_respuesta * 1000);
-                uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-                uint32_t num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-                uint32_t offset = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-                char *tam_a_leerr = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-
-                //char *valor_t = leer_memoria(pid, num_pagina, offset, tam_a_leer); aca podriamos poner leer para leer memoria
-                //enviar_string(SOCKET_CLIENTE_CPU, valor_t, ACCESO); 
-                //“PID: <PID> - Accion: <LEER / ESCRIBIR> - Direccion fisica: <DIRECCION_FISICA>” - Tamaño <TAMAÑO A LEER / ESCRIBIR>
-                int direc_fisica;
-                char *accion;
-                log_info(log_memoria, "PID: %d - Accion: LEER/ESCRIBIR %s - Direccion Fisica: %i - Tamanio a leer/escribir : %s", pid, accion/*accion*/, direc_fisica, tam_a_leerr);
-                //free(valor_t);
-                break;
         case ACCESO_TABLA_PAGINAS: 
             usleep(retardo_respuesta * 1000);
             uint32_t num_paginax = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
             uint32_t pidx = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-            uint32_t marco_correspondiente = obtener_marco_pagina(pid, num_pagina);
+            uint32_t marco_correspondiente = obtener_marco_pagina(pidx, num_paginax);
             
             enviar_entero(SOCKET_CLIENTE_CPU, marco_correspondiente, ACCESO_TABLA_PAGINAS_OK);
             log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pidx, num_paginax, marco_correspondiente);
@@ -344,20 +336,67 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
             case MENSAJE:
                 recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_memoria);
                 break;
+
+            case IO_STDIN_READ:
+                usleep(retardo_respuesta * 1000);
+                pthread_mutex_lock(&mutex_memoria);
+
+                t_3_enteros* stdin_data = recibir_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
+                uint32_t pid_leer_archivo_stdin = stdin_data->entero1;
+                uint32_t dir_fisica_leer_archivo_stdin = stdin_data->entero2;
+                uint32_t tamanio_io_read_stdin = stdin_data->entero3;
+
+                char* valor_leer_archivo_stdin = leer(dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
+                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo_stdin, IO_STDIN_READ_OK, tamanio_io_read_stdin);
+                
+                log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
+                         pid_leer_archivo_stdin, dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
+
+                free(valor_leer_archivo_stdin);
+
+                pthread_mutex_unlock(&mutex_memoria);
+                break;
+            case IO_STDOUT_WRITE:
+                usleep(retardo_respuesta * 1000);
+                pthread_mutex_lock(&mutex_memoria);
+
+                t_string_3enteros* stdout_write = recibir_string_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
+                uint32_t direccion_fisica_stdout_write = stdout_write->entero1; // Cambiado el nombre de dir_fisica a direccion_fisica
+                uint32_t pid_stdout_write = stdout_write->entero2;
+                uint32_t tam_a_escribir_stdout_write = stdout_write->entero2;
+                char* escritura_stdout = stdout_write->string;
+
+                char* valor_stdout_write = malloc(tam_a_escribir_stdout_write);
+
+                strcpy(valor_stdout_write,escritura_stdout);
+
+                escribir(direccion_fisica_stdout_write, escritura_stdout, tam_a_escribir_stdout_write);
+                enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_STDOUT_WRITE_OK);
+                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu",
+                         pid_stdout_write, direccion_fisica_stdout_write, tam_a_escribir_stdout_write);
+
+
+                free(valor_stdout_write);
+                pthread_mutex_unlock(&mutex_memoria);
+
+                break;
             case IO_FS_READ:
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);
 
-                t_string_2enteros* fread_data = recibir_string_2enteros(SOCKET_CLIENTE_ENTRADASALIDA);
+                t_3_enteros* fread_data = recibir_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
                 uint32_t pid_leer_archivo = fread_data->entero1;
                 uint32_t dir_fisica_leer_archivo = fread_data->entero2;
+                uint32_t tamanio_io_read = fread_data->entero3;
 
-                char* valor_leer_archivo = leer(dir_fisica_leer_archivo, memoria_config.tam_pagina);
-                //enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo, IO_FS_READ_OK, memoria_config.tam_pagina);
+                char* valor_leer_archivo = leer(dir_fisica_leer_archivo, tamanio_io_read);
+                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo, IO_FS_READ_OK, tamanio_io_read);
                 free(valor_leer_archivo);
 
-                log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d - Origen: FS",
-                         pid_leer_archivo, dir_fisica_leer_archivo, memoria_config.tam_pagina);
+                log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
+                         pid_leer_archivo, dir_fisica_leer_archivo, tamanio_io_read);
+
+                free(valor_leer_archivo);
 
                 pthread_mutex_unlock(&mutex_memoria);
                 break;
@@ -365,36 +404,30 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);
 
-                t_string_2enteros* fwrite_data = recibir_string_2enteros(SOCKET_CLIENTE_ENTRADASALIDA);
-                uint32_t pid_escribir_archivo = fwrite_data->entero1;
-                uint32_t dir_fisica_escribir_archivo = fwrite_data->entero2;
-                char* escritura = fwrite_data->string;
+                t_string_3enteros* io_write = recibir_string_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
+                uint32_t direccion_fisica_io_write = io_write->entero1; // Cambiado el nombre de dir_fisica a direccion_fisica
+                uint32_t pid_io_write = io_write->entero2;
+                uint32_t tam_a_escribir_io_write = io_write->entero2;
+                char* escritura_io = io_write->string;
 
-                escribir(dir_fisica_escribir_archivo, escritura, strlen(escritura));
+                char* valor_io_write = malloc(tam_a_escribir_io_write);
+
+                strcpy(valor_io_write,escritura_io);
+
+                escribir(direccion_fisica_io_write, escritura_io, tam_a_escribir_io_write);
                 enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_FS_WRITE_OK);
-                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu - Origen: FS",
-                         pid_escribir_archivo, dir_fisica_escribir_archivo, strlen(escritura));
+                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu",
+                         pid_io_write, direccion_fisica_io_write, tam_a_escribir_io_write);
 
+
+                free(valor_io_write);
                 pthread_mutex_unlock(&mutex_memoria);
-                break;
-            case ACCESO_ESPACIO_USUARIO:
-                usleep(retardo_respuesta * 1000);
-                uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
-                uint32_t num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
-                uint32_t offset = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
-                uint32_t tam_a_leer = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
 
-                //char *valor_t = leer_memoria(pid, num_pagina, offset, tam_a_leer); aca podriamos poner leer para leer memoria
-                //enviar_string(SOCKET_CLIENTE_CPU, valor_t, ACCESO); 
-                int direc_fisica;
-                char *accion;
-                log_info(log_memoria, "PID: %d - Accion: LEER/ESCRIBIR %s - Direccion Fisica: %i - Tamanio a leer/escribir : %i", pid, accion/*accion*/, direc_fisica, tam_a_leer);
-                //free(valor_t);
                 break;
             case ACCESO_TABLA_PAGINAS: 
                 usleep(retardo_respuesta * 1000);
-                num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
-                pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
+                uint32_t num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
+                uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
                 uint32_t marco_correspondiente = obtener_marco_pagina(pid, num_pagina);
                 
                 log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
@@ -506,13 +539,15 @@ void finalizar_proceso(uint32_t proceso) {
     }
 }
 
-op_code ajustar_tamanio_proceso(uint32_t nuevo_tam) {
+op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
     op_code ret;
     for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
         tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, i);
         
             if (nuevo_tam > tabla->cantidad_paginas) {
                 // aca se amplia el tamanio del proceso
+                log_info(log_memoria, "PID: <PID> - %i: - Tamanio actual: %i - Tamanio a Ampliar %i"
+                ,pid, tabla->cantidad_paginas*(memoria_config.tam_pagina), nuevo_tam);
                 uint32_t paginas_a_asignar = nuevo_tam - tabla->cantidad_paginas;
                 if(marcos_libres < paginas_a_asignar) {
                     log_info(log_memoria, "No se pueden solicitar mas marcos -> Memoria llena");
@@ -532,9 +567,13 @@ op_code ajustar_tamanio_proceso(uint32_t nuevo_tam) {
 
             }else if(nuevo_tam < tabla->cantidad_paginas) {
                 // aca se reduce el tamanio del proceso
+                log_info(log_memoria, "PID: <PID> - %i: - Tamanio actual: %i - Tamanio a Reducir %i"
+                ,pid, tabla->cantidad_paginas*(memoria_config.tam_pagina), nuevo_tam);
                 for(uint32_t i = nuevo_tam; i > tabla->cantidad_paginas; i++) {
                     tabla->tabla_paginas[i].numero_marco = 0;
                 }
+
+                
                 tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) *nuevo_tam);
 
                 //actualizo los marcos disponibles

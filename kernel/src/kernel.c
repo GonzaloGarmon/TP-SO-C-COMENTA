@@ -681,8 +681,12 @@ void iniciar_proceso(char* path){
     pcb_nuevo->quantum_utilizado = quantum;
     pcb_nuevo->contexto->pid = generador_pid;
     pcb_nuevo->contexto->pc = 0;
+<<<<<<< Updated upstream
     pcb_nuevo->quantum = temporal_create();
     pcb_nuevo ->contexto->registros = registros;
+=======
+    pcb_nuevo->contexto->registros = registros;
+>>>>>>> Stashed changes
     
     //LOG OBLIGATORIO
     log_info(log_kernel,"Se crea el proceso pid: %d en NEW",pcb_nuevo->contexto->pid);

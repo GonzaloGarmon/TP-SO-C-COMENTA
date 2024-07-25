@@ -76,7 +76,7 @@ void esperar_cliente_especial(int socket_servidor_memoria_dispatch);
 
 
 void finalizar_proceso(uint32_t proceso);
-op_code ajustar_tamanio_proceso(uint32_t nuevo_tam);
+op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid);
 void crear_tabla_pagina(uint32_t pid_t, uint32_t cant_paginas);
 void copiarBytes(uint32_t tamanio, t_contexto *contexto);
 

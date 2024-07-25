@@ -881,7 +881,7 @@ uint32_t tamanio_registro(char *registro){
     else if (strcmp(registro, "EDX") == 0) return 8;
 }
 
-char *leer_valor_de_memoria(char* direccionFisica, uint32_t tamanio) {
+char *leer_valor_de_memoria(uint32_t* direccionFisica, uint32_t tamanio) {
 
     t_paquete *paquete = crear_paquete_op(MOV_IN);
     agregar_string_a_paquete(paquete, direccionFisica);
@@ -901,7 +901,11 @@ char *leer_valor_de_memoria(char* direccionFisica, uint32_t tamanio) {
             break;
         case MOV_IN_OK:
             log_info(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
+            
             char *valor_recibido = recibir_string(conexion_memoria, log_cpu);
+
+            log_info(log_cpu, "PID: %d - Acción: LEER - Dirección física: %d - Valor: %d",
+                        contexto->pid, direccionFisica, valor_recibido);
             log_info(log_cpu, "Recibo string :%s", valor_recibido);
             return valor_recibido;
             break;
@@ -984,10 +988,10 @@ char *leer_valor_de_registro(char *registro) {
 
 void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, int tamanio) {
     t_paquete *paquete = crear_paquete_op(MOV_OUT);
-    agregar_string_a_paquete(paquete, direccionFisica);
-    agregar_string_a_paquete(paquete, valor);
+    agregar_entero_a_paquete(paquete, direccionFisica);
     agregar_entero_a_paquete(paquete, contexto->pid);
     agregar_entero_a_paquete(paquete, tamanio);
+    agregar_string_a_paquete(paquete, valor);
 
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete);
@@ -1002,6 +1006,8 @@ void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, int tamani
         case MOV_OUT_OK:
             log_info(log_cpu, "Código de operación recibido en cpu: %d", cod_op);
             log_info(log_cpu, "Valor escrito en memoria correctamente");
+            log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Valor: %d",
+                        contexto->pid, direccionFisica, valor);
             return;
         default:
             log_warning(log_cpu, "Llegó un código de operación desconocido, %d", cod_op);
