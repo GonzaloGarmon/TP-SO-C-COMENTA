@@ -92,7 +92,7 @@ void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* in
     strcpy(path_compl, path_instrucciones);
     strcat(path_compl, nombre_archivo); 
     //log_info(log_memoria, "log 2");
-    FILE* archivo = fopen(path_compl, "r");
+    FILE* archivo = fopen(nombre_archivo, "r");
     
     // Liberar path_compl ya que no se necesita más
     free(path_compl);
@@ -230,6 +230,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             for (int i = 0; i < list_size(pids_archivos.nombres_archivos); i++)
             {
                 if (list_get(pids_archivos.pids, i) == list_get(enteros,0)){
+                    log_info(log_memoria, "voy a abrir el archivo %s del pid: %d", list_get(pids_archivos.nombres_archivos, i), list_get(pids_archivos.pids, i));
                     cargar_instrucciones_desde_archivo(list_get(pids_archivos.nombres_archivos, i),&instrucciones);
                 }
             }

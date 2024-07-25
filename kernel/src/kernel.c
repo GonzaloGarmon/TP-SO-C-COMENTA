@@ -1429,7 +1429,7 @@ void mostrar_motivo_block(uint32_t pid, char* motivo_block){
 
 void mostrar_prioridad_ready(){
     char* procesos_ready = malloc(200 * sizeof(char));
-    procesos_ready = "";
+    //procesos_ready = "";
 
     if(algoritmo_planificacion == VRR){
     if(!list_is_empty(cola_ready_aux)){
@@ -1450,7 +1450,7 @@ void mostrar_prioridad_ready(){
         for(int i = 0; i < list_size(cola_ready); i++){
             t_pcb* pcb_listar = list_get(cola_ready,i);
             char* proceso = malloc(100 * sizeof(char));
-            proceso = "";
+            
             sprintf(proceso,"%u",pcb_listar->contexto->pid);
             strcat(proceso, ", ");
             strcat(procesos_ready, proceso);
