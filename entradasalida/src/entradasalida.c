@@ -277,7 +277,9 @@ void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
 
 void funcIoGenSleep(){
     log_info(log_entradasalida, "Generica: PID: <%d> - Gen_Sleep",pidRecibido);
-    sleep(unidadesRecibidas*tiempo_unidad_trabajo);
+    int unidades = unidadesRecibidas*tiempo_unidad_trabajo;
+    log_info(log_entradasalida, "Eperando durante %d unidades",unidades);
+    usleep(unidadesRecibidas*tiempo_unidad_trabajo);
     log_info(log_entradasalida, "Operacion completada");
 }
 
