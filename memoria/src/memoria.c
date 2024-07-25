@@ -341,25 +341,6 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);
 
-                t_3_enteros* stdin_data = recibir_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
-                uint32_t pid_leer_archivo_stdin = stdin_data->entero1;
-                uint32_t dir_fisica_leer_archivo_stdin = stdin_data->entero2;
-                uint32_t tamanio_io_read_stdin = stdin_data->entero3;
-
-                char* valor_leer_archivo_stdin = leer(dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
-                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo_stdin, IO_STDIN_READ_OK, tamanio_io_read_stdin);
-                
-                log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
-                         pid_leer_archivo_stdin, dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
-
-                free(valor_leer_archivo_stdin);
-
-                pthread_mutex_unlock(&mutex_memoria);
-                break;
-            case IO_STDOUT_WRITE:
-                usleep(retardo_respuesta * 1000);
-                pthread_mutex_lock(&mutex_memoria);
-
                 t_string_3enteros* stdout_write = recibir_string_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
                 uint32_t direccion_fisica_stdout_write = stdout_write->entero1; // Cambiado el nombre de dir_fisica a direccion_fisica
                 uint32_t pid_stdout_write = stdout_write->entero2;
@@ -371,7 +352,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 strcpy(valor_stdout_write,escritura_stdout);
 
                 escribir(direccion_fisica_stdout_write, escritura_stdout, tam_a_escribir_stdout_write);
-                enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_STDOUT_WRITE_OK);
+                enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_STDIN_READ_OK);
                 log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu",
                          pid_stdout_write, direccion_fisica_stdout_write, tam_a_escribir_stdout_write);
 
@@ -380,27 +361,28 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 pthread_mutex_unlock(&mutex_memoria);
 
                 break;
-            case IO_FS_READ:
+            case IO_STDOUT_WRITE:
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);
 
-                t_3_enteros* fread_data = recibir_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
-                uint32_t pid_leer_archivo = fread_data->entero1;
-                uint32_t dir_fisica_leer_archivo = fread_data->entero2;
-                uint32_t tamanio_io_read = fread_data->entero3;
+                t_3_enteros* stdin_data = recibir_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
+                uint32_t pid_leer_archivo_stdin = stdin_data->entero1;
+                uint32_t dir_fisica_leer_archivo_stdin = stdin_data->entero2;
+                uint32_t tamanio_io_read_stdin = stdin_data->entero3;
 
-                char* valor_leer_archivo = leer(dir_fisica_leer_archivo, tamanio_io_read);
-                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo, IO_FS_READ_OK, tamanio_io_read);
-                free(valor_leer_archivo);
-
+                char* valor_leer_archivo_stdin = leer(dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
+                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo_stdin, IO_STDOUT_WRITE_OK, tamanio_io_read_stdin);
+                
                 log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
-                         pid_leer_archivo, dir_fisica_leer_archivo, tamanio_io_read);
+                         pid_leer_archivo_stdin, dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
 
-                free(valor_leer_archivo);
+                free(valor_leer_archivo_stdin);
 
                 pthread_mutex_unlock(&mutex_memoria);
+                
                 break;
-            case IO_FS_WRITE:
+            case IO_FS_READ:
+            
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);
 
@@ -415,7 +397,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 strcpy(valor_io_write,escritura_io);
 
                 escribir(direccion_fisica_io_write, escritura_io, tam_a_escribir_io_write);
-                enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_FS_WRITE_OK);
+                enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_FS_READ_OK);
                 log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu",
                          pid_io_write, direccion_fisica_io_write, tam_a_escribir_io_write);
 
@@ -423,6 +405,27 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 free(valor_io_write);
                 pthread_mutex_unlock(&mutex_memoria);
 
+                break;
+            case IO_FS_WRITE:
+                
+                usleep(retardo_respuesta * 1000);
+                pthread_mutex_lock(&mutex_memoria);
+
+                t_3_enteros* fread_data = recibir_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
+                uint32_t pid_leer_archivo = fread_data->entero1;
+                uint32_t dir_fisica_leer_archivo = fread_data->entero2;
+                uint32_t tamanio_io_read = fread_data->entero3;
+
+                char* valor_leer_archivo = leer(dir_fisica_leer_archivo, tamanio_io_read);
+                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo, IO_FS_WRITE_OK, tamanio_io_read);
+                free(valor_leer_archivo);
+
+                log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
+                         pid_leer_archivo, dir_fisica_leer_archivo, tamanio_io_read);
+
+                free(valor_leer_archivo);
+
+                pthread_mutex_unlock(&mutex_memoria);
                 break;
             case ACCESO_TABLA_PAGINAS: 
                 usleep(retardo_respuesta * 1000);

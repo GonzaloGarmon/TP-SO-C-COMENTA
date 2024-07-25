@@ -881,7 +881,7 @@ uint32_t tamanio_registro(char *registro){
     else if (strcmp(registro, "EDX") == 0) return 8;
 }
 
-char *leer_valor_de_memoria(uint32_t* direccionFisica, uint32_t tamanio) {
+char *leer_valor_de_memoria(uint32_t direccionFisica, uint32_t tamanio) {
 
     t_paquete *paquete = crear_paquete_op(MOV_IN);
     agregar_string_a_paquete(paquete, direccionFisica);
