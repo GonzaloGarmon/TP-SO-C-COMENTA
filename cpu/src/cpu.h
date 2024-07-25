@@ -68,7 +68,7 @@ void agregar_valor_a_registro(char *reg, char *val);
 void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina);
 char *leer_valor_de_registro(char *registro) ;
 void guardar_valor_en_registro(char *valor, char *registro);
-char *leer_valor_de_memoria(uint32_t* direccionFisica, uint32_t tamanio);
+char * leer_valor_de_memoria(uint32_t direccionFisica, uint32_t tamanio);
 void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, int tamanio);
 uint32_t tamanio_registro(char *registro);
 t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc, t_log *logg); 
