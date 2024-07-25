@@ -554,6 +554,7 @@ void funcIoGenSleep(t_instruccion *instruccion) {
     agregar_entero_a_paquete(paquete, atoi(instruccion->parametros3));
     agregar_contexto_a_paquete(paquete, contexto);
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
+    eliminar_paquete(paquete);
 
 }
 
@@ -572,8 +573,7 @@ void funcWait(t_instruccion *instruccion){
     agregar_a_paquete(paquete,instruccion->parametros2, strlen(instruccion->parametros2)+1);
     agregar_contexto_a_paquete(paquete,contexto);
     enviar_paquete(paquete,socket_cliente_kernel_dispatch);
-    
-   
+    eliminar_paquete(paquete);
 }
 
 void funcExit(t_instruccion *instruccion) {
