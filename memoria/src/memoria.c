@@ -180,7 +180,7 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             list_add(pids_archivos.pids,pid);
             //cargar_instrucciones_desde_archivo(path, &instrucciones);
             sem_post(&sem);
-            enviar_mensaje("Proceso creado", SOCKET_CLIENTE_KERNEL);
+            //enviar_mensaje("Proceso creado", SOCKET_CLIENTE_KERNEL);
             
             break;
         case FINALIZAR_PROCESO:

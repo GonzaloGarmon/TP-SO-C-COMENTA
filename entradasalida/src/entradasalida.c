@@ -94,12 +94,13 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
 
         recibir_y_procesar_paquete(SOCKET_CLIENTE_KERNEL);
 
+/*
         if (list_is_empty(lista_operaciones)) {
             noFinalizar = -1;
             break;
         }
-
-        operacionActual = *(op_code*)list_get(lista_operaciones, 0);
+*/
+        operacionActual = list_get(lista_operaciones, 0);
 
         bool operacionRealizada = false;
 
@@ -107,10 +108,10 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
             case IO_GEN_SLEEP:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_sleep; 
-                    pthread_create(&ejecutar_sleep, NULL, (void *)funcIoGenSleep, NULL);
+                    log_info(log_entradasalida, "entre a gen sleep");
+                    pthread_create(&ejecutar_sleep,NULL,(void*) funcIoGenSleep, (void*) (intptr_t) &operacionRealizada);
                     pthread_detach(ejecutar_sleep);
-                    enviar_codop(SOCKET_CLIENTE_KERNEL, IO_GEN_SLEEP_OK);
-                    operacionRealizada = true;
+                    
                 }
                 break;
             case IO_STDIN_READ:
@@ -190,15 +191,16 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
 void recibir_y_procesar_paquete(int socket_cliente) {
     int size = 0;
     int desplazamiento = 0;
-    void* buffer = NULL;
+    char* buffer;
 
     // Recibir operación
-    op_code operacion = recibir_operacion(socket_cliente);
+    int operacion = recibir_operacion(socket_cliente);
+    log_info(log_entradasalida, "recibi codigo: %d", operacion);
     if (operacion == -1) {
         printf("Error al recibir la operación\n");
         return;
     }
-    list_add(lista_operaciones, &operacion);
+    list_add(lista_operaciones, operacion);
 
     // Recibir el buffer
     buffer = recibir_buffer(&size, socket_cliente);
@@ -208,27 +210,33 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     }
 
     // Leer pidRecibido
+    /*
     if (desplazamiento + sizeof(uint32_t) > size) {
         printf("Error: Desplazamiento fuera de rango al leer pidRecibido\n");
         free(buffer);
         return;
     }
+    */
     pidRecibido = leer_entero_uint32(buffer, &desplazamiento);
-    list_add(lista_pids, malloc_copiar_uint32(pidRecibido));
+    list_add(lista_pids, pidRecibido);
 
     // Procesar según operación
     switch (operacion) {
         case IO_GEN_SLEEP:
-            if (desplazamiento < size) {
+            //if (desplazamiento < size) {
                 nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+                log_info(log_entradasalida, "nombnre interfaz: %s", nombreInterfazRecibido);
                 list_add(lista_datos, nombreInterfazRecibido);
-            } else {
-                printf("Error: No se puede leer nombreInterfazRecibido\n");
-            }
-            if (desplazamiento + sizeof(uint32_t) <= size) {
+
+            
+            //} else {
+              //  printf("Error: No se puede leer nombreInterfazRecibido\n");
+            //}
+            //if (desplazamiento + sizeof(uint32_t) <= size) {
                 unidadesRecibidas = leer_entero_uint32(buffer, &desplazamiento);
+                log_info(log_entradasalida, "unidades: %d", unidadesRecibidas);
                 list_add(lista_datos, malloc_copiar_uint32(unidadesRecibidas));
-            }
+            //}
             break;
         case IO_STDIN_READ:
         case IO_STDOUT_WRITE:
@@ -334,12 +342,16 @@ void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     }
 }
 
-void funcIoGenSleep(){
+void funcIoGenSleep(int operacion){
     log_info(log_entradasalida, "Generica: PID: <%d> - Gen_Sleep",pidRecibido);
     int unidades = unidadesRecibidas*tiempo_unidad_trabajo;
     log_info(log_entradasalida, "Eperando durante %d unidades",unidades);
     usleep(unidadesRecibidas*tiempo_unidad_trabajo);
+    
+
+    enviar_codop(conexion_entradasalida_kernel, TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
+    operacion = true;
 }
 
 void funcIoStdRead(){

@@ -183,6 +183,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
             recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
             break;
         case TERMINO_INTERFAZ:
+            log_info(log_kernel, "termino una interfaz");
             uint32_t  pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
             desbloquear_proceso_block(pid);
             break;                                      
@@ -700,7 +701,7 @@ void iniciar_proceso(char* path){
     pthread_mutex_unlock(&mutex_cola_new);
     sem_post(&sem_listos_para_ready);
 
-    recibir_mensaje(conexion_kernel_memoria, log_kernel);
+    //recibir_mensaje(conexion_kernel_memoria, log_kernel);
 }
 
 void finalizar_proceso(uint32_t pid){
@@ -1022,6 +1023,7 @@ void pcb_ready(){
     if (!apagar_planificacion){
     if (proceso_activos() < grado_multiprogramacion){
     sem_wait(&sem_listos_para_ready);
+    
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
     //sem_wait(&sem_multiprogamacion);
     cambio_estado(pcb->contexto->pid, "NEW", "READY");
@@ -1276,6 +1278,7 @@ int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t ent
         if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
            t_paquete* paquete = crear_paquete_op(codigo);
            agregar_entero_a_paquete(paquete, pid);
+           agregar_a_paquete(paquete,nombre_interfaz, strlen(nombre_interfaz)+1);
            agregar_entero_a_paquete(paquete, entero32);
            enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
            eliminar_paquete(paquete);
@@ -1292,6 +1295,7 @@ int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t pr
         if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
            t_paquete* paquete = crear_paquete_op(codigo);
            agregar_entero_a_paquete(paquete, pid);
+           agregar_a_paquete(paquete,nombre_interfaz, strlen(nombre_interfaz)+1);
            agregar_entero_a_paquete(paquete, primer_entero32);
            agregar_entero_a_paquete(paquete, segundo_entero32);
            enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
@@ -1309,6 +1313,7 @@ int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* pal
         if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
            t_paquete* paquete = crear_paquete_op(codigo);
            agregar_entero_a_paquete(paquete, pid);
+           agregar_a_paquete(paquete,nombre_interfaz, strlen(nombre_interfaz)+1);
            agregar_a_paquete(paquete, palabra, strlen(palabra+1));
            enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
            eliminar_paquete(paquete);
@@ -1325,6 +1330,7 @@ int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char*
         if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
            t_paquete* paquete = crear_paquete_op(codigo);
            agregar_entero_a_paquete(paquete, pid);
+           agregar_a_paquete(paquete,nombre_interfaz, strlen(nombre_interfaz)+1);
            agregar_a_paquete(paquete, palabra, strlen(palabra+1));
            agregar_entero_a_paquete(paquete, primer_entero32);
            enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
@@ -1342,6 +1348,7 @@ int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo,char*
         if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
            t_paquete* paquete = crear_paquete_op(codigo);
            agregar_entero_a_paquete(paquete, pid);
+           agregar_a_paquete(paquete,nombre_interfaz, strlen(nombre_interfaz)+1);
            agregar_a_paquete(paquete, palabra, strlen(palabra+1));
            agregar_entero_a_paquete(paquete, primer_entero32);
            agregar_entero_a_paquete(paquete, segundo_entero32);
@@ -1367,7 +1374,7 @@ void bloquear_pcb(t_contexto* contexto){
     t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
     pcb_nuevo->contexto = contexto;
     //pcb_nuevo->quantum = pcb_encontrado->quantum;
-    pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
+    //pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
     pthread_mutex_unlock(&mutex_cola_exec);
 
     cambio_estado(pcb_nuevo->contexto->pid, "EXEC", "BLOCK");
@@ -1376,6 +1383,7 @@ void bloquear_pcb(t_contexto* contexto){
     pthread_mutex_lock(&mutex_cola_block);
     list_add(cola_block,pcb_nuevo);
     pthread_mutex_unlock(&mutex_cola_block);
+    sem_post(&sem_listos_para_exec);
 }
 
 void desbloquear_proceso_block(uint32_t pid){
@@ -1428,7 +1436,7 @@ void mostrar_motivo_block(uint32_t pid, char* motivo_block){
 }
 
 void mostrar_prioridad_ready(){
-    char* procesos_ready = malloc(200 * sizeof(char));
+    char* procesos_ready = malloc(50 * sizeof(char));
     //procesos_ready = "";
 
     if(algoritmo_planificacion == VRR){
@@ -1449,7 +1457,7 @@ void mostrar_prioridad_ready(){
     if(!list_is_empty(cola_ready)){
         for(int i = 0; i < list_size(cola_ready); i++){
             t_pcb* pcb_listar = list_get(cola_ready,i);
-            char* proceso = malloc(100 * sizeof(char));
+            char* proceso = malloc(15 * sizeof(char));
             
             sprintf(proceso,"%u",pcb_listar->contexto->pid);
             strcat(proceso, ", ");

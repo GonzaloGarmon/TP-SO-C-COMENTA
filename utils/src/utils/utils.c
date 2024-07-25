@@ -305,11 +305,11 @@ void enviar_3_enteros(int conexion, t_3_enteros* enteros, int codop){
 }
 
 void enviar_codop(int conexion, op_code cod_op){
-    t_paquete * codigo = crear_paquete_op(cod_op);
+    t_paquete* codigo = crear_paquete_op(cod_op);
     
-    enviar_codigo(codigo,conexion);
+    enviar_paquete(codigo, conexion);
 
-    eliminar_codigo(codigo);
+    eliminar_paquete(codigo);
 
 }
 

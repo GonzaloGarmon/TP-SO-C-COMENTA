@@ -48,7 +48,7 @@ char* nombreArchivoRecibido;
 int registroPunteroArchivoRecibido;
 
 
-op_code operacionActual;
+int operacionActual;
 
 t_list* lista_operaciones;
 t_list* lista_pids;
@@ -101,7 +101,7 @@ void dialfs_compactar_archivos(DialFS *fs);
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL);
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA);
 void conexionRecMem();
-void funcIoGenSleep();
+void funcIoGenSleep(int operacion);
 void funcIoStdRead();
 void funcIoStdWrite();
 void funcIoFsRead();
