@@ -77,7 +77,9 @@ void finalizar_programa(){
 
     log_destroy(log_entradasalida);
     config_destroy(config_entradasalida);
-    dialfs_destroy(&fs);
+    if(tipoInterfaz == DIALFS_I){
+        dialfs_destroy(&fs);
+    }
 }
 
 void conexionRecMem(){
@@ -186,66 +188,112 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
 }
 
 void recibir_y_procesar_paquete(int socket_cliente) {
-    int size;
+    int size = 0;
     int desplazamiento = 0;
-    void* buffer;
+    void* buffer = NULL;
 
+    // Recibir operación
     op_code operacion = recibir_operacion(socket_cliente);
+    if (operacion == -1) {
+        printf("Error al recibir la operación\n");
+        return;
+    }
     list_add(lista_operaciones, &operacion);
 
+    // Recibir el buffer
     buffer = recibir_buffer(&size, socket_cliente);
-    if (buffer == NULL) {
-        printf("Error al recibir el paquete\n");
+    if (buffer == NULL || size <= 0) {
+        printf("Error al recibir el paquete o tamaño inválido\n");
         return;
     }
 
-    desplazamiento = 0;
+    // Leer pidRecibido
+    if (desplazamiento + sizeof(uint32_t) > size) {
+        printf("Error: Desplazamiento fuera de rango al leer pidRecibido\n");
+        free(buffer);
+        return;
+    }
     pidRecibido = leer_entero_uint32(buffer, &desplazamiento);
-    list_add(lista_pids, &pidRecibido);
+    list_add(lista_pids, malloc_copiar_uint32(pidRecibido));
 
+    // Procesar según operación
     switch (operacion) {
         case IO_GEN_SLEEP:
-            nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
-            unidadesRecibidas = leer_entero_uint32(buffer, &desplazamiento);
-            list_add(lista_datos, nombreInterfazRecibido);
-            list_add(lista_datos, &unidadesRecibidas);
+            if (desplazamiento < size) {
+                nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+                list_add(lista_datos, nombreInterfazRecibido);
+            } else {
+                printf("Error: No se puede leer nombreInterfazRecibido\n");
+            }
+            if (desplazamiento + sizeof(uint32_t) <= size) {
+                unidadesRecibidas = leer_entero_uint32(buffer, &desplazamiento);
+                list_add(lista_datos, malloc_copiar_uint32(unidadesRecibidas));
+            }
             break;
         case IO_STDIN_READ:
         case IO_STDOUT_WRITE:
-            nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
-            direccionRecibida = leer_entero_uint32(buffer, &desplazamiento);
-            tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
-            list_add(lista_datos, nombreInterfazRecibido);
-            list_add(lista_datos, &direccionRecibida);
-            list_add(lista_datos, &tamañoRecibido);
+            if (desplazamiento < size) {
+                nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+                list_add(lista_datos, nombreInterfazRecibido);
+            } else {
+                printf("Error: No se puede leer nombreInterfazRecibido\n");
+            }
+            if (desplazamiento + sizeof(uint32_t) * 2 <= size) {
+                direccionRecibida = leer_entero_uint32(buffer, &desplazamiento);
+                tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
+                list_add(lista_datos, malloc_copiar_uint32(direccionRecibida));
+                list_add(lista_datos, malloc_copiar_uint32(tamañoRecibido));
+            }
             break;
         case IO_FS_CREATE:
         case IO_FS_DELETE:
-            nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
-            nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
-            list_add(lista_datos, nombreInterfazRecibido);
-            list_add(lista_datos, nombreArchivoRecibido);
+            if (desplazamiento < size) {
+                nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+                list_add(lista_datos, nombreInterfazRecibido);
+            } else {
+                printf("Error: No se puede leer nombreInterfazRecibido\n");
+            }
+            if (desplazamiento < size) {
+                nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
+                list_add(lista_datos, nombreArchivoRecibido);
+            }
             break;
         case IO_FS_TRUNCATE:
-            nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
-            nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
-            tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
-            list_add(lista_datos, nombreInterfazRecibido);
-            list_add(lista_datos, nombreArchivoRecibido);
-            list_add(lista_datos, &tamañoRecibido);
+            if (desplazamiento < size) {
+                nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+                list_add(lista_datos, nombreInterfazRecibido);
+            } else {
+                printf("Error: No se puede leer nombreInterfazRecibido\n");
+            }
+            if (desplazamiento < size) {
+                nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
+                list_add(lista_datos, nombreArchivoRecibido);
+            }
+            if (desplazamiento + sizeof(uint32_t) <= size) {
+                tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
+                list_add(lista_datos, malloc_copiar_uint32(tamañoRecibido));
+            }
             break;
         case IO_FS_WRITE:
         case IO_FS_READ:
-            nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
-            nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
-            direccionRecibida = leer_entero_uint32(buffer, &desplazamiento);
-            tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
-            registroPunteroArchivoRecibido = leer_entero_uint32(buffer, &desplazamiento);
-            list_add(lista_datos, nombreInterfazRecibido);
-            list_add(lista_datos, nombreArchivoRecibido);
-            list_add(lista_datos, &direccionRecibida);
-            list_add(lista_datos, &tamañoRecibido);
-            list_add(lista_datos, &registroPunteroArchivoRecibido);
+            if (desplazamiento < size) {
+                nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+                list_add(lista_datos, nombreInterfazRecibido);
+            } else {
+                printf("Error: No se puede leer nombreInterfazRecibido\n");
+            }
+            if (desplazamiento < size) {
+                nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
+                list_add(lista_datos, nombreArchivoRecibido);
+            }
+            if (desplazamiento + sizeof(uint32_t) * 3 <= size) {
+                direccionRecibida = leer_entero_uint32(buffer, &desplazamiento);
+                tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
+                registroPunteroArchivoRecibido = leer_entero_uint32(buffer, &desplazamiento);
+                list_add(lista_datos, malloc_copiar_uint32(direccionRecibida));
+                list_add(lista_datos, malloc_copiar_uint32(tamañoRecibido));
+                list_add(lista_datos, malloc_copiar_uint32(registroPunteroArchivoRecibido));
+            }
             break;
         default:
             break;
@@ -254,7 +302,15 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     free(buffer);
 }
 
-//UNICA FUNCION QUE FALTA. LOS RECIBIR ETC
+uint32_t* malloc_copiar_uint32(uint32_t valor) {
+    uint32_t* ptr = malloc(sizeof(uint32_t));
+    if (ptr) {
+        *ptr = valor;
+    }
+    return ptr;
+}
+
+
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
     char *mensaje;
@@ -271,7 +327,7 @@ void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
         break;
         case IO_FS_WRITE:
             mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
-            dialfs_leer_archivo(&fs,nombreArchivoRecibido,direccionRecibida,tamañoRecibido,registroPunteroArchivoRecibido);
+            dialfs_escribir_archivo(&fs,nombreArchivoRecibido,registroPunteroArchivoRecibido,tamañoRecibido,mensaje);
         break;
         default:
         break;
@@ -332,10 +388,8 @@ void funcIoStdWrite(){
 
 void funcIoFsWrite(){
     log_info(log_entradasalida, "DialFS: PID: <%d> - Leer archivo.",pidRecibido);
-    //retardo
-    usleep(tiempo_unidad_trabajo);
-    //envio a memoria un paquete con el RegistroTamaño y el RegistroDireccion recibidos de kernel
 
+    //envio a memoria un paquete con el RegistroTamaño y el RegistroDireccion recibidos de kernel
     t_3_enteros *mensaje = malloc(sizeof(t_3_enteros));
     mensaje->entero1 = direccionRecibida;
     mensaje->entero2 = pidRecibido;
@@ -348,9 +402,9 @@ void funcIoFsWrite(){
 
 void funcIoFsRead(){
     log_info(log_entradasalida, "DialFS: PID: <%d> - Escribir Archivo.",pidRecibido);
-    //retardo
-    usleep(tiempo_unidad_trabajo);
+
     dialfs_leer_archivo(&fs,nombreArchivoRecibido,direccionRecibida,tamañoRecibido,registroPunteroArchivoRecibido);
+
     //envio a memoria un paquete con el RegistroTamaño y el RegistroDireccion recibidos de kernel
     t_string_3enteros *mensaje = malloc(sizeof(t_string_3enteros));
     mensaje->entero1 = direccionRecibida;
@@ -408,7 +462,7 @@ void establecer_conexion_kernel(char *ip_kernel, char *puerto_kernel, t_config *
         return;
     }
     
-    enviar_string(conexion_entradasalida_kernel, tipo_interfaz_txt, IDENTIFICACION);
+    enviar_string(conexion_entradasalida_kernel, nombre_interfaz, IDENTIFICACION);
 
 }
 
@@ -541,12 +595,19 @@ void dialfs_init(DialFS *dialfs, int block_size, int block_count, const char *pa
     dialfs->blocks = (Block *)malloc(block_count * sizeof(Block));
     if (dialfs->blocks == NULL) {
         fprintf(stderr, "Error: No se pudo asignar memoria para los bloques de datos\n");
+        free(dialfs->bitmap); // Liberar el bitmap antes de salir
         exit(EXIT_FAILURE);
     }
     for (int i = 0; i < block_count; ++i) {
         dialfs->blocks[i].data = (uint8_t *)malloc(block_size * sizeof(uint8_t));
         if (dialfs->blocks[i].data == NULL) {
             fprintf(stderr, "Error: No se pudo asignar memoria para los datos del bloque %d\n", i);
+            // Liberar la memoria asignada hasta ahora
+            for (int j = 0; j < i; ++j) {
+                free(dialfs->blocks[j].data);
+            }
+            free(dialfs->blocks);
+            free(dialfs->bitmap);
             exit(EXIT_FAILURE);
         }
         memset(dialfs->blocks[i].data, 0, block_size * sizeof(uint8_t)); // Inicializar los datos a 0
@@ -556,23 +617,23 @@ void dialfs_init(DialFS *dialfs, int block_size, int block_count, const char *pa
     dialfs->archivos = list_create();
 }
 
-// Función para destruir el sistema de archivos DialFS y liberar memoria
 void dialfs_destroy(DialFS *fs) {
     usleep(tiempo_unidad_trabajo);
+
     // Liberar la memoria de los archivos
     for (int i = 0; i < list_size(fs->archivos); ++i) {
         Archivo *archivo = (Archivo *)list_get(fs->archivos, i);
         free(archivo->nombre_archivo);
         free(archivo);
     }
-    list_destroy(fs->archivos);
-    
+    list_destroy_and_destroy_elements(fs->archivos, (void *)free);
+
     // Liberar los bloques y el bitmap
-    free(fs->bitmap);
     for (int i = 0; i < fs->num_blocks; ++i) {
         free(fs->blocks[i].data);
     }
     free(fs->blocks);
+    free(fs->bitmap);
     free(fs->path_base);
     log_info(log_entradasalida, "DialFS: PID: <%d> - Sistema de archivos destruido.", pidRecibido);
 }

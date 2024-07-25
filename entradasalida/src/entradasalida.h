@@ -26,6 +26,7 @@ typedef struct {
     char *path_base;        // Agregado para almacenar el path base
 } DialFS;
 
+DialFS fs;
 
 t_log* log_entradasalida;
 t_config *config_entradasalida;
@@ -48,8 +49,6 @@ int registroPunteroArchivoRecibido;
 
 
 op_code operacionActual;
-
-DialFS fs;
 
 t_list* lista_operaciones;
 t_list* lista_pids;
@@ -114,5 +113,7 @@ void funcIoFsTruncate();
 void recibir_y_procesar_paquete(int socket_cliente);
 void inicializar_listas();
 void avanzar_a_siguiente_operacion();
+
+uint32_t* malloc_copiar_uint32(uint32_t valor);
 
 #endif // ENTRADASALIDA_H_
