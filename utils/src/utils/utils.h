@@ -248,6 +248,7 @@ void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion * instrucci
 void agregar_2_enteros_1_string_a_paquete(t_paquete *paquete, t_string_2enteros * enteros_string);
 void agregar_2_enteros_a_paquete(t_paquete *paquete, t_2_enteros * enteros);
 void agregar_3_enteros_a_paquete(t_paquete *paquete, t_3_enteros * enteros);
+void agregar_3_enteros_1_string_a_paquete(t_paquete *paquete, t_string_3enteros * enteros_string);
 void enviar_entero (int conexion, uint32_t numero, int codop);
 void enviar_string (int conexion, char* palabra, int codop);
 void enviar_contexto (int conexion, t_contexto* pcb, int codop);
@@ -255,6 +256,7 @@ void enviar_instruccion (int conexion, t_instruccion* nueva_instruccion, int cod
 void enviar_2_enteros(int conexion, t_2_enteros* enteros, int codop);
 void enviar_3_enteros(int conexion, t_3_enteros* enteros, int codop);
 void enviar_2_enteros_1_string(int conexion, t_string_2enteros* enteros_string, int codop);
+void enviar_3_enteros_1_string(int conexion, t_string_3enteros* enteros_string, int codop);
 void enviar_codigo (t_paquete *codop, int socket_cliente);
 void enviar_codop(int conexion, op_code cod_op);
 void enviar_paquete_string(int conexion, char* string, op_code codOP, int tamanio);

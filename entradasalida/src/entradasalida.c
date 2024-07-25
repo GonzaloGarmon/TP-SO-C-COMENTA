@@ -72,6 +72,9 @@ void crear_interfaz(char *nombre_interfaz, char *ruta_archivo){
 }
 
 void finalizar_programa(){
+    free(nombre_interfaz);
+    free(ruta_archivo);         
+
     log_destroy(log_entradasalida);
     config_destroy(config_entradasalida);
     dialfs_destroy(&fs);
@@ -176,71 +179,68 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                 break;
         }
 
-        if (!operacionRealizada) {
+        if (operacionRealizada) {
             avanzar_a_siguiente_operacion();
         }
     }
 }
 
 void recibir_y_procesar_paquete(int socket_cliente) {
-    /*
-    t_list* valores = recibir_paquete(socket_cliente);
-    if (valores == NULL) {
+    int size;
+    int desplazamiento = 0;
+    void* buffer;
+
+    op_code operacion = recibir_operacion(socket_cliente);
+    list_add(lista_operaciones, &operacion);
+
+    buffer = recibir_buffer(&size, socket_cliente);
+    if (buffer == NULL) {
         printf("Error al recibir el paquete\n");
         return;
     }
-*/
-    t_list* valores = list_create();
-    int size;
-    int desplazamiento = 0;
-    void * buffer;
 
-    operacionActual = recibir_operacion(socket_cliente);
-    list_add(lista_operaciones, &operacionActual);
-
-    pidRecibido = *(int*)list_remove(valores, 0);
+    desplazamiento = 0;
+    pidRecibido = leer_entero_uint32(buffer, &desplazamiento);
     list_add(lista_pids, &pidRecibido);
 
-
-
-    switch (operacionActual) {
+    switch (operacion) {
         case IO_GEN_SLEEP:
-            nombreInterfazRecibido = (char*)list_remove(valores, 0);
-            unidadesRecibidas = *(int*)list_remove(valores, 0);
+            nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+            unidadesRecibidas = leer_entero_uint32(buffer, &desplazamiento);
             list_add(lista_datos, nombreInterfazRecibido);
             list_add(lista_datos, &unidadesRecibidas);
             break;
         case IO_STDIN_READ:
         case IO_STDOUT_WRITE:
-            nombreInterfazRecibido = (char*)list_remove(valores, 0);
-            direccionRecibida = *(int*)list_remove(valores, 0);
-            tamañoRecibido = *(int*)list_remove(valores, 0);
+            nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+            direccionRecibida = leer_entero_uint32(buffer, &desplazamiento);
+            tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
             list_add(lista_datos, nombreInterfazRecibido);
             list_add(lista_datos, &direccionRecibida);
             list_add(lista_datos, &tamañoRecibido);
             break;
         case IO_FS_CREATE:
         case IO_FS_DELETE:
-            nombreInterfazRecibido = (char*)list_remove(valores, 0);
-            nombreArchivoRecibido = (char*)list_remove(valores, 0);
+            nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+            nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
             list_add(lista_datos, nombreInterfazRecibido);
             list_add(lista_datos, nombreArchivoRecibido);
             break;
         case IO_FS_TRUNCATE:
-            nombreInterfazRecibido = (char*)list_remove(valores, 0);
-            nombreArchivoRecibido = (char*)list_remove(valores, 0);
-            tamañoArchivoRecibido = *(int*)list_remove(valores, 0);
+            nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+            nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
+            tamañoArchivoRecibido = leer_entero_uint32(buffer, &desplazamiento);
             list_add(lista_datos, nombreInterfazRecibido);
             list_add(lista_datos, nombreArchivoRecibido);
             list_add(lista_datos, &tamañoArchivoRecibido);
             break;
         case IO_FS_WRITE:
         case IO_FS_READ:
-            nombreInterfazRecibido = (char*)list_remove(valores, 0);
-            nombreArchivoRecibido = (char*)list_remove(valores, 0);
-            direccionRecibida = *(int*)list_remove(valores, 0);
-            tamañoArchivoRecibido = *(int*)list_remove(valores, 0);
-            RegistroPunteroArchivoRecibido = *(int*)list_remove(valores, 0);
+            nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
+            nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
+            direccionRecibida = leer_entero_uint32(buffer, &desplazamiento);
+            tamañoArchivoRecibido = leer_entero_uint32(buffer, &desplazamiento);
+            RegistroPunteroArchivoRecibido = leer_entero_uint32(buffer, &desplazamiento);
             list_add(lista_datos, nombreInterfazRecibido);
             list_add(lista_datos, nombreArchivoRecibido);
             list_add(lista_datos, &direccionRecibida);
@@ -251,24 +251,28 @@ void recibir_y_procesar_paquete(int socket_cliente) {
             break;
     }
 
-    list_destroy_and_destroy_elements(valores, free);
+    free(buffer);
 }
 
 //UNICA FUNCION QUE FALTA. LOS RECIBIR ETC
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
+    char *mensaje;
     switch (operacion){
-        case IO_STDOUT_WRITE_OK:
+        case IO_STDOUT_WRITE:
             log_info(log_entradasalida, "Mensaje escrito correctamente");
         break;
-        case IO_STDIN_READ_OK:
-            log_info(log_entradasalida, "Mensaje escrito en esa direccion de memoria");
+        case IO_STDIN_READ:
+            mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
+            log_info(log_entradasalida, "Valor escrito en memoria: %p", mensaje);
         break;
-        case IO_FS_READ_OK:
+        case IO_FS_READ:
             log_info(log_entradasalida, "Mensaje escrito correctamente");
         break;
-        case IO_FS_WRITE_OK:
-            log_info(log_entradasalida, "Mensaje escrito correctamente");
+        case IO_FS_WRITE:
+            mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
+            //terminando el write
+            dialfs_write(&fs);
         break;
         default:
         break;
@@ -301,13 +305,15 @@ void funcIoStdRead(){
         buffer[tamañoRecibido] = '\0';
     }
 
-    t_string_2enteros *mensaje = malloc(sizeof(t_string_2enteros));
-    mensaje->entero1=direccionRecibida;
-    mensaje->entero2=tamañoRecibido;
+    t_string_3enteros *mensaje = malloc(sizeof(t_string_3enteros));
+    mensaje->entero1 = direccionRecibida;
+    mensaje->entero2 = pidRecibido;
+    mensaje->entero3 = tamañoRecibido;
     mensaje->string=buffer;
     // Escribir el valor en la memoria. se encarga memoria yo solo le envio lo que escribio el usuario
-    enviar_2_enteros_1_string(conexion_entradasalida_memoria, mensaje, IO_STDIN_READ);
-    //Devolver un OK
+    enviar_3_enteros_1_string(conexion_entradasalida_memoria, mensaje, IO_STDIN_READ);
+
+    //recibo un OK de memoria
     conexionRecMem();
     free(buffer);
 }
@@ -315,36 +321,45 @@ void funcIoStdRead(){
 void funcIoStdWrite(){
     log_info(log_entradasalida, "Stdin: PID: <%d> - Escribir.",pidRecibido);
 
-    t_2_enteros *mensaje = malloc(sizeof(t_2_enteros));
-    mensaje->entero1=direccionRecibida;
-    mensaje->entero2=tamañoRecibido;
-    enviar_2_enteros(conexion_entradasalida_memoria,mensaje,IO_STDOUT_WRITE);
+    t_3_enteros *mensaje = malloc(sizeof(t_3_enteros));
+    mensaje->entero1 = direccionRecibida;
+    mensaje->entero2 = pidRecibido;
+    mensaje->entero3 = tamañoRecibido;
+    enviar_3_enteros(conexion_entradasalida_memoria,mensaje,IO_STDOUT_WRITE);
+
     //Que memoria me pase lo leido y yo lo muestro en pantalla
     conexionRecMem();
 }
 
 void funcIoFsWrite(){
     log_info(log_entradasalida, "DialFS: PID: <%d> - Leer archivo.",pidRecibido);
+    //retardo
+    usleep(tiempo_unidad_trabajo);
     //envio a memoria un paquete con el RegistroTamaño y el RegistroDireccion recibidos de kernel
 
     t_3_enteros *mensaje = malloc(sizeof(t_3_enteros));
-    mensaje->entero1 = tamañoArchivoRecibido;
-    mensaje->entero2 = direccionRecibida;
-    mensaje->entero3 = RegistroPunteroArchivoRecibido;
+    mensaje->entero1 = direccionRecibida;
+    mensaje->entero2 = pidRecibido;
+    mensaje->entero3 = tamañoRecibido;
     enviar_3_enteros(conexion_entradasalida_memoria,mensaje,IO_FS_WRITE);
-    //recibo un OK de memoria o podemos hacer que se muestre lo que se escribio
+
+    //Escribo el valor en el archivo
     conexionRecMem();
 }
 
 void funcIoFsRead(){
     log_info(log_entradasalida, "DialFS: PID: <%d> - Escribir Archivo.",pidRecibido);
-
+    //retardo
+    usleep(tiempo_unidad_trabajo);
+    //char* textoLeido = dialfs_read(&fs);
     //envio a memoria un paquete con el RegistroTamaño y el RegistroDireccion recibidos de kernel
-    t_3_enteros *mensaje = malloc(sizeof(t_3_enteros));
-    mensaje->entero1 = tamañoArchivoRecibido;
-    mensaje->entero2 = direccionRecibida;
-    mensaje->entero3 = RegistroPunteroArchivoRecibido;
-    enviar_3_enteros(conexion_entradasalida_memoria,mensaje,IO_FS_READ);
+    t_string_3enteros *mensaje = malloc(sizeof(t_string_3enteros));
+    mensaje->entero1 = direccionRecibida;
+    mensaje->entero2 = pidRecibido;
+    mensaje->entero3 = tamañoRecibido;
+    mensaje->string = mensajeLeido;
+    enviar_3_enteros_1_string(conexion_entradasalida_memoria,mensaje,IO_FS_READ);
+
     //recibo un OK de memoria o podemos hacer que se muestre lo que se escribio
     conexionRecMem();
 }
@@ -394,13 +409,8 @@ void establecer_conexion_kernel(char *ip_kernel, char *puerto_kernel, t_config *
         return;
     }
     
-    //BORRAR
-    //enviar_string(conexion_entradasalida_kernel, "hola papito", MENSAJE);
-    //log_trace(log_entradasalida, "mande un mensaje");
-
-    //sleep(3);
     enviar_string(conexion_entradasalida_kernel, tipo_interfaz_txt, IDENTIFICACION);
-    //log_trace(log_entradasalida, "mande un mensaje");
+
 }
 
 void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_config *config_entradasalida, t_log *loggs){
@@ -412,14 +422,6 @@ void establecer_conexion_memoria(char *ip_memoria, char *puerto_memoria, t_confi
         return;
     }
 
-    //BORRAR
-    //sleep(3);
-    //int operacion = recibir_operacion(conexion_entradasalida_memoria);
-    //log_info(loggs, "Recibi operacion 1 %i", operacion);
-    //char* palabra = recibir_string(conexion_entradasalida_memoria, log_entradasalida);
-    //log_info(loggs, "Recibi operacion 2 %s", palabra);
-
-    //enviar_string(conexion_entradasalida_memoria,"mando saludos", MENSAJE);  
 }
 
 void inicializar_interfaz_generica(t_config *config_entradasalida, const char *nombre){
@@ -558,6 +560,7 @@ void dialfs_init(DialFS *dialfs, int block_size, int block_count) {
 
 // Función para destruir el sistema de archivos DialFS y liberar memoria
 void dialfs_destroy(DialFS *fs) {
+    usleep(tiempo_unidad_trabajo);
     // Liberar la memoria de los archivos
     for (int i = 0; i < list_size(fs->archivos); ++i) {
         Archivo *archivo = (Archivo *)list_get(fs->archivos, i);
@@ -595,6 +598,9 @@ void dialfs_free_block(DialFS *fs, int block_index) {
 
 // Función para crear un archivo en DialFS
 int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, size_t tamaño) {
+    usleep(tiempo_unidad_trabajo);
+    //Es un sistema de archivo, debo crear el archivo en la direccion que viene del path + el nombre del archivo
+
     // Buscar un bloque libre para el archivo
     int bloque = dialfs_allocate_block(fs);
     if (bloque == -1) {
@@ -621,6 +627,7 @@ int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, size_t tamaño)
 
 // Función para redimensionar un archivo en DialFS
 void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo_size) {
+    usleep(tiempo_unidad_trabajo);
     Archivo *archivo = NULL;
 
     // Buscar el archivo en la lista de archivos
@@ -680,9 +687,27 @@ void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo
     log_info(log_entradasalida, "DialFS: PID: <%d> - Truncar Archivo: %s.", pidRecibido, nombre_archivo);
 }
 
+// Función para escribir en un archivo
+void dialfs_write(DialFS *fs) {
+    usleep(tiempo_unidad_trabajo);
+
+
+}
+
+// Función para leer un archivo
+char* dialfs_read(DialFS *fs) {
+    char* leido;
+    usleep(tiempo_unidad_trabajo);
+
+
+
+    return leido;
+}
+
 // Función para compactar archivos en DialFS
 void dialfs_compactar_archivos(DialFS *fs) {
     log_info(log_entradasalida, "DialFS: PID: <%d> - Inicio Compactación.", pidRecibido);
+    usleep(retraso_compactacion);
     int next_free_block = 0; // Siguiente bloque libre disponible
 
     // Recorrer todos los bloques del sistema de archivos

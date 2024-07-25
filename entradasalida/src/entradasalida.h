@@ -95,6 +95,9 @@ int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, size_t tamaño)
 void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo_size);
 void dialfs_compactar_archivos(DialFS *fs);
 
+//void dialfs_write(DialFS *fs);
+//char* dialfs_read(DialFS *fs);
+
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL);
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA);
 void conexionRecMem();
