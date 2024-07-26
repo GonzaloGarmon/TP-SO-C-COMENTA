@@ -243,7 +243,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             t_2_enteros* resize = recibir_2_enteros(SOCKET_CLIENTE_CPU);
             uint32_t nuevo_tam = resize->entero1;
             uint32_t pid_resize = resize->entero2;
-            op_code res = ajustar_tamanio_proceso(nuevo_tam,contexto->pid);
+            op_code res = ajustar_tamanio_proceso(nuevo_tam,pid_resize);
             enviar_codop(SOCKET_CLIENTE_CPU, res);
             
             break;

@@ -44,9 +44,9 @@ pthread_mutex_t mutex_memoria;
 sem_t sem;
 t_pids_archivos pids_archivos;
 
-int longitud_maxima;
-int parametros_maximos;
-int instrucciones_maximas;
+int longitud_maxima=100;
+int parametros_maximos=6;
+int instrucciones_maximas=100;
 t_instruccion* instrucciones[100];
 int socket_servidor_memoria_dispatch;
 int socket_servidor_memoria_interrupt;
