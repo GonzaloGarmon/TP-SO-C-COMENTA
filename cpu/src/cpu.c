@@ -696,7 +696,7 @@ void funcResize(t_instruccion* instruccion){
 
     t_paquete *paquete = crear_paquete_op(RESIZE);
     agregar_entero_a_paquete(paquete, tamanio);
-    agregar_contexto_a_paquete(paquete, contexto);
+    agregar_entero_a_paquete(paquete, contexto->pid);
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete);
     log_info(log_cpu, "Tamanio enviado");

@@ -240,8 +240,9 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
         break;
         case RESIZE: 
             usleep(retardo_respuesta * 1000);
-            uint32_t nuevo_tam = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-            t_contexto *contexto = recibir_contexto(SOCKET_CLIENTE_CPU);
+            t_2_enteros* resize = recibir_2_enteros(SOCKET_CLIENTE_CPU);
+            uint32_t nuevo_tam = resize->entero1;
+            uint32_t pid_resize = resize->entero2;
             op_code res = ajustar_tamanio_proceso(nuevo_tam,contexto->pid);
             enviar_codop(SOCKET_CLIENTE_CPU, res);
             
@@ -543,43 +544,44 @@ void finalizar_proceso(uint32_t proceso) {
 
 op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
     op_code ret;
+    uint32_t nuevo_tamanio_resize = ceil(nuevo_tam / tam_pagina);
     for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
         tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, i);
         if (tabla->pid == pid) {
-            if (nuevo_tam > tabla->cantidad_paginas) {
+            if (nuevo_tamanio_resize > tabla->cantidad_paginas) {
                 // Ampliar el tamaño del proceso
                 log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Ampliar: %i",
-                         pid, tabla->cantidad_paginas * memoria_config.tam_pagina, nuevo_tam * memoria_config.tam_pagina);
-                uint32_t paginas_a_asignar = nuevo_tam - tabla->cantidad_paginas;
+                         pid, tabla->cantidad_paginas * memoria_config.tam_pagina, nuevo_tamanio_resize * memoria_config.tam_pagina);
+                uint32_t paginas_a_asignar = nuevo_tamanio_resize;
                 if (marcos_libres < paginas_a_asignar) {
                     log_info(log_memoria, "No se pueden solicitar más marcos -> Memoria llena");
                     return OUT_OF_MEMORY;
                 }
 
-                tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tam);
-                for (uint32_t i = tabla->cantidad_paginas; i < nuevo_tam; i++) {
+                tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tamanio_resize);
+                for (uint32_t i = tabla->cantidad_paginas; i < nuevo_tamanio_resize; i++) {
                     tabla->tabla_paginas[i].numero_pagina = i;
                     tabla->tabla_paginas[i].numero_marco = (uint32_t)((char*)ESPACIO_USUARIO + (i * memoria_config.tam_pagina));
                 }
                 marcos_libres -= paginas_a_asignar;
 
-            } else if (nuevo_tam < tabla->cantidad_paginas) {
+            } else if (nuevo_tamanio_resize < tabla->cantidad_paginas) {
                 // Reducir el tamaño del proceso
                 log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Reducir: %i",
-                         pid, tabla->cantidad_paginas * memoria_config.tam_pagina, nuevo_tam * memoria_config.tam_pagina);
-                for (uint32_t i = nuevo_tam; i < tabla->cantidad_paginas; i++) {
+                         pid, tabla->cantidad_paginas * memoria_config.tam_pagina, nuevo_tamanio_resize * memoria_config.tam_pagina);
+                for (uint32_t i = nuevo_tamanio_resize; i < tabla->cantidad_paginas; i++) {
                     // Aquí podrías liberar recursos asociados a estas páginas si es necesario
                     tabla->tabla_paginas[i].numero_marco = 0;
                 }
-                tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tam);
-                marcos_libres += (tabla->cantidad_paginas - nuevo_tam);
+                tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tamanio_resize);
+                marcos_libres += (tabla->cantidad_paginas - nuevo_tamanio_resize);
             }
 
-            tabla->cantidad_paginas = nuevo_tam;
+            tabla->cantidad_paginas = nuevo_tamanio_resize;
             return RESIZE_OK;
         }
     }
-    return OUT_OF_MEMORY; // Indicar error si no se encuentra el proceso
+    return 0; // Indicar error si no se encuentra el proceso
 }
 
 
