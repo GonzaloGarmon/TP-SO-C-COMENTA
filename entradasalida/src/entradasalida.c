@@ -173,6 +173,9 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                     operacionRealizada = true;
                 }
                 break;
+            case -1:
+                noFinalizar =operacionActual;
+                break;
             default:
                 break;
         }
@@ -191,10 +194,6 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     // Recibir operación
     int operacion = recibir_operacion(socket_cliente);
     log_info(log_entradasalida, "recibi codigo: %d", operacion);
-    if (operacion == -1) {
-        printf("Error al recibir la operación\n");
-        return;
-    }
 
     int *operacionPtr = malloc(sizeof(int));
     *operacionPtr = operacion;
@@ -203,10 +202,6 @@ void recibir_y_procesar_paquete(int socket_cliente) {
 
     // Recibir el buffer
     buffer = recibir_buffer(&size, socket_cliente);
-    if (buffer == NULL || size <= 0) {
-        printf("Error al recibir el paquete o tamaño inválido\n");
-        return;
-    }
 
     // Leer pidRecibido
     /*
@@ -324,10 +319,10 @@ void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
     char *mensaje;
     switch (operacion){
-        case IO_STDOUT_WRITE:
+        case IO_STDIN_READ:
             log_info(log_entradasalida, "Mensaje escrito correctamente");
         break;
-        case IO_STDIN_READ:
+        case IO_STDOUT_WRITE:
             mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
             log_info(log_entradasalida, "Valor escrito en memoria: %p", mensaje);
         break;
@@ -350,7 +345,6 @@ void funcIoGenSleep(int operacion){
     usleep(unidadesRecibidas*tiempo_unidad_trabajo);
     
 
-    enviar_codop(conexion_entradasalida_kernel, TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
     operacion = true;
 }

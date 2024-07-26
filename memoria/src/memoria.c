@@ -354,7 +354,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 strcpy(valor_stdout_write,escritura_stdout);
 
                 escribir(direccion_fisica_stdout_write, escritura_stdout, tam_a_escribir_stdout_write);
-                enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_STDIN_READ_OK);
+                enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_STDIN_READ);
                 log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu",
                          pid_stdout_write, direccion_fisica_stdout_write, tam_a_escribir_stdout_write);
 
@@ -373,7 +373,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t tamanio_io_read_stdin = stdin_data->entero3;
 
                 char* valor_leer_archivo_stdin = leer(dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
-                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo_stdin, IO_STDOUT_WRITE_OK, tamanio_io_read_stdin);
+                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo_stdin, IO_STDOUT_WRITE, tamanio_io_read_stdin);
                 
                 log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
                          pid_leer_archivo_stdin, dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
@@ -399,7 +399,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 strcpy(valor_io_write,escritura_io);
 
                 escribir(direccion_fisica_io_write, escritura_io, tam_a_escribir_io_write);
-                enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_FS_READ_OK);
+                enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_FS_READ);
                 log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu",
                          pid_io_write, direccion_fisica_io_write, tam_a_escribir_io_write);
 
@@ -419,7 +419,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t tamanio_io_read = fread_data->entero3;
 
                 char* valor_leer_archivo = leer(dir_fisica_leer_archivo, tamanio_io_read);
-                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo, IO_FS_WRITE_OK, tamanio_io_read);
+                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo, IO_FS_WRITE, tamanio_io_read);
                 free(valor_leer_archivo);
 
                 log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
