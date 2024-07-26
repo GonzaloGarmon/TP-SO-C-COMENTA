@@ -661,7 +661,8 @@ void recibir_string_mas_contexto(int conexion_kernel_cpu_dispatch,t_contexto** p
 	(*contexto)->registros->EBX = leer_entero_uint32(buffer,&desp);
 	(*contexto)->registros->ECX = leer_entero_uint32(buffer,&desp);
 	(*contexto)->registros->EDX = leer_entero_uint32(buffer,&desp);
-
+    (*contexto)->registros->SI = leer_entero_uint32(buffer,&desp);
+    (*contexto)->registros->DI = leer_entero_uint32(buffer,&desp);
     free(buffer);
   }
 
@@ -867,6 +868,8 @@ void recibir_2_string_mas_u32_con_contexto(int socket, char** palabra1,char** pa
 	(*contexto)->registros->EBX = leer_entero_uint32(buffer,&desp);
 	(*contexto)->registros->ECX = leer_entero_uint32(buffer,&desp);
 	(*contexto)->registros->EDX = leer_entero_uint32(buffer,&desp);
+    (*contexto)->registros->SI = leer_entero_uint32(buffer,&desp);
+    (*contexto)->registros->DI = leer_entero_uint32(buffer,&desp);
     free(buffer);
 }
 
@@ -894,6 +897,8 @@ t_string_2enteros* recibir_string_2enteros_con_contexto(int socket, t_contexto**
 	(*contexto)->registros->EBX = leer_entero_uint32(buffer,&desp);
 	(*contexto)->registros->ECX = leer_entero_uint32(buffer,&desp);
 	(*contexto)->registros->EDX = leer_entero_uint32(buffer,&desp);
+    (*contexto)->registros->SI = leer_entero_uint32(buffer,&desp);
+    (*contexto)->registros->DI = leer_entero_uint32(buffer,&desp);
     free(buffer);
 
     return devolver;
@@ -923,5 +928,7 @@ void recibir_2_string_mas_3_u32_con_contexto(int socket, char** palabra1,char** 
 	(*contexto)->registros->EBX = leer_entero_uint32(buffer,&desp);
 	(*contexto)->registros->ECX = leer_entero_uint32(buffer,&desp);
 	(*contexto)->registros->EDX = leer_entero_uint32(buffer,&desp); 
+    (*contexto)->registros->SI = leer_entero_uint32(buffer,&desp);
+    (*contexto)->registros->DI = leer_entero_uint32(buffer,&desp);
     free(buffer); 
 }

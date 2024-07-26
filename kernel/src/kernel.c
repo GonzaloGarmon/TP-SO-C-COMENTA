@@ -854,6 +854,8 @@ t_registros_cpu* inicializar_registros(){
     registros->EBX = 0;
     registros->ECX = 0;
     registros->EDX = 0;
+    registros->SI = 0;
+    registros->DI = 0;
 
     return registros;
 }
@@ -1455,7 +1457,7 @@ void mostrar_prioridad_ready(){
     char* procesos_ready = malloc(60 * sizeof(char));
     //procesos_ready = "";
      procesos_ready[0] = '\0';
-     
+
     if(algoritmo_planificacion == VRR){
     if(!list_is_empty(cola_ready_aux)){
         for(int i = 0; i < list_size(cola_ready_aux); i++){
