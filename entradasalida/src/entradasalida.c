@@ -25,8 +25,6 @@ int main(int argc, char *argv[]){
     generar_conexiones();
     inicializar_listas();
 
-    
-    
     pthread_t atiende_cliente_kernel;
     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
     pthread_join(atiende_cliente_kernel,NULL);
@@ -98,7 +96,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
 
         int *operacionActualPtr = (int *)list_get(lista_operaciones, 0);
         int operacionActual = *operacionActualPtr;
-        uint32_t pid = list_get(lista_pids,0);
+        uint32_t pid = *(uint32_t *)list_get(lista_pids, 0);
         bool operacionRealizada = false;
         t_entero_bool* ejecucion = malloc(sizeof(t_entero_bool));
         ejecucion->entero = pid;
@@ -207,14 +205,6 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     // Recibir el buffer
     buffer = recibir_buffer(&size, socket_cliente);
 
-    // Leer pidRecibido
-    /*
-    if (desplazamiento + sizeof(uint32_t) > size) {
-        printf("Error: Desplazamiento fuera de rango al leer pidRecibido\n");
-        free(buffer);
-        return;
-    }
-    */
     pidRecibido = leer_entero_uint32(buffer, &desplazamiento);
     int *pidPtr = malloc(sizeof(int));
     *pidPtr = pidRecibido;
@@ -223,20 +213,12 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     // Procesar según operación
     switch (operacion) {
         case IO_GEN_SLEEP:
-            //if (desplazamiento < size) {
                 nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
                 log_info(log_entradasalida, "nombnre interfaz: %s", nombreInterfazRecibido);
                 list_add(lista_datos, nombreInterfazRecibido);
-
-            
-            //} else {
-              //  printf("Error: No se puede leer nombreInterfazRecibido\n");
-            //}
-            //if (desplazamiento + sizeof(uint32_t) <= size) {
                 unidadesRecibidas = leer_entero_uint32(buffer, &desplazamiento);
                 log_info(log_entradasalida, "unidades: %d", unidadesRecibidas);
                 list_add(lista_datos, malloc_copiar_uint32(unidadesRecibidas));
-            //}
             break;
         case IO_STDIN_READ:
         case IO_STDOUT_WRITE:
@@ -317,7 +299,6 @@ uint32_t* malloc_copiar_uint32(uint32_t valor) {
     }
     return ptr;
 }
-
 
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
@@ -433,7 +414,7 @@ void funcIoFsTruncate() {
 }
 
 void funcIoFsCreate() {
-    int bloque = dialfs_crear_archivo(&fs, nombreArchivoRecibido, tamañoRecibido);
+    int bloque = dialfs_crear_archivo(&fs, nombreArchivoRecibido);
 
     if (bloque == -1) {
         return;
@@ -587,51 +568,55 @@ bool es_operacion_compatible(op_code tipo, op_code operacion){
     }
 }
 
+// Función para inicializar DialFS
 void dialfs_init(DialFS *dialfs, int block_size, int block_count, const char *path_base) {
-    dialfs->num_blocks = block_count;
     dialfs->block_size = block_size;
-
-    // Guardar el path base
+    dialfs->block_count = block_count;
     dialfs->path_base = strdup(path_base);
 
-    // Inicialización del bitmap de bloques
-    dialfs->bitmap = (int *)malloc(block_count * sizeof(int));
-    if (dialfs->bitmap == NULL) {
-        fprintf(stderr, "Error: No se pudo asignar memoria para el bitmap de bloques\n");
+    // Crear el archivo de bloques
+    char bloques_path[256];
+    sprintf(bloques_path, "%s/bloques.dat", path_base);
+    FILE *bloques_file = fopen(bloques_path, "w");
+    if (bloques_file == NULL) {
+        fprintf(stderr, "Error: No se pudo crear el archivo de bloques\n");
         exit(EXIT_FAILURE);
     }
-    memset(dialfs->bitmap, 0, block_count * sizeof(int));
+    fseek(bloques_file, block_size * block_count - 1, SEEK_SET);
+    fputc('\0', bloques_file);
+    fclose(bloques_file);
 
-    // Inicialización de los bloques de datos
-    dialfs->blocks = (Block *)malloc(block_count * sizeof(Block));
-    if (dialfs->blocks == NULL) {
-        fprintf(stderr, "Error: No se pudo asignar memoria para los bloques de datos\n");
-        free(dialfs->bitmap); // Liberar el bitmap antes de salir
+    // Crear el archivo de bitmap
+    char bitmap_path[256];
+    sprintf(bitmap_path, "%s/bitmap.dat", path_base);
+    FILE *bitmap_file = fopen(bitmap_path, "w");
+    if (bitmap_file == NULL) {
+        fprintf(stderr, "Error: No se pudo crear el archivo de bitmap\n");
         exit(EXIT_FAILURE);
     }
+    int bitmap_size = (block_count + 7) / 8;
+    uint8_t *bitmap_data = calloc(bitmap_size, sizeof(uint8_t));
+    fwrite(bitmap_data, sizeof(uint8_t), bitmap_size, bitmap_file);
+    fclose(bitmap_file);
+    free(bitmap_data);
+
+    // Inicialización del bitmap en memoria
+    dialfs->bitmap = bitarray_create_with_mode(bitmap_path, bitmap_size, LSB_FIRST);
+
+    // Inicialización de los bloques en memoria
+    dialfs->blocks = (Block *)malloc(block_count * sizeof(Block));
     for (int i = 0; i < block_count; ++i) {
         dialfs->blocks[i].data = (uint8_t *)malloc(block_size * sizeof(uint8_t));
-        if (dialfs->blocks[i].data == NULL) {
-            fprintf(stderr, "Error: No se pudo asignar memoria para los datos del bloque %d\n", i);
-            // Liberar la memoria asignada hasta ahora
-            for (int j = 0; j < i; ++j) {
-                free(dialfs->blocks[j].data);
-            }
-            free(dialfs->blocks);
-            free(dialfs->bitmap);
-            exit(EXIT_FAILURE);
-        }
-        memset(dialfs->blocks[i].data, 0, block_size * sizeof(uint8_t)); // Inicializar los datos a 0
+        memset(dialfs->blocks[i].data, 0, block_size * sizeof(uint8_t));
     }
 
     // Inicialización de la lista de archivos
     dialfs->archivos = list_create();
 }
 
+// Función para destruir DialFS
 void dialfs_destroy(DialFS *fs) {
     usleep(tiempo_unidad_trabajo);
-
-    // Liberar la memoria de los archivos
     for (int i = 0; i < list_size(fs->archivos); ++i) {
         Archivo *archivo = (Archivo *)list_get(fs->archivos, i);
         free(archivo->nombre_archivo);
@@ -639,75 +624,78 @@ void dialfs_destroy(DialFS *fs) {
     }
     list_destroy_and_destroy_elements(fs->archivos, (void *)free);
 
-    // Liberar los bloques y el bitmap
-    for (int i = 0; i < fs->num_blocks; ++i) {
+    for (int i = 0; i < fs->block_count; ++i) {
         free(fs->blocks[i].data);
     }
     free(fs->blocks);
-    free(fs->bitmap);
+    bitarray_destroy(fs->bitmap);
     free(fs->path_base);
-    log_info(log_entradasalida, "DialFS: PID: <%d> - Sistema de archivos destruido.", pidRecibido);
 }
 
 // Función para reservar un bloque
 int dialfs_allocate_block(DialFS *fs) {
-    for (int i = 0; i < fs->num_blocks; i++) {
-        if (fs->bitmap[i] == 0) {
-            fs->bitmap[i] = 1; // Marcar como ocupado
+    for (int i = 0; i < fs->block_count; i++) {
+        if (!bitarray_test_bit(fs->bitmap, i)) {
+            bitarray_set_bit(fs->bitmap, i);
             return i;
         }
     }
-    return -1; // No hay bloques libres
+    return -1;
+}
+
+// Añadir esta función en entradasalida.c
+void dialfs_allocate_specific_block(DialFS *fs, int block_index) {
+    if (block_index >= 0 && block_index < fs->block_count) {
+        bitarray_set_bit(fs->bitmap, block_index);
+    }
 }
 
 // Función para liberar un bloque
 void dialfs_free_block(DialFS *fs, int block_index) {
-    if (block_index >= 0 && block_index < fs->num_blocks) {
-        fs->bitmap[block_index] = 0; // Marcar como libre
+    if (block_index >= 0 && block_index < fs->block_count) {
+        bitarray_clean_bit(fs->bitmap, block_index);
     }
 }
 
-// Función para crear un archivo en DialFS
-int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, size_t tamaño) {
-    usleep(tiempo_unidad_trabajo);
-
-    // Buscar un bloque libre para el archivo
-    int bloque = dialfs_allocate_block(fs);
-    if (bloque == -1) {
-        fprintf(stderr, "No hay suficientes bloques libres para crear el archivo.\n");
-        return -1;
+// Función para crear un archivo de usuario en DialFS
+int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo) {
+    // Verificar si el archivo ya existe
+    for (int i = 0; i < list_size(fs->archivos); ++i) {
+        Archivo *a = (Archivo *)list_get(fs->archivos, i);
+        if (strcmp(a->nombre_archivo, nombre_archivo) == 0) {
+            fprintf(stderr, "Error: El archivo '%s' ya existe.\n", nombre_archivo);
+            return -1;
+        }
     }
 
-    // Crear la estructura para el archivo
+    // Crear un nuevo archivo
     Archivo *nuevo_archivo = malloc(sizeof(Archivo));
-    if (nuevo_archivo == NULL) {
-        fprintf(stderr, "Error: No se pudo asignar memoria para el nuevo archivo\n");
-        return -1;
-    }
-    nuevo_archivo->nombre_archivo = strdup(nombre_archivo);
-    nuevo_archivo->bloque_inicio = bloque;
-    nuevo_archivo->tamaño = tamaño;
+    strcpy(nuevo_archivo->nombre_archivo, nombre_archivo);
+    nuevo_archivo->tamaño = 0;
 
-    // Agregar el archivo a la lista de archivos
-    list_add(fs->archivos, nuevo_archivo);
-
-    // Crear el archivo de metadata en el path base
-    char *path = malloc(strlen(fs->path_base) + strlen(nombre_archivo) + 2); // 1 para '/' y 1 para '\0'
-    sprintf(path, "%s/%s", fs->path_base, nombre_archivo);
-
-    FILE *archivo_fisico = fopen(path, "w");
-    if (archivo_fisico == NULL) {
-        fprintf(stderr, "Error: No se pudo crear el archivo físico %s\n", path);
-        free(nuevo_archivo->nombre_archivo);
+    // Asignar al menos un bloque al archivo
+    int bloque_asignado = dialfs_allocate_block(fs);
+    if (bloque_asignado == -1) {
+        fprintf(stderr, "Error: No hay bloques libres para crear el archivo.\n");
         free(nuevo_archivo);
         return -1;
     }
-    fprintf(archivo_fisico, "BLOQUE_INICIAL=%d\nTAMANIO_ARCHIVO=%zu\n", bloque, tamaño);
-    fclose(archivo_fisico);
-    free(path);
 
-    log_info(log_entradasalida, "DialFS: PID: <%d> - Crear Archivo: %s.", pidRecibido, nombre_archivo);
-    return bloque;
+    nuevo_archivo->bloque_inicio = bloque_asignado;
+    list_add(fs->archivos, nuevo_archivo);
+
+    // Crear el archivo de metadata
+    char* metadata_path = malloc(256);
+    sprintf(metadata_path, "%s/%s", fs->path_base, nombre_archivo);
+    FILE *metadata_file = fopen(metadata_path, "w");
+    if (metadata_file == NULL) {
+        fprintf(stderr, "Error: No se pudo crear el archivo de metadata %s\n", metadata_path);
+        return -1;
+    }
+    fprintf(metadata_file, "BLOQUE_INICIAL=%d\nTAMANIO_ARCHIVO=%d\n", bloque_asignado, 0);
+    fclose(metadata_file);
+    free(metadata_path);
+    return bloque_asignado;
 }
 
 // Función para eliminar un archivo en DialFS
@@ -741,9 +729,8 @@ void dialfs_eliminar_archivo(DialFS *fs, const char *nombre_archivo) {
     free(archivo);
 
     // Eliminar el archivo de metadata en el path base
-    char *path = malloc(strlen(fs->path_base) + strlen(nombre_archivo) + 2); // 1 para '/' y 1 para '\0'
+    char *path = malloc(256);
     sprintf(path, "%s/%s", fs->path_base, nombre_archivo);
-    remove(path);
     free(path);
 
     log_info(log_entradasalida, "DialFS: PID: <%d> - Eliminar Archivo: %s.", pidRecibido, nombre_archivo);
@@ -772,17 +759,29 @@ void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo
     // Verificar si el tamaño del archivo necesita cambiar
     if (nuevo_size > archivo->tamaño) {
         // Necesita asignar más bloques si el nuevo tamaño es mayor
-        size_t bytes_a_escribir = nuevo_size - archivo->tamaño;
-        size_t bytes_por_bloque = fs->block_size;
+        size_t bloques_actuales = (archivo->tamaño + fs->block_size - 1) / fs->block_size;
+        size_t nuevos_bloques = (nuevo_size + fs->block_size - 1) / fs->block_size;
 
-        // Reasignar bloques si es necesario
-        while (bytes_a_escribir > 0) {
+        // Comprobar si hay suficiente espacio contiguo
+        if (!espacioContiguoDisponible(fs, nuevos_bloques - bloques_actuales)) {
+            dialfs_compactar_archivos(fs);
+
+            // Esperar el tiempo de RETRASO_COMPACTACION
+            sleep(retraso_compactacion);
+
+            // Comprobar nuevamente si hay suficiente espacio contiguo
+            if (!espacioContiguoDisponible(fs, nuevos_bloques - bloques_actuales)) {
+                fprintf(stderr, "No hay suficientes bloques libres para redimensionar el archivo incluso después de compactar.\n");
+                return;
+            }
+        }
+
+        for (size_t i = bloques_actuales; i < nuevos_bloques; ++i) {
             int bloque = dialfs_allocate_block(fs);
             if (bloque == -1) {
                 fprintf(stderr, "No hay suficientes bloques libres para redimensionar el archivo.\n");
                 return;
             }
-            bytes_a_escribir -= bytes_por_bloque;
         }
     } else if (nuevo_size < archivo->tamaño) {
         // Liberar bloques si el nuevo tamaño es menor
@@ -797,7 +796,7 @@ void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo
     archivo->tamaño = nuevo_size;
 
     // Actualizar el archivo de metadata en el path base
-    char *path = malloc(strlen(fs->path_base) + strlen(nombre_archivo) + 2); // 1 para '/' y 1 para '\0'
+    char *path = malloc(256);
     sprintf(path, "%s/%s", fs->path_base, nombre_archivo);
 
     FILE *archivo_fisico = fopen(path, "w");
@@ -807,9 +806,9 @@ void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo
     }
     fprintf(archivo_fisico, "BLOQUE_INICIAL=%d\nTAMANIO_ARCHIVO=%zu\n", archivo->bloque_inicio, nuevo_size);
     fclose(archivo_fisico);
-    free(path);
 
     log_info(log_entradasalida, "DialFS: PID: <%d> - Truncar Archivo: %s a tamaño %zu.", pidRecibido, nombre_archivo, nuevo_size);
+    free(path);
 }
 
 // Función para escribir datos en un archivo en DialFS
@@ -831,6 +830,7 @@ void dialfs_escribir_archivo(DialFS *fs, const char *nombre_archivo, size_t offs
         return;
     }
 
+    // Verificar que la escritura no exceda el tamaño del archivo
     if (offset + size > archivo->tamaño) {
         fprintf(stderr, "Error: Intento de escritura fuera de los límites del archivo.\n");
         return;
@@ -908,63 +908,69 @@ void dialfs_leer_archivo(DialFS *fs, const char *nombre_archivo, int registro_di
 
         ptr_mensaje += bytes_a_copiar;
         bytes_por_leer -= bytes_a_copiar;
-        desplazamiento_inicial = 0; // Sólo el primer bloque puede tener un desplazamiento
+        desplazamiento_inicial = 0;
         bloque_inicial++;
     }
 
-    // Agregar terminador null al final de mensajeLeido
+    // Asegurar que el mensaje leído esté null-terminated
     mensajeLeido[registro_tamaño] = '\0';
 
-    log_info(log_entradasalida, "DialFS: PID: <%d> - Leer Archivo: %s - Tamaño a Leer: %d - Puntero Archivo: %d", pidRecibido, nombre_archivo, registro_tamaño, registro_puntero_archivo);
+    log_info(log_entradasalida, "DialFS: PID: <%d> - Leer Archivo: %s desde offset %d, tamaño %d.", pidRecibido, nombre_archivo, registro_puntero_archivo, registro_tamaño);
 }
 
 // Función para compactar archivos en DialFS
 void dialfs_compactar_archivos(DialFS *fs) {
-    log_info(log_entradasalida, "DialFS: PID: <%d> - Inicio Compactación.", pidRecibido);
-    usleep(retraso_compactacion);
-    int next_free_block = 0; // Siguiente bloque libre disponible
+    usleep(tiempo_unidad_trabajo);
 
-    // Recorrer todos los bloques del sistema de archivos
-    for (int i = 0; i < fs->num_blocks; ++i) {
-        if (fs->bitmap[i] == 1) {
-            // Si el bloque está ocupado, necesitamos copiarlo al próximo bloque libre disponible
-            if (i != next_free_block) {
-                // Copiar datos al próximo bloque libre
-                memcpy(fs->blocks[next_free_block].data, fs->blocks[i].data, fs->block_size);
-                fs->bitmap[next_free_block] = 1; // Marcar el nuevo bloque como ocupado
-                fs->bitmap[i] = 0; // Marcar el bloque original como libre
-                
-                // Actualizar el bloque de inicio en la lista de archivos
-                for (int j = 0; j < list_size(fs->archivos); ++j) {
-                    Archivo *archivo = (Archivo *)list_get(fs->archivos, j);
-                    int bloques_usados = (archivo->tamaño + fs->block_size - 1) / fs->block_size;
-                    if (archivo->bloque_inicio <= i && archivo->bloque_inicio + bloques_usados > i) {
-                        archivo->bloque_inicio = next_free_block - (i - archivo->bloque_inicio);
-                    }
-                }
+    // Crear una copia de la lista de archivos ordenada por bloque de inicio
+    t_list *archivos_ordenados = list_duplicate(fs->archivos);
+    list_sort(archivos_ordenados, (void *)comparar_archivos_por_bloque_inicio);
+
+    // Compactar archivos
+    int bloque_libre = 0;
+    for (int i = 0; i < list_size(archivos_ordenados); ++i) {
+        Archivo *archivo = (Archivo *)list_get(archivos_ordenados, i);
+        size_t bloques_usados = (archivo->tamaño + fs->block_size - 1) / fs->block_size;
+
+        if (archivo->bloque_inicio != bloque_libre) {
+            // Mover los bloques del archivo a la primera posición libre
+            for (size_t j = 0; j < bloques_usados; ++j) {
+                memcpy(fs->blocks[bloque_libre + j].data, fs->blocks[archivo->bloque_inicio + j].data, fs->block_size);
+                dialfs_free_block(fs, archivo->bloque_inicio + j);
+                dialfs_allocate_specific_block(fs, bloque_libre + j);
             }
-            ++next_free_block; // Mover al siguiente bloque libre
+            archivo->bloque_inicio = bloque_libre;
+        }
+        bloque_libre += bloques_usados;
+    }
+
+    list_destroy(archivos_ordenados);
+
+    log_info(log_entradasalida, "DialFS: PID: <%d> - Compactar Archivos.", pidRecibido);
+}
+
+bool espacioContiguoDisponible(DialFS *fs, size_t bloques_necesarios) {
+    size_t bloques_libres_contiguos = 0;
+
+    for (size_t i = 0; i < fs->block_count; ++i) {
+        if (!bitarray_test_bit(fs->bitmap, i)) {
+            bloques_libres_contiguos++;
+            if (bloques_libres_contiguos >= bloques_necesarios) {
+                return true;
+            }
+        } else {
+            bloques_libres_contiguos = 0;
         }
     }
 
-    // Si algún archivo ha sido movido, actualizar su metadata en el sistema de archivos real
-    for (int j = 0; j < list_size(fs->archivos); ++j) {
-        Archivo *archivo = (Archivo *)list_get(fs->archivos, j);
-        char *path = malloc(strlen(fs->path_base) + strlen(archivo->nombre_archivo) + 2); // 1 para '/' y 1 para '\0'
-        sprintf(path, "%s/%s", fs->path_base, archivo->nombre_archivo);
+    return false;
+}
 
-        FILE *archivo_fisico = fopen(path, "w");
-        if (archivo_fisico == NULL) {
-            fprintf(stderr, "Error: No se pudo actualizar el archivo físico %s\n", path);
-            free(path);
-            continue;
-        }
-        fprintf(archivo_fisico, "BLOQUE_INICIAL=%d\nTAMANIO_ARCHIVO=%zu\n", archivo->bloque_inicio, archivo->tamaño);
-        fclose(archivo_fisico);
-        free(path);
-    }
-
-    log_info(log_entradasalida, "DialFS: PID: <%d> - Fin Compactación.", pidRecibido);
+// Función para comparar archivos por su bloque de inicio
+int comparar_archivos_por_bloque_inicio(const void *a, const void *b) {
+    Archivo *archivo_a = *(Archivo **)a;
+    Archivo *archivo_b = *(Archivo **)b;
+    return archivo_a->bloque_inicio - archivo_b->bloque_inicio;
 }
 
 void inicializar_listas() {

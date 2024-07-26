@@ -8,15 +8,15 @@
 #include <dirent.h>
 #include <commons/log.h> 
 #include <commons/config.h>
-#include <commons/config.h>
+#include <commons/bitarray.h>
 #include <commons/temporal.h>
+#include <commons/collections/list.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <signal.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <commons/collections/list.h>
 #include <assert.h>
 
 typedef struct{

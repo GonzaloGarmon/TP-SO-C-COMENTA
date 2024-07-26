@@ -6,25 +6,33 @@
 
 // Estructura para representar un bloque de datos en DialFS
 typedef struct {
-    uint8_t *data;      
+    int is_allocated;
+    uint8_t *data;
 } Block;
 
 // Estructura para representar un archivo en DialFS
 typedef struct {
-    char *nombre_archivo;  
-    int bloque_inicio;     
-    size_t tamaño;         
+    char *nombre_archivo;
+    int bloque_inicio;
+    size_t tamaño;
 } Archivo;
 
 // Estructura para representar el sistema de archivos DialFS
 typedef struct {
-    int num_blocks; 
-    int block_size;       
-    int *bitmap;           
-    Block *blocks;         
-    t_list *archivos;      
-    char *path_base;        // Agregado para almacenar el path base
+    int block_count;
+    int block_size;
+    t_bitarray *bitmap;
+    Block *blocks;
+    t_list *archivos;
+    char *path_base;
 } DialFS;
+
+// Tipo de archivo para crear
+typedef enum {
+    ARCHIVO_BITMAP,
+    ARCHIVO_BLOQUES,
+    ARCHIVO_USUARIO
+} TipoArchivo;
 
 DialFS fs;
 
@@ -83,17 +91,21 @@ void inicializar_interfaz_stdout(t_config *config_entradasalida, const char *nom
 void inicializar_interfaz_dialfs(t_config *config_entradasalida, const char *nombre);
 bool es_operacion_compatible(op_code tipo, op_code operacion);
 
+// Prototipos de funciones de fs
 void dialfs_init(DialFS *dialfs, int block_size, int block_count, const char *path_base);
 void dialfs_destroy(DialFS *fs);
 int dialfs_allocate_block(DialFS *fs);
+void dialfs_allocate_specific_block(DialFS *fs, int block_index);
 void dialfs_free_block(DialFS *fs, int block_index);
-int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo, size_t tamaño);
+int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo);
 void dialfs_eliminar_archivo(DialFS *fs, const char *nombre_archivo);
-Archivo* buscar_archivo(DialFS *fs, const char *nombre_archivo);
-void dialfs_escribir_archivo(DialFS *fs, const char *nombre_archivo, size_t offset, size_t size, const void *buffer);
-void dialfs_leer_archivo(DialFS *fs, const char *nombre_archivo, int registro_direccion, int registro_tamaño, int registro_puntero_archivo);
 void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo_size);
+void dialfs_escribir_archivo(DialFS *fs, const char *nombre_archivo, size_t offset, size_t size, const void *buffer);
+Archivo* buscar_archivo(DialFS *fs, const char *nombre_archivo);
+void dialfs_leer_archivo(DialFS *fs, const char *nombre_archivo, int registro_direccion, int registro_tamaño, int registro_puntero_archivo);
 void dialfs_compactar_archivos(DialFS *fs);
+bool espacioContiguoDisponible(DialFS *fs, size_t bloques_necesarios);
+int comparar_archivos_por_bloque_inicio(const void *a, const void *b);
 
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL);
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA);
