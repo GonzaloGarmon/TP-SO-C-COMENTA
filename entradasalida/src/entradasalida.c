@@ -295,6 +295,7 @@ void funcIoGenSleep(t_entero_bool** ejecucion){
     enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
+    avanzar_a_siguiente_operacion();
 }
 
 void funcIoStdRead(t_entero_bool** ejecucion){
