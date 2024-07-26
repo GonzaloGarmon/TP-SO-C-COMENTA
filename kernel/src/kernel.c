@@ -1042,7 +1042,7 @@ void exec_pcb()
 void pcb_ready(){
  while(1){
     if (!apagar_planificacion){
-    if (proceso_activos() < grado_multiprogramacion){
+    if (proceso_activos() < grado_multiprogramacion && !list_is_empty(cola_new)){
     sem_wait(&sem_listos_para_ready);
     
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
@@ -1283,13 +1283,15 @@ void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid){
 }
 
 int existe_interfaz_conectada(char* nombre_interfaz){
-
+    
     for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
         if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
            return 1;
          }
         }
+   
     return 0;
+
 }
 
 int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t entero32, uint32_t pid){
