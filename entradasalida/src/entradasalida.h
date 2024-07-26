@@ -98,7 +98,7 @@ void dialfs_compactar_archivos(DialFS *fs);
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL);
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA);
 void conexionRecMem();
-void funcIoGenSleep(int operacion);
+void funcIoGenSleep(t_entero_bool** ejecucion);
 void funcIoStdRead();
 void funcIoStdWrite();
 void funcIoFsRead();

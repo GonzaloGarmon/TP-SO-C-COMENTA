@@ -24,6 +24,8 @@ int main(int argc, char *argv[]){
 
     generar_conexiones();
     inicializar_listas();
+
+    
     
     pthread_t atiende_cliente_kernel;
     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
@@ -96,18 +98,19 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
 
         int *operacionActualPtr = (int *)list_get(lista_operaciones, 0);
         int operacionActual = *operacionActualPtr;
-        
+        uint32_t pid = list_get(lista_pids,0);
         bool operacionRealizada = false;
-
+        t_entero_bool* ejecucion = malloc(sizeof(t_entero_bool));
+        ejecucion->entero = pid;
+        ejecucion->operacion = operacionRealizada;
         switch (operacionActual) {
             case IO_GEN_SLEEP:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_sleep; 
                     log_info(log_entradasalida, "entre a gen sleep");
-                    pthread_create(&ejecutar_sleep,NULL,(void*) funcIoGenSleep, (void*) (intptr_t) &operacionRealizada);
+                    pthread_create(&ejecutar_sleep,NULL,(void*) funcIoGenSleep, (void*) (intptr_t) &ejecucion);
                     pthread_detach(ejecutar_sleep);
-                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
-                    operacionRealizada = true;
+                    
                 }
                 break;
             case IO_STDIN_READ:
@@ -180,8 +183,9 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                 break;
         }
 
-        if (operacionRealizada) {
+        if (ejecucion->operacion) {
             avanzar_a_siguiente_operacion();
+            free(ejecucion);
         }
     }
 }
@@ -338,15 +342,15 @@ void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     }
 }
 
-void funcIoGenSleep(int operacion){
+void funcIoGenSleep(t_entero_bool** ejecucion){
     log_info(log_entradasalida, "Generica: PID: <%d> - Gen_Sleep",pidRecibido);
     int unidades = unidadesRecibidas*tiempo_unidad_trabajo;
     log_info(log_entradasalida, "Eperando durante %d unidades",unidades);
     usleep(unidadesRecibidas*tiempo_unidad_trabajo);
     
-
+    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
-    operacion = true;
+    (*ejecucion)->operacion = true;
 }
 
 void funcIoStdRead(){
@@ -972,5 +976,6 @@ void inicializar_listas() {
 void avanzar_a_siguiente_operacion() {
     if (!list_is_empty(lista_operaciones)) {
         list_remove(lista_operaciones, 0);  // Remueve la operación actual
+        list_remove(lista_pids,0);
     }
 }

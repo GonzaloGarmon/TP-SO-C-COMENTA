@@ -1,4 +1,6 @@
 #include <kernel.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 int main(int argc, char **argv) {
 
@@ -186,6 +188,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
         case TERMINO_INTERFAZ:
             log_info(log_kernel, "termino una interfaz");
             uint32_t  pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
+            log_info(log_kernel, "desbloqueo pid: %d", pid);
             desbloquear_proceso_block(pid);
             break;                                      
         case -1:
@@ -199,6 +202,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
         }
         break;
         default:
+            return;
             break;
         }
     }
@@ -307,16 +311,20 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             
             if(existe_interfaz_conectada(interfaz_gen_sleep)){
                 if (admite_operacion_con_u32(interfaz_gen_sleep, IO_GEN_SLEEP,tiempo_trabajo, pcb_IO_GEN_SLEEP->pid)){
+                    enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_GEN_SLEEP,BLOCK);
                     bloquear_pcb(pcb_IO_GEN_SLEEP);
+                 
                 }else{
-                    actualizar_pcb_envia_exit(pcb_IO_GEN_SLEEP,INVALID_INTERFACE);
                     enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_GEN_SLEEP,EXIT);
+                    actualizar_pcb_envia_exit(pcb_IO_GEN_SLEEP,INVALID_INTERFACE);
+                    
                     sem_post(&esta_ejecutando);
                 }
 
             }else{
-                actualizar_pcb_envia_exit(pcb_IO_GEN_SLEEP,INVALID_INTERFACE);
                 enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_GEN_SLEEP,EXIT);
+                actualizar_pcb_envia_exit(pcb_IO_GEN_SLEEP,INVALID_INTERFACE);
+                
                 sem_post(&esta_ejecutando);
             }
 
@@ -595,28 +603,32 @@ void iniciar_consola(){
     printf("6. Listar procesos por estado\n");
 
     printf("seleccione la opción que desee: ");
-    scanf("%d", &eleccion);
-
+    //scanf("%d", &eleccion);
+    char* elije = readline(">");
+    eleccion = atoi(elije);
     switch (eleccion)
     {
     case 1:
-        char* nombre_script = malloc(100 * sizeof(char));
+        
         printf("\n ingrese el path del script: ");
-        scanf("%99s", nombre_script);
+        //scanf("%99s", nombre_script);
+        char* nombre_script = readline(">");
         ejecutar_script(nombre_script);
         break;
     case 2:
         char* path = malloc(30*sizeof(char));
 
         printf("Por favor ingrese el path: ");
-        scanf("%s", path);
-
+        //scanf("%s", path);
+        path = readline(">");
         iniciar_proceso(path);
         break;
     case 3:
         uint32_t pid;
         printf("\n ingrese el pid del proceso que desea finalizar: ");
-        scanf("%d", &pid);
+        char* pid_s = readline(">");
+        //scanf("%d", &pid);
+        pid = atoi(pid_s);
         finalizar_proceso(pid);
         break;
     case 4:
@@ -630,7 +642,9 @@ void iniciar_consola(){
     case 7:
         int grado;
         printf("\n ingrese el grado de multiprogramacion que quiere tener: ");
-        scanf("%d", &grado);
+        //scanf("%d", &grado);
+        char* grado_s = readline(">");
+        grado = atoi(grado_s);
         grado_multiprogramacion = grado;
         break;
     default:
@@ -1438,17 +1452,18 @@ void mostrar_motivo_block(uint32_t pid, char* motivo_block){
 }
 
 void mostrar_prioridad_ready(){
-    char* procesos_ready = malloc(50 * sizeof(char));
+    char* procesos_ready = malloc(60 * sizeof(char));
     //procesos_ready = "";
-
+     procesos_ready[0] = '\0';
+     
     if(algoritmo_planificacion == VRR){
     if(!list_is_empty(cola_ready_aux)){
         for(int i = 0; i < list_size(cola_ready_aux); i++){
             t_pcb* pcb_listar = list_get(cola_ready_aux,i);
-            char* proceso = malloc(100 * sizeof(char));
-            proceso = "";
+            char* proceso = malloc(15 * sizeof(char));
+            //proceso = "";
             sprintf(proceso,"%u",pcb_listar->contexto->pid);
-            strcat(proceso, ", ");
+            strcat(proceso, ",");
             strcat(procesos_ready, proceso);
 
             free(proceso);
@@ -1462,7 +1477,7 @@ void mostrar_prioridad_ready(){
             char* proceso = malloc(15 * sizeof(char));
             
             sprintf(proceso,"%u",pcb_listar->contexto->pid);
-            strcat(proceso, ", ");
+            strcat(proceso, ",");
             strcat(procesos_ready, proceso);
 
             free(proceso);
@@ -1470,6 +1485,6 @@ void mostrar_prioridad_ready(){
     }
 
     //LOG OBLIGATORIO
-    log_info(log_kernel,"Cola Ready / Ready prioridad: [ %s ]", procesos_ready);
+    log_info(log_kernel,"Cola Ready / Ready prioridad: [%s]", procesos_ready);
 
 }

@@ -185,6 +185,11 @@ typedef struct {
 }t_2_enteros;
 
 typedef struct {
+    uint32_t entero;
+    bool operacion;
+}t_entero_bool;
+
+typedef struct {
     uint32_t entero1;
     uint32_t entero2;
     uint32_t entero3;
