@@ -143,23 +143,13 @@ void establecer_conexion(char * ip_memoria, char* puerto_memoria, t_config* conf
 void ejecutar_ciclo_de_instruccion(t_log* loggs){
     seguir_ejecutando = 1;
     while(seguir_ejecutando){
-    log_info(loggs, "paso el while");
+    
     t_instruccion* instruccion = fetch(contexto->pid, contexto->pc);
-    log_info(loggs, "paso fetch");
+    
     op_code instruccion_nombre = decode(instruccion);
-    log_info(loggs, "paso decode");
+
     execute(instruccion_nombre, instruccion);
-    log_info(log_cpu, "PID -> %i PC -> %i -> Registros -> AX:%i , BX:%i, CX:%i, DX:%i, EAX:%i, EBX:%i, ECX:%i, EDX:%i", 
-    contexto->pid, 
-    contexto->pc,
-    contexto->registros->AX,
-    contexto->registros->BX,
-    contexto->registros->CX,
-    contexto->registros->DX,
-    contexto->registros->EAX,
-    contexto->registros->EBX,
-    contexto->registros->ECX,
-    contexto->registros->EDX);
+
     contexto->pc++;
     if(seguir_ejecutando){
     checkInturrupt(contexto->pid);
@@ -179,12 +169,12 @@ t_instruccion* fetch(uint32_t pid, uint32_t pc){
   return instruccion;
 }
 
-t_instruccion* pedir_instruccion_memoria(uint32_t pid, uint32_t pc, t_log *logg){
+void pedir_instruccion_memoria(uint32_t pid, uint32_t pc, t_log *logg){
     t_paquete* paquete = crear_paquete_op(PEDIR_INSTRUCCION_MEMORIA);
     agregar_entero_a_paquete(paquete,pid);
     agregar_entero_a_paquete(paquete,pc);
     
-    log_info(logg, "serializacion %i %i", pid, pc);
+    //log_info(logg, "serializacion %i %i", pid, pc); ya esta el log
     enviar_paquete(paquete,conexion_memoria);
     eliminar_paquete(paquete);
 

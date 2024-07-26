@@ -452,15 +452,15 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
 
 void levantar_estructuras_administrativas() {
     log_info(log_memoria, "principio de todo el cod");
-    ESPACIO_USUARIO = malloc(memoria_config.tam_memoria);
-    ESPACIO_LIBRE_TOTAL = memoria_config.tam_memoria;
+    ESPACIO_USUARIO = malloc(tam_memoria);
+    ESPACIO_LIBRE_TOTAL = tam_memoria;
 
     LISTA_ESPACIOS_LIBRES = list_create();
     LISTA_TABLA_PAGINAS = list_create();
 
     t_esp* espacio_inicial = malloc(sizeof(t_esp));
     espacio_inicial->base = 0;
-    espacio_inicial->limite = memoria_config.tam_memoria;
+    espacio_inicial->limite = tam_memoria;
 
     list_add(LISTA_ESPACIOS_LIBRES, espacio_inicial);
 
@@ -468,7 +468,7 @@ void levantar_estructuras_administrativas() {
 }
 
 void crear_tabla_pagina(uint32_t pid_t, uint32_t cant_paginas) {
-    uint32_t tam_total_paginas = cant_paginas * memoria_config.tam_pagina;
+    uint32_t tam_total_paginas = cant_paginas * tam_pagina;
 
     t_esp* espacio_libre = NULL;
     for (int i = 0; i < list_size(LISTA_ESPACIOS_LIBRES); i++) {
@@ -486,7 +486,7 @@ void crear_tabla_pagina(uint32_t pid_t, uint32_t cant_paginas) {
 
     for (int i = 0; i < cant_paginas; i++) {
         tabla_nueva->tabla_paginas[i].numero_pagina = i;
-        tabla_nueva->tabla_paginas[i].numero_marco = (uint32_t)((char*)ESPACIO_USUARIO + (i * memoria_config.tam_pagina));
+        tabla_nueva->tabla_paginas[i].numero_marco = (uint32_t)((char*)ESPACIO_USUARIO + (i * tam_pagina));
     }
 
     list_add(LISTA_TABLA_PAGINAS, tabla_nueva);
@@ -551,7 +551,7 @@ op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
             if (nuevo_tamanio_resize > tabla->cantidad_paginas) {
                 // Ampliar el tamaño del proceso
                 log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Ampliar: %i",
-                         pid, tabla->cantidad_paginas * memoria_config.tam_pagina, nuevo_tamanio_resize * memoria_config.tam_pagina);
+                         pid, tabla->cantidad_paginas * tam_pagina, nuevo_tamanio_resize * tam_pagina);
                 uint32_t paginas_a_asignar = nuevo_tamanio_resize;
                 if (marcos_libres < paginas_a_asignar) {
                     log_info(log_memoria, "No se pueden solicitar más marcos -> Memoria llena");
@@ -561,14 +561,14 @@ op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
                 tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tamanio_resize);
                 for (uint32_t i = tabla->cantidad_paginas; i < nuevo_tamanio_resize; i++) {
                     tabla->tabla_paginas[i].numero_pagina = i;
-                    tabla->tabla_paginas[i].numero_marco = (uint32_t)((char*)ESPACIO_USUARIO + (i * memoria_config.tam_pagina));
+                    tabla->tabla_paginas[i].numero_marco = (uint32_t)((char*)ESPACIO_USUARIO + (i * tam_pagina));
                 }
                 marcos_libres -= paginas_a_asignar;
 
             } else if (nuevo_tamanio_resize < tabla->cantidad_paginas) {
                 // Reducir el tamaño del proceso
                 log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Reducir: %i",
-                         pid, tabla->cantidad_paginas * memoria_config.tam_pagina, nuevo_tamanio_resize * memoria_config.tam_pagina);
+                         pid, tabla->cantidad_paginas * tam_pagina, nuevo_tamanio_resize * tam_pagina);
                 for (uint32_t i = nuevo_tamanio_resize; i < tabla->cantidad_paginas; i++) {
                     // Aquí podrías liberar recursos asociados a estas páginas si es necesario
                     tabla->tabla_paginas[i].numero_marco = 0;

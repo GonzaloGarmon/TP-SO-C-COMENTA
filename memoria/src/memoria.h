@@ -4,11 +4,6 @@
 #include <utils/utils.h>
 
 // Creación de estructuras para paginación
-typedef struct {
-    uint32_t tam_memoria;
-    uint32_t tam_pagina;
-    uint32_t retardo_obtencion_instruccion;
-} memoria_config_t;
 
 typedef struct {
     uint32_t base;
@@ -33,7 +28,7 @@ typedef struct {
 
 t_log* log_memoria;
 t_config* config_memoria;
-memoria_config_t memoria_config;
+
 
 char* puerto_escucha;
 int tam_memoria;
