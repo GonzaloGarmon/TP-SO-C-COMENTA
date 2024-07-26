@@ -167,9 +167,9 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
             break;
         case IDENTIFICACION:
             char* nombre_interfaz = recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
-            pthread_mutex_lock(&conexion);
+            //pthread_mutex_lock(&conexion);
             list_add(conexiones_io.conexiones_io_nombres, nombre_interfaz);
-            pthread_mutex_unlock(&conexion);
+            //pthread_mutex_unlock(&conexion);
             log_trace(log_kernel, "me llego la interfaz: %s", nombre_interfaz);
             break;
         case GENERICA_I:
@@ -199,8 +199,10 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
         for (int i = 0; i < list_size(conexiones_io.conexiones_io); i++) {
         int socket = list_get(conexiones_io.conexiones_io, i);
         if ( socket == SOCKET_CLIENTE_ENTRADASALIDA) {
+            pthread_mutex_lock(&conexion);
             list_remove(conexiones_io.conexiones_io,i);
             list_remove(conexiones_io.conexiones_io_nombres,i);
+            pthread_mutex_unlock(&conexion);
             }
         }
         break;
