@@ -280,10 +280,10 @@ void enviar_contexto (int conexion, t_contexto* pcb, int codop){
 
 }
 
-void enviar_instruccion (int conexion, t_instruccion* nueva_instruccion, int codop){
+void enviar_instruccion (int conexion, t_instruccion* instruccion_nueva, int codop){
     t_paquete* paquete = crear_paquete_op(codop);
 
-    agregar_instruccion_a_paquete(paquete,nueva_instruccion);
+    agregar_instruccion_a_paquete(paquete,instruccion_nueva);
     enviar_paquete(paquete,conexion);
     eliminar_paquete(paquete);
 }
@@ -422,48 +422,73 @@ void agregar_3_enteros_1_string_a_paquete(t_paquete *paquete, t_string_3enteros 
 
 
 void agregar_instruccion_a_paquete(t_paquete *paquete, t_instruccion * instruccion_nueva){
-    
-    if(instruccion_nueva->parametros1 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros1,strlen(instruccion_nueva->parametros1)+1);
-	}else{
-		instruccion_nueva->parametros1 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros1,strlen(instruccion_nueva->parametros1)+1);
-	}
+    agregar_a_paquete(paquete,instruccion_nueva->parametros1,strlen(instruccion_nueva->parametros1)+1);
 
-	if(instruccion_nueva->parametros2 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
-	}else{
-		instruccion_nueva->parametros2 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
-	}
-
-	if(instruccion_nueva->parametros3 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
-	}else{
-		instruccion_nueva->parametros3 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
-	}
-
-	if(instruccion_nueva->parametros4 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
-	}else{
-		instruccion_nueva->parametros4 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
-	}
-
-	if(instruccion_nueva->parametros5 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros5,strlen(instruccion_nueva->parametros5)+1);
-	}else{
-		instruccion_nueva->parametros5 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros5,strlen(instruccion_nueva->parametros5)+1);
-	}
-
-	if(instruccion_nueva->parametros6 != NULL){
-		agregar_a_paquete(paquete,instruccion_nueva->parametros6,strlen(instruccion_nueva->parametros6)+1);
-	}else{
-		instruccion_nueva->parametros6 = "";
-		agregar_a_paquete(paquete,instruccion_nueva->parametros6,strlen(instruccion_nueva->parametros6)+1);
-	}
+    if(strcmp(instruccion_nueva->parametros1, "SET") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "SUM") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "SUB") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "MOV_IN") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "MOV_OUT") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "RESIZE") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+       
+    }if(strcmp(instruccion_nueva->parametros1, "JNZ") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "COPY_STRING") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "IO_GEN_SLEEP") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "IO_STDIN_READ") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "IO_STDOUT_WRITE") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "IO_FS_CREATE") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "IO_FS_DELETE") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "IO_FS_TRUNCATE") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "IO_FS_WRITE") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros5,strlen(instruccion_nueva->parametros5)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros6,strlen(instruccion_nueva->parametros6)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "IO_FS_READ") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros3,strlen(instruccion_nueva->parametros3)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros4,strlen(instruccion_nueva->parametros4)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros5,strlen(instruccion_nueva->parametros5)+1);
+        agregar_a_paquete(paquete,instruccion_nueva->parametros6,strlen(instruccion_nueva->parametros6)+1);
+    }if(strcmp(instruccion_nueva->parametros1, "WAIT") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "SIGNAL") == 0){
+        agregar_a_paquete(paquete,instruccion_nueva->parametros2,strlen(instruccion_nueva->parametros2)+1);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "EXIT") == 0){
+    }
 
 }
 
@@ -575,8 +600,8 @@ char* recibir_string(int socket,t_log* loggs){
 t_contexto* recibir_contexto(int socket){
 
 	t_contexto* nuevo_contexto = malloc(sizeof(t_contexto));
-	t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
-	nuevo_contexto->registros = registros;
+	//t_registros_cpu* registros = malloc(sizeof(t_registros_cpu));
+	nuevo_contexto->registros = malloc(sizeof(t_registros_cpu));
 	int size = 0;
 	char* buffer;
 	int desp = 0;
@@ -702,22 +727,97 @@ void recibir_2_string_con_contexto(int conexion_kernel_cpu_dispatch, char** pala
 
 t_instruccion* recibir_instruccion(int socket){
     
-    t_instruccion* nueva_instruccion = malloc(sizeof(t_instruccion));
+    t_instruccion* instruccion_nueva = malloc(sizeof(t_instruccion));
     int size = 0;
     char* buffer;
     int desp = 0;
         
     buffer = recibir_buffer(&size, socket);
 
-    nueva_instruccion->parametros1  = leer_string(buffer, &desp);
-    nueva_instruccion->parametros2  = leer_string(buffer, &desp);
-    nueva_instruccion->parametros3  = leer_string(buffer, &desp);
-    nueva_instruccion->parametros4  = leer_string(buffer, &desp);
-    nueva_instruccion->parametros5  = leer_string(buffer, &desp);
-    nueva_instruccion->parametros6  = leer_string(buffer, &desp);
+    instruccion_nueva->parametros1  = leer_string(buffer, &desp);
+
+    if(strcmp(instruccion_nueva->parametros1, "SET") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+
+    }if(strcmp(instruccion_nueva->parametros1, "SUM") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+
+    }if(strcmp(instruccion_nueva->parametros1, "SUB") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+
+    }if(strcmp(instruccion_nueva->parametros1, "MOV_IN") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+ 
+    }if(strcmp(instruccion_nueva->parametros1, "MOV_OUT") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+
+    }if(strcmp(instruccion_nueva->parametros1, "RESIZE") == 0){
+        instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+       
+    }if(strcmp(instruccion_nueva->parametros1, "JNZ") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "COPY_STRING") == 0){
+        
+        instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+
+    }if(strcmp(instruccion_nueva->parametros1, "IO_GEN_SLEEP") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "IO_STDIN_READ") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+    instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+    instruccion_nueva->parametros4  = leer_string(buffer, &desp);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "IO_STDOUT_WRITE") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros4  = leer_string(buffer, &desp);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "IO_FS_CREATE") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "IO_FS_DELETE") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "IO_FS_TRUNCATE") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros4  = leer_string(buffer, &desp);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "IO_FS_WRITE") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros4  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros5  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros6  = leer_string(buffer, &desp);
+    }if(strcmp(instruccion_nueva->parametros1, "IO_FS_READ") == 0){
+            instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros3  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros4  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros5  = leer_string(buffer, &desp);
+            instruccion_nueva->parametros6  = leer_string(buffer, &desp);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "WAIT") == 0){
+        instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "SIGNAL") == 0){
+        instruccion_nueva->parametros2  = leer_string(buffer, &desp);
+        
+    }if(strcmp(instruccion_nueva->parametros1, "EXIT") == 0){
+    }
     
     free(buffer);
-    return nueva_instruccion;
+    return instruccion_nueva;
 
 }
 /*

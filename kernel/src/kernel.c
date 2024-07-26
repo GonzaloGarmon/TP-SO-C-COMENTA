@@ -162,6 +162,9 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
         int op_code = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
         switch (op_code)
         {
+        case MENSAJE:
+            recibir_string(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
+            break;
         case IDENTIFICACION:
             char* nombre_interfaz = recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
             pthread_mutex_lock(&conexion);

@@ -87,15 +87,15 @@ void finalizar_programa(){
 
 void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* instrucciones[instrucciones_maximas]) {
     //log_info(log_memoria, "log 1 %s", nombre_archivo);
-    size_t path_len = strlen(path_instrucciones) + strlen(nombre_archivo) + 1;
-    char* path_compl = malloc(path_len);    
-    strcpy(path_compl, path_instrucciones);
-    strcat(path_compl, nombre_archivo); 
+    //size_t path_len = strlen(path_instrucciones) + strlen(nombre_archivo) + 1;
+    //char* path_compl = malloc(path_len);    
+    //strcpy(path_compl, path_instrucciones);
+    //strcat(path_compl, nombre_archivo); 
     //log_info(log_memoria, "log 2");
     FILE* archivo = fopen(nombre_archivo, "r");
     
     // Liberar path_compl ya que no se necesita más
-    free(path_compl);
+    //free(path_compl);
     //log_info(log_memoria, "log 3");
     if (archivo == NULL) {
         perror("Error al abrir el archivo");
@@ -115,26 +115,32 @@ void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* in
         while (token != NULL && param_count < parametros_maximos) {
             switch (param_count) {
                 case 0:
+                    instruccion->parametros1 = NULL;
                     instruccion->parametros1 = strdup(token);
                     //log_info(log_memoria, "case instruccion %s", instruccion->parametros1);
                     break;
                 case 1:
+                    instruccion->parametros2 = NULL;
                     instruccion->parametros2 = strdup(token);
                     //log_info(log_memoria, "parametro 1 %s", instruccion->parametros2);
                     break;
                 case 2:
+                    instruccion->parametros3 = NULL;
                     instruccion->parametros3 = strdup(token);
                     //log_info(log_memoria, "parametro 2 %s", instruccion->parametros3);
                     break;
                 case 3:
+                    instruccion->parametros4 = NULL;
                     instruccion->parametros4 = strdup(token);
                     //log_info(log_memoria, "parametro 3 %s", instruccion->parametros4);
                     break;
                 case 4:
+                    instruccion->parametros5 = NULL;
                     instruccion->parametros5 = strdup(token);
                     //log_info(log_memoria, "parametro 4 %s", instruccion->parametros5);
                     break;
                 case 5:
+                    instruccion->parametros6 = NULL;
                     instruccion->parametros6 = strdup(token);
                     //log_info(log_memoria, "parametro 5 %s", instruccion->parametros6);
                     break;

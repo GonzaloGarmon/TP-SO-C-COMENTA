@@ -185,6 +185,7 @@ void recibir_y_procesar_paquete(int socket_cliente) {
 
     // Recibir operación
     int operacion = recibir_operacion(socket_cliente);
+    
     log_info(log_entradasalida, "recibi codigo: %d", operacion);
 
     int *operacionPtr = malloc(sizeof(int));
@@ -206,7 +207,7 @@ void recibir_y_procesar_paquete(int socket_cliente) {
                 list_add(lista_datos, nombreInterfazRecibido);
                 unidadesRecibidas = leer_entero_uint32(buffer, &desplazamiento);
                 list_add(lista_datos, malloc_copiar_uint32(unidadesRecibidas));
-
+                enviar_string(conexion_entradasalida_kernel, "PENEEE",MENSAJE);
                 log_info(log_entradasalida, "nombre interfaz: %s", nombreInterfazRecibido);
                 log_info(log_entradasalida, "unidades: %d", unidadesRecibidas);
             break;
@@ -292,7 +293,9 @@ void funcIoGenSleep(t_entero_bool** ejecucion){
     usleep(unidadesRecibidas*tiempo_unidad_trabajo);
     
     log_info(log_entradasalida, "pid justo antes de enviar %d",(*ejecucion)->entero);
-    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
+    
+    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero, TERMINO_INTERFAZ);
+
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
     avanzar_a_siguiente_operacion();
