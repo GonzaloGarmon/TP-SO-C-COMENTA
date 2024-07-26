@@ -108,70 +108,55 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                     log_info(log_entradasalida, "entre a gen sleep");
                     pthread_create(&ejecutar_sleep,NULL,(void*) funcIoGenSleep, (void*) (intptr_t) &ejecucion);
                     pthread_detach(ejecutar_sleep);
-                    
                 }
                 break;
             case IO_STDIN_READ:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_StdRead; 
-                    pthread_create(&ejecutar_StdRead, NULL, (void *)funcIoStdRead, NULL);
+                    pthread_create(&ejecutar_StdRead, NULL, (void *)funcIoStdRead, (void*) (intptr_t) &ejecucion);
                     pthread_detach(ejecutar_StdRead);
-                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
-                    operacionRealizada = true;
                 }
                 break;
             case IO_STDOUT_WRITE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_StdWrite; 
-                    pthread_create(&ejecutar_StdWrite, NULL, (void *)funcIoStdWrite, NULL);
+                    pthread_create(&ejecutar_StdWrite, NULL, (void *)funcIoStdWrite, (void*) (intptr_t) &ejecucion);
                     pthread_detach(ejecutar_StdWrite);
-                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
-                    operacionRealizada = true;
                 }
                 break;
             case IO_FS_READ:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_FsRead; 
-                    pthread_create(&ejecutar_FsRead, NULL, (void *)funcIoFsRead, NULL);
+                    pthread_create(&ejecutar_FsRead, NULL, (void *)funcIoFsRead, (void*) (intptr_t) &ejecucion);
                     pthread_detach(ejecutar_FsRead);
-                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
-                    operacionRealizada = true;
                 }
                 break;
             case IO_FS_WRITE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_FsWrite; 
-                    pthread_create(&ejecutar_FsWrite, NULL, (void *)funcIoFsWrite, NULL);
+                    pthread_create(&ejecutar_FsWrite, NULL, (void *)funcIoFsWrite, (void*) (intptr_t) &ejecucion);
                     pthread_detach(ejecutar_FsWrite);
-                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
-                    operacionRealizada = true;
                 }
                 break;
             case IO_FS_CREATE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_FsCreate; 
-                    pthread_create(&ejecutar_FsCreate, NULL, (void *)funcIoFsCreate, NULL);
+                    pthread_create(&ejecutar_FsCreate, NULL, (void *)funcIoFsCreate, (void*) (intptr_t) &ejecucion);
                     pthread_detach(ejecutar_FsCreate);
-                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
-                    operacionRealizada = true;
                 }
                 break;
             case IO_FS_DELETE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_FsDelete; 
-                    pthread_create(&ejecutar_FsDelete, NULL, (void *)funcIoFsDelete, NULL);
+                    pthread_create(&ejecutar_FsDelete, NULL, (void *)funcIoFsDelete, (void*) (intptr_t) &ejecucion);
                     pthread_detach(ejecutar_FsDelete);
-                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
-                    operacionRealizada = true;
                 }
                 break;
             case IO_FS_TRUNCATE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_FsTruncate; 
-                    pthread_create(&ejecutar_FsTruncate, NULL, (void *)funcIoFsTruncate, NULL);
+                    pthread_create(&ejecutar_FsTruncate, NULL, (void *)funcIoFsTruncate, (void*) (intptr_t) &ejecucion);
                     pthread_detach(ejecutar_FsTruncate);
-                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
-                    operacionRealizada = true;
                 }
                 break;
             case -1:
@@ -214,76 +199,49 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     switch (operacion) {
         case IO_GEN_SLEEP:
                 nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
-                log_info(log_entradasalida, "nombnre interfaz: %s", nombreInterfazRecibido);
                 list_add(lista_datos, nombreInterfazRecibido);
                 unidadesRecibidas = leer_entero_uint32(buffer, &desplazamiento);
-                log_info(log_entradasalida, "unidades: %d", unidadesRecibidas);
                 list_add(lista_datos, malloc_copiar_uint32(unidadesRecibidas));
+
+                log_info(log_entradasalida, "nombre interfaz: %s", nombreInterfazRecibido);
+                log_info(log_entradasalida, "unidades: %d", unidadesRecibidas);
             break;
         case IO_STDIN_READ:
         case IO_STDOUT_WRITE:
-            if (desplazamiento < size) {
                 nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
                 list_add(lista_datos, nombreInterfazRecibido);
-            } else {
-                printf("Error: No se puede leer nombreInterfazRecibido\n");
-            }
-            if (desplazamiento + sizeof(uint32_t) * 2 <= size) {
                 direccionRecibida = leer_entero_uint32(buffer, &desplazamiento);
-                tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
                 list_add(lista_datos, malloc_copiar_uint32(direccionRecibida));
+                tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
                 list_add(lista_datos, malloc_copiar_uint32(tamañoRecibido));
-            }
             break;
         case IO_FS_CREATE:
         case IO_FS_DELETE:
-            if (desplazamiento < size) {
                 nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
                 list_add(lista_datos, nombreInterfazRecibido);
-            } else {
-                printf("Error: No se puede leer nombreInterfazRecibido\n");
-            }
-            if (desplazamiento < size) {
                 nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
                 list_add(lista_datos, nombreArchivoRecibido);
-            }
             break;
         case IO_FS_TRUNCATE:
-            if (desplazamiento < size) {
                 nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
                 list_add(lista_datos, nombreInterfazRecibido);
-            } else {
-                printf("Error: No se puede leer nombreInterfazRecibido\n");
-            }
-            if (desplazamiento < size) {
                 nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
                 list_add(lista_datos, nombreArchivoRecibido);
-            }
-            if (desplazamiento + sizeof(uint32_t) <= size) {
                 tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
                 list_add(lista_datos, malloc_copiar_uint32(tamañoRecibido));
-            }
             break;
         case IO_FS_WRITE:
         case IO_FS_READ:
-            if (desplazamiento < size) {
                 nombreInterfazRecibido = leer_string(buffer, &desplazamiento);
                 list_add(lista_datos, nombreInterfazRecibido);
-            } else {
-                printf("Error: No se puede leer nombreInterfazRecibido\n");
-            }
-            if (desplazamiento < size) {
                 nombreArchivoRecibido = leer_string(buffer, &desplazamiento);
                 list_add(lista_datos, nombreArchivoRecibido);
-            }
-            if (desplazamiento + sizeof(uint32_t) * 3 <= size) {
                 direccionRecibida = leer_entero_uint32(buffer, &desplazamiento);
-                tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
-                registroPunteroArchivoRecibido = leer_entero_uint32(buffer, &desplazamiento);
                 list_add(lista_datos, malloc_copiar_uint32(direccionRecibida));
+                tamañoRecibido = leer_entero_uint32(buffer, &desplazamiento);
                 list_add(lista_datos, malloc_copiar_uint32(tamañoRecibido));
+                registroPunteroArchivoRecibido = leer_entero_uint32(buffer, &desplazamiento);    
                 list_add(lista_datos, malloc_copiar_uint32(registroPunteroArchivoRecibido));
-            }
             break;
         default:
             break;
@@ -334,7 +292,7 @@ void funcIoGenSleep(t_entero_bool** ejecucion){
     (*ejecucion)->operacion = true;
 }
 
-void funcIoStdRead(){
+void funcIoStdRead(t_entero_bool** ejecucion){
     log_info(log_entradasalida, "Stdin: PID: <%d> - Leer.",pidRecibido);
 
     char *buffer = (char *)malloc(tamañoRecibido + 1);
@@ -362,10 +320,13 @@ void funcIoStdRead(){
 
     //recibo un OK de memoria
     conexionRecMem();
+    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
+    log_info(log_entradasalida, "Operacion completada");
+    (*ejecucion)->operacion = true;
     free(buffer);
 }
 
-void funcIoStdWrite(){
+void funcIoStdWrite(t_entero_bool** ejecucion){
     log_info(log_entradasalida, "Stdin: PID: <%d> - Escribir.",pidRecibido);
 
     t_3_enteros *mensaje = malloc(sizeof(t_3_enteros));
@@ -376,9 +337,12 @@ void funcIoStdWrite(){
 
     //Que memoria me pase lo leido y yo lo muestro en pantalla
     conexionRecMem();
+    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
+    log_info(log_entradasalida, "Operacion completada");
+    (*ejecucion)->operacion = true;
 }
 
-void funcIoFsWrite(){
+void funcIoFsWrite(t_entero_bool** ejecucion){
     log_info(log_entradasalida, "DialFS: PID: <%d> - Leer archivo.",pidRecibido);
 
     //envio a memoria un paquete con el RegistroTamaño y el RegistroDireccion recibidos de kernel
@@ -390,9 +354,12 @@ void funcIoFsWrite(){
 
     //Escribo el valor en el archivo
     conexionRecMem();
+    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
+    log_info(log_entradasalida, "Operacion completada");
+    (*ejecucion)->operacion = true;
 }
 
-void funcIoFsRead(){
+void funcIoFsRead(t_entero_bool** ejecucion){
     log_info(log_entradasalida, "DialFS: PID: <%d> - Escribir Archivo.",pidRecibido);
 
     dialfs_leer_archivo(&fs,nombreArchivoRecibido,direccionRecibida,tamañoRecibido,registroPunteroArchivoRecibido);
@@ -407,24 +374,37 @@ void funcIoFsRead(){
 
     //recibo un OK de memoria o podemos hacer que se muestre lo que se escribio
     conexionRecMem();
+    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
+    log_info(log_entradasalida, "Operacion completada");
+    (*ejecucion)->operacion = true;
 }
 
-void funcIoFsTruncate() {
+void funcIoFsTruncate(t_entero_bool** ejecucion) {
     dialfs_truncar_archivo(&fs, nombreArchivoRecibido, tamañoRecibido);
+    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
+    log_info(log_entradasalida, "Operacion completada");
+    (*ejecucion)->operacion = true;
 }
 
-void funcIoFsCreate() {
+void funcIoFsCreate(t_entero_bool** ejecucion) {
     int bloque = dialfs_crear_archivo(&fs, nombreArchivoRecibido);
 
     if (bloque == -1) {
+        log_info(log_entradasalida, "Error al crear el bloque");
         return;
     }
 
     log_info(log_entradasalida, "Archivo creado con éxito: %s en bloque %d", nombreArchivoRecibido, bloque);
+    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
+    log_info(log_entradasalida, "Operacion completada");
+    (*ejecucion)->operacion = true;
 }
 
-void funcIoFsDelete() {
+void funcIoFsDelete(t_entero_bool** ejecucion) {
     dialfs_eliminar_archivo(&fs,nombreArchivoRecibido);
+    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
+    log_info(log_entradasalida, "Operacion completada");
+    (*ejecucion)->operacion = true;
 }
 
 void generar_conexiones(){   
