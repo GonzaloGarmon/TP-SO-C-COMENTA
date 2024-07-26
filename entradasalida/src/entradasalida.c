@@ -94,14 +94,9 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
 
         recibir_y_procesar_paquete(SOCKET_CLIENTE_KERNEL);
 
-/*
-        if (list_is_empty(lista_operaciones)) {
-            noFinalizar = -1;
-            break;
-        }
-*/
-        operacionActual = list_get(lista_operaciones, 0);
-
+        int *operacionActualPtr = (int *)list_get(lista_operaciones, 0);
+        int operacionActual = *operacionActualPtr;
+        
         bool operacionRealizada = false;
 
         switch (operacionActual) {
@@ -111,7 +106,8 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                     log_info(log_entradasalida, "entre a gen sleep");
                     pthread_create(&ejecutar_sleep,NULL,(void*) funcIoGenSleep, (void*) (intptr_t) &operacionRealizada);
                     pthread_detach(ejecutar_sleep);
-                    
+                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
+                    operacionRealizada = true;
                 }
                 break;
             case IO_STDIN_READ:
@@ -119,7 +115,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                     pthread_t ejecutar_StdRead; 
                     pthread_create(&ejecutar_StdRead, NULL, (void *)funcIoStdRead, NULL);
                     pthread_detach(ejecutar_StdRead);
-                    enviar_codop(SOCKET_CLIENTE_KERNEL, IO_STDIN_READ_OK);
+                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
                     operacionRealizada = true;
                 }
                 break;
@@ -128,7 +124,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                     pthread_t ejecutar_StdWrite; 
                     pthread_create(&ejecutar_StdWrite, NULL, (void *)funcIoStdWrite, NULL);
                     pthread_detach(ejecutar_StdWrite);
-                    enviar_codop(SOCKET_CLIENTE_KERNEL, IO_STDOUT_WRITE_OK);
+                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
                     operacionRealizada = true;
                 }
                 break;
@@ -137,7 +133,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                     pthread_t ejecutar_FsRead; 
                     pthread_create(&ejecutar_FsRead, NULL, (void *)funcIoFsRead, NULL);
                     pthread_detach(ejecutar_FsRead);
-                    enviar_codop(SOCKET_CLIENTE_KERNEL, IO_FS_READ_OK);
+                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
                     operacionRealizada = true;
                 }
                 break;
@@ -146,7 +142,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                     pthread_t ejecutar_FsWrite; 
                     pthread_create(&ejecutar_FsWrite, NULL, (void *)funcIoFsWrite, NULL);
                     pthread_detach(ejecutar_FsWrite);
-                    enviar_codop(SOCKET_CLIENTE_KERNEL, IO_FS_WRITE_OK);
+                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
                     operacionRealizada = true;
                 }
                 break;
@@ -155,7 +151,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                     pthread_t ejecutar_FsCreate; 
                     pthread_create(&ejecutar_FsCreate, NULL, (void *)funcIoFsCreate, NULL);
                     pthread_detach(ejecutar_FsCreate);
-                    enviar_codop(SOCKET_CLIENTE_KERNEL, IO_FS_CREATE_OK);
+                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
                     operacionRealizada = true;
                 }
                 break;
@@ -164,7 +160,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                     pthread_t ejecutar_FsDelete; 
                     pthread_create(&ejecutar_FsDelete, NULL, (void *)funcIoFsDelete, NULL);
                     pthread_detach(ejecutar_FsDelete);
-                    enviar_codop(SOCKET_CLIENTE_KERNEL, IO_FS_DELETE_OK);
+                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
                     operacionRealizada = true;
                 }
                 break;
@@ -173,12 +169,11 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                     pthread_t ejecutar_FsTruncate; 
                     pthread_create(&ejecutar_FsTruncate, NULL, (void *)funcIoFsTruncate, NULL);
                     pthread_detach(ejecutar_FsTruncate);
-                    enviar_codop(SOCKET_CLIENTE_KERNEL, IO_FS_TRUNCATE_OK);
+                    enviar_entero(SOCKET_CLIENTE_KERNEL,pidRecibido,TERMINO_INTERFAZ);
                     operacionRealizada = true;
                 }
                 break;
             default:
-                //log_warning(log_entradasalida, "Operacion no compatible");
                 break;
         }
 
@@ -200,7 +195,11 @@ void recibir_y_procesar_paquete(int socket_cliente) {
         printf("Error al recibir la operación\n");
         return;
     }
-    list_add(lista_operaciones, operacion);
+
+    int *operacionPtr = malloc(sizeof(int));
+    *operacionPtr = operacion;
+    list_add(lista_operaciones, operacionPtr);
+
 
     // Recibir el buffer
     buffer = recibir_buffer(&size, socket_cliente);
@@ -218,7 +217,9 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     }
     */
     pidRecibido = leer_entero_uint32(buffer, &desplazamiento);
-    list_add(lista_pids, pidRecibido);
+    int *pidPtr = malloc(sizeof(int));
+    *pidPtr = pidRecibido;
+    list_add(lista_pids, pidPtr);
 
     // Procesar según operación
     switch (operacion) {

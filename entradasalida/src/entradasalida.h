@@ -47,9 +47,6 @@ int direccionRecibida;
 char* nombreArchivoRecibido;
 int registroPunteroArchivoRecibido;
 
-
-int operacionActual;
-
 t_list* lista_operaciones;
 t_list* lista_pids;
 t_list* lista_datos;
