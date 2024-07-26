@@ -45,7 +45,7 @@ char* ruta_completa;
 //Datos recibidos de kernel
 //Todas
 char* nombreInterfazRecibido;
-int pidRecibido;
+uint32_t pidRecibido;
 //Generica
 int unidadesRecibidas;
 //Stdin Stdout

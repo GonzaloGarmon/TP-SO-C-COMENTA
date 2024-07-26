@@ -195,7 +195,7 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     buffer = recibir_buffer(&size, socket_cliente);
 
     pidRecibido = leer_entero_uint32(buffer, &desplazamiento);
-    int *pidPtr = malloc(sizeof(int));
+    uint32_t *pidPtr = malloc(sizeof(uint32_t));
     *pidPtr = pidRecibido;
     list_add(lista_pids, pidPtr);
 
