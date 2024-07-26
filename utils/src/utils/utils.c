@@ -497,10 +497,13 @@ uint8_t leer_entero_uint8(char *buffer, int * desplazamiento)
 
 char* leer_string(char* buffer, int* desplazamiento) {
     int tamanio = leer_entero(buffer, desplazamiento);
-    char* palabra = malloc(tamanio);
+
+    char* palabra = malloc(tamanio + 1);
 
     memcpy(palabra, buffer + *desplazamiento, tamanio);
-    
+
+    palabra[tamanio] = '\0';
+
     *desplazamiento += tamanio;
 
     return palabra;

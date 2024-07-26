@@ -28,9 +28,7 @@ int main(int argc, char *argv[]){
     pthread_t atiende_cliente_kernel;
     pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
     pthread_join(atiende_cliente_kernel,NULL);
-   
-    log_info(log_entradasalida, "Finalizo conexion con servidores");
-    finalizar_programa();
+
     return 0;
 }
 
@@ -72,11 +70,13 @@ void crear_interfaz(char *nombre_interfaz, char *ruta_archivo){
 }
 
 void finalizar_programa(){
+    liberar_conexion(conexion_entradasalida_kernel);
+    liberar_conexion(conexion_entradasalida_memoria);
     free(nombre_interfaz);
     free(ruta_archivo);         
-
     log_destroy(log_entradasalida);
     config_destroy(config_entradasalida);
+    liberar_listas();
     if(tipoInterfaz == DIALFS_I){
         dialfs_destroy(&fs);
     }
@@ -91,76 +91,81 @@ void conexionRecMem(){
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
     int noFinalizar = 0;
     while (noFinalizar != -1) {
-
         recibir_y_procesar_paquete(SOCKET_CLIENTE_KERNEL);
 
         int *operacionActualPtr = (int *)list_get(lista_operaciones, 0);
+        
         int operacionActual = *operacionActualPtr;
         uint32_t pid = *(uint32_t *)list_get(lista_pids, 0);
         bool operacionRealizada = false;
         t_entero_bool* ejecucion = malloc(sizeof(t_entero_bool));
         ejecucion->entero = pid;
         ejecucion->operacion = operacionRealizada;
+
         switch (operacionActual) {
             case IO_GEN_SLEEP:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
-                    pthread_t ejecutar_sleep; 
+                    pthread_t ejecutar_sleep;
                     log_info(log_entradasalida, "entre a gen sleep");
-                    pthread_create(&ejecutar_sleep,NULL,(void*) funcIoGenSleep, (void*) (intptr_t) &ejecucion);
+                    pthread_create(&ejecutar_sleep, NULL, (void*)funcIoGenSleep, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_sleep);
                 }
                 break;
             case IO_STDIN_READ:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
-                    pthread_t ejecutar_StdRead; 
-                    pthread_create(&ejecutar_StdRead, NULL, (void *)funcIoStdRead, (void*) (intptr_t) &ejecucion);
+                    pthread_t ejecutar_StdRead;
+                    pthread_create(&ejecutar_StdRead, NULL, (void*)funcIoStdRead, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_StdRead);
                 }
                 break;
             case IO_STDOUT_WRITE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
-                    pthread_t ejecutar_StdWrite; 
-                    pthread_create(&ejecutar_StdWrite, NULL, (void *)funcIoStdWrite, (void*) (intptr_t) &ejecucion);
+                    pthread_t ejecutar_StdWrite;
+                    pthread_create(&ejecutar_StdWrite, NULL, (void*)funcIoStdWrite, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_StdWrite);
                 }
                 break;
             case IO_FS_READ:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
-                    pthread_t ejecutar_FsRead; 
-                    pthread_create(&ejecutar_FsRead, NULL, (void *)funcIoFsRead, (void*) (intptr_t) &ejecucion);
+                    pthread_t ejecutar_FsRead;
+                    pthread_create(&ejecutar_FsRead, NULL, (void*)funcIoFsRead, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_FsRead);
                 }
                 break;
             case IO_FS_WRITE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
-                    pthread_t ejecutar_FsWrite; 
-                    pthread_create(&ejecutar_FsWrite, NULL, (void *)funcIoFsWrite, (void*) (intptr_t) &ejecucion);
+                    pthread_t ejecutar_FsWrite;
+                    pthread_create(&ejecutar_FsWrite, NULL, (void*)funcIoFsWrite, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_FsWrite);
                 }
                 break;
             case IO_FS_CREATE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
-                    pthread_t ejecutar_FsCreate; 
-                    pthread_create(&ejecutar_FsCreate, NULL, (void *)funcIoFsCreate, (void*) (intptr_t) &ejecucion);
+                    pthread_t ejecutar_FsCreate;
+                    pthread_create(&ejecutar_FsCreate, NULL, (void*)funcIoFsCreate, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_FsCreate);
                 }
                 break;
             case IO_FS_DELETE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
-                    pthread_t ejecutar_FsDelete; 
-                    pthread_create(&ejecutar_FsDelete, NULL, (void *)funcIoFsDelete, (void*) (intptr_t) &ejecucion);
+                    pthread_t ejecutar_FsDelete;
+                    pthread_create(&ejecutar_FsDelete, NULL, (void*)funcIoFsDelete, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_FsDelete);
                 }
                 break;
             case IO_FS_TRUNCATE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
-                    pthread_t ejecutar_FsTruncate; 
-                    pthread_create(&ejecutar_FsTruncate, NULL, (void *)funcIoFsTruncate, (void*) (intptr_t) &ejecucion);
+                    pthread_t ejecutar_FsTruncate;
+                    pthread_create(&ejecutar_FsTruncate, NULL, (void*)funcIoFsTruncate, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_FsTruncate);
                 }
                 break;
+            case EXIT:
+                log_info(log_entradasalida, "Finalizo conexion con servidores");
+                finalizar_programa();
+                break;
             case -1:
-                noFinalizar =operacionActual;
+                noFinalizar = operacionActual;
                 break;
             default:
                 break;
@@ -185,7 +190,6 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     int *operacionPtr = malloc(sizeof(int));
     *operacionPtr = operacion;
     list_add(lista_operaciones, operacionPtr);
-
 
     // Recibir el buffer
     buffer = recibir_buffer(&size, socket_cliente);
@@ -287,6 +291,7 @@ void funcIoGenSleep(t_entero_bool** ejecucion){
     log_info(log_entradasalida, "Eperando durante %d unidades",unidades);
     usleep(unidadesRecibidas*tiempo_unidad_trabajo);
     
+    log_info(log_entradasalida, "pid justo antes de enviar %d",(*ejecucion)->entero);
     enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
@@ -959,9 +964,15 @@ void inicializar_listas() {
     lista_datos = list_create();
 }
 
+void liberar_listas() {
+    list_destroy_and_destroy_elements(lista_operaciones,free);
+    list_destroy_and_destroy_elements(lista_pids,free);
+    list_destroy_and_destroy_elements(lista_datos,free);
+}
+
 void avanzar_a_siguiente_operacion() {
     if (!list_is_empty(lista_operaciones)) {
         list_remove(lista_operaciones, 0);  // Remueve la operación actual
-        list_remove(lista_pids,0);
+        list_remove(lista_pids, 0);
     }
 }

@@ -121,6 +121,7 @@ void funcIoFsTruncate();
 
 void recibir_y_procesar_paquete(int socket_cliente);
 void inicializar_listas();
+void liberar_listas();
 void avanzar_a_siguiente_operacion();
 
 uint32_t* malloc_copiar_uint32(uint32_t valor);
