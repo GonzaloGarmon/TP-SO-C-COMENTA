@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     //pthread_mutex_unlock(&conexion)
 
     pthread_t atiende_nuevas_interfaces;
-    pthread_create(&atiende_nuevas_interfaces, NULL, (void *)esperar_cliente_especial, (void *) (intptr_t) socket_servidor_kernel_dispatch);
+    pthread_create(&atiende_nuevas_interfaces, NULL, (void*) esperar_cliente_especial, (void*) (intptr_t) socket_servidor_kernel_dispatch);
     pthread_detach(atiende_nuevas_interfaces);
 
     planificar();
@@ -108,7 +108,7 @@ void generar_conexiones(){
     log_info(log_kernel, "Se generaron correctamente las conexiones");
 }
 
-void iniciar_semaforos(){
+void iniciar_semaforos() {
     pthread_mutex_init(&mutex_cola_ready, NULL);
     pthread_mutex_init(&mutex_cola_new, NULL);
     pthread_mutex_init(&mutex_cola_exec, NULL);
@@ -116,6 +116,7 @@ void iniciar_semaforos(){
     pthread_mutex_init(&mutex_cola_block, NULL);
     pthread_mutex_init(&mutex_cola_ready_aux, NULL);
     pthread_mutex_init(&conexion, NULL);
+    pthread_mutex_init(&conexiones_io_mutex, NULL);
 
     sem_init(&sem_multiprogamacion, 0, grado_multiprogramacion);
     sem_init(&sem_listos_para_ready, 0, 0);
@@ -124,12 +125,14 @@ void iniciar_semaforos(){
     sem_init(&sem_empezar_quantum, 0, 0);
     sem_init(&sem_iniciar_consola, 0, 0);
     sem_init(&esta_ejecutando, 0, 1);
+
     cola_new = list_create();
     cola_ready = list_create();
     cola_exec = list_create();
     cola_exit = list_create();
     cola_block = list_create();
     cola_ready_aux = list_create();
+
     apagar_planificacion = 0;
     generador_pid = 0;
     conexiones_io.conexiones_io = list_create();
@@ -154,61 +157,47 @@ int* convertirArrayDeNumeros(char** caracteres){
     return intArray;
 }
 
-void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA){
-    //enviar_string(socket_cliente_entradasalida, "hola desde kernel", MENSAJE);
-    //Se deben enviar la cantidad de unidades de trabakp necesarias, crear una nueva funcion
+void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
     int noFinalizar = 0;
-    while(noFinalizar != -1){
+    while (noFinalizar != -1) {
         int op_code = recibir_operacion(SOCKET_CLIENTE_ENTRADASALIDA);
-        switch (op_code)
-        {
-        case MENSAJE:
-            recibir_string(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
-            break;
-        case IDENTIFICACION:
-            char* nombre_interfaz = recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
-            //pthread_mutex_lock(&conexion);
-            list_add(conexiones_io.conexiones_io_nombres, nombre_interfaz);
-            //pthread_mutex_unlock(&conexion);
-            log_trace(log_kernel, "me llego la interfaz: %s", nombre_interfaz);
-            break;
-        case GENERICA_I:
-            log_trace(log_kernel, "entre a GENERICA_I");
-            recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
-            break; 
-        case STDIN_I:
-            log_trace(log_kernel, "entre a STDIN_I");
-            recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
-            break;
-        case STDOUT_I:
-            log_trace(log_kernel, "entre a STDOUT_I");
-            recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
-            break; 
-        case DIALFS_I:
-            log_trace(log_kernel, "entre a DIALFS_I");
-            recibir_string(SOCKET_CLIENTE_ENTRADASALIDA,log_kernel);
-            break;
-        case TERMINO_INTERFAZ:
-            log_info(log_kernel, "termino una interfaz");
-            uint32_t  pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
-            log_info(log_kernel, "desbloqueo pid: %d", pid);
-            desbloquear_proceso_block(pid);
-            break;                                      
-        case -1:
-        log_trace(log_kernel, "se desconecto un modulo io");
-        for (int i = 0; i < list_size(conexiones_io.conexiones_io); i++) {
-        int socket = list_get(conexiones_io.conexiones_io, i);
-        if ( socket == SOCKET_CLIENTE_ENTRADASALIDA) {
-            pthread_mutex_lock(&conexion);
-            list_remove(conexiones_io.conexiones_io,i);
-            list_remove(conexiones_io.conexiones_io_nombres,i);
-            pthread_mutex_unlock(&conexion);
+        switch (op_code) {
+            case MENSAJE:
+                recibir_string(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
+                break;
+            case IDENTIFICACION: {
+                char* nombre_interfaz = recibir_string(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
+                pthread_mutex_lock(&conexion);
+                list_add(conexiones_io.conexiones_io_nombres, nombre_interfaz);
+                pthread_mutex_unlock(&conexion);
+                log_trace(log_kernel, "Me llegó la interfaz: %s", nombre_interfaz);
+                break;
             }
-        }
-        break;
-        default:
-            return;
-            break;
+            case TERMINO_INTERFAZ: {
+                log_info(log_kernel, "Terminó una interfaz");
+                uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
+                log_info(log_kernel, "Desbloqueo pid: %d", pid);
+                desbloquear_proceso_block(pid);
+                break;
+            }
+            case -1: {
+                log_trace(log_kernel, "Se desconectó un módulo io");
+                pthread_mutex_lock(&conexion);
+                for (int i = 0; i < list_size(conexiones_io.conexiones_io); i++) {
+                    int socket = (intptr_t) list_get(conexiones_io.conexiones_io, i);
+                    if (socket == SOCKET_CLIENTE_ENTRADASALIDA) {
+                        list_remove(conexiones_io.conexiones_io, i);
+                        list_remove(conexiones_io.conexiones_io_nombres, i);
+                        break;
+                    }
+                }
+                pthread_mutex_unlock(&conexion);
+                noFinalizar = -1;
+                break;
+            }
+            default:
+                log_warning(log_kernel, "Operación desconocida recibida: %d", op_code);
+                break;
         }
     }
 }
@@ -579,21 +568,25 @@ void finalizar_programa(){
 ------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
 */
 
-void esperar_cliente_especial(int socket_servidor_kernel_dispatch)
-{   int no_fin = 1;
-    while(no_fin != 0){
-    // Aceptamos un nuevo cliente
-    int socket_cliente = esperar_cliente(socket_servidor_kernel_dispatch);
-    log_trace(log_kernel, "conecte una interfaz");
-    pthread_mutex_lock(&conexion);
-    list_add(conexiones_io.conexiones_io,socket_cliente);
-    pthread_mutex_unlock(&conexion);
-    pthread_t atiende_cliente_entradasalida;
-    pthread_create(&atiende_cliente_entradasalida, NULL, (void *)recibir_entradasalida, (void *) (intptr_t) socket_cliente);
-    pthread_detach(atiende_cliente_entradasalida);
-    }
+void esperar_cliente_especial(int socket_servidor_kernel_dispatch) {
+    int no_fin = 1;
+    while (no_fin != 0) {
+        int socket_cliente = esperar_cliente(socket_servidor_kernel_dispatch);
+        if (socket_cliente == -1) {
+            log_error(log_kernel, "Error al aceptar cliente.");
+            continue;
+        }
+        
+        log_trace(log_kernel, "Conecté una interfaz");
 
- 
+        pthread_mutex_lock(&conexion);
+        list_add(conexiones_io.conexiones_io, (void*)(intptr_t)socket_cliente);
+        pthread_mutex_unlock(&conexion);
+
+        pthread_t atiende_cliente_entradasalida;
+        pthread_create(&atiende_cliente_entradasalida, NULL, (void*) recibir_entradasalida, (void*) (intptr_t) socket_cliente);
+        pthread_detach(atiende_cliente_entradasalida);
+    }
 }
 
 void iniciar_consola(){
@@ -1135,98 +1128,100 @@ int existe_recurso(char* recurso){
     return 0;
 }
 
-void actualizar_contexto(t_contexto* pcb_wait){
-
-    bool encontrar_pcb(t_pcb* pcb){
+void actualizar_contexto(t_contexto* pcb_wait) {
+    bool encontrar_pcb(t_pcb* pcb) {
         return pcb->contexto->pid == pcb_wait->pid;
-    };
-    
+    }
 
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
-    pcb_nuevo->contexto = pcb_wait;
-    //pcb_nuevo->quantum = pcb_encontrado->quantum;
-    pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
-    list_replace_by_condition(cola_exec, (void*) encontrar_pcb, pcb_nuevo);
+    if (pcb_encontrado) {
+        t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
+        pcb_nuevo->contexto = pcb_wait;
+        pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
+        list_replace_by_condition(cola_exec, (void*) encontrar_pcb, pcb_nuevo);
+    }
     pthread_mutex_unlock(&mutex_cola_exec);
 }
 
-void actualizar_pcb_con_cambiar_lista(t_contexto* pcb_wait, t_list* lista_bloq_recurso){
-    
-    bool encontrar_pcb(t_pcb* pcb){
+void actualizar_pcb_con_cambiar_lista(t_contexto* pcb_wait, t_list* lista_bloq_recurso) {
+    bool encontrar_pcb(t_pcb* pcb) {
         return pcb->contexto->pid == pcb_wait->pid;
-        };
-    
+    }
 
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    list_remove_element(cola_exec,pcb_encontrado);
-    free(pcb_encontrado);
-    t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
-    pcb_nuevo->contexto = pcb_wait;
-    //pcb_nuevo->quantum = pcb_encontrado->quantum;
-    pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
-    pthread_mutex_unlock(&mutex_cola_exec);
-    cambio_estado(pcb_nuevo->contexto->pid, "EXEC", "BLOCK");
-    list_add(lista_bloq_recurso,pcb_nuevo);
+    if (pcb_encontrado) {
+        list_remove_element(cola_exec, pcb_encontrado);
+        pthread_mutex_unlock(&mutex_cola_exec);
+
+        t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
+        pcb_nuevo->contexto = pcb_wait;
+        pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
+        cambio_estado(pcb_nuevo->contexto->pid, "EXEC", "BLOCK");
+        list_add(lista_bloq_recurso, pcb_nuevo);
+        free(pcb_encontrado);
+    } else {
+        pthread_mutex_unlock(&mutex_cola_exec);
+    }
 }
 
-void actualizar_pcb_envia_exit(t_contexto* pcb_wait, motivo_exit codigo){
-    
-    bool encontrar_pcb(t_pcb* pcb){
+void actualizar_pcb_envia_exit(t_contexto* pcb_wait, motivo_exit codigo) {
+    bool encontrar_pcb(t_pcb* pcb) {
         return pcb->contexto->pid == pcb_wait->pid;
-        };
-    
-    
-    pthread_mutex_lock(&mutex_cola_exec);
-    t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    list_remove_element(cola_exec,pcb_encontrado);
-    
-    pthread_mutex_unlock(&mutex_cola_exec);
-    
-    t_pcb_exit* pcb_exit_ok = malloc(sizeof(t_pcb_exit));
-    pcb_exit_ok->pcb = pcb_encontrado;
-    pcb_exit_ok->pcb->contexto = pcb_wait;
-    pcb_exit_ok->pcb->quantum_utilizado = pcb_encontrado->quantum_utilizado;
-    pcb_exit_ok->motivo = codigo;
-    //free(pcb_encontrado);
-    cambio_estado(pcb_exit_ok->pcb->contexto->pid, "EXEC", "EXIT");
-    pthread_mutex_lock(&mutex_cola_exit);
-    list_add(cola_exit,pcb_exit_ok);
-    pthread_mutex_unlock(&mutex_cola_exit);
-}
-
-void actualizar_pcb_envia_ready(t_contexto* pcb_wait){
-    
-    bool encontrar_pcb(t_pcb* pcb){
-        return pcb->contexto->pid == pcb_wait->pid;
-        };
-    
+    }
 
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    list_remove_element(cola_exec,pcb_encontrado);
-    pthread_mutex_unlock(&mutex_cola_exec);
-    pcb_encontrado->contexto = pcb_wait;
-    //ver como setear el temporal
-    cambio_estado(pcb_encontrado->contexto->pid, "EXEC", "READY");
-    pthread_mutex_lock(&mutex_cola_ready);
-    list_add(cola_ready,pcb_encontrado);
-    pthread_mutex_unlock(&mutex_cola_ready);
+    if (pcb_encontrado) {
+        list_remove_element(cola_exec, pcb_encontrado);
+        pthread_mutex_unlock(&mutex_cola_exec);
 
-    mostrar_prioridad_ready();
+        t_pcb_exit* pcb_exit_ok = malloc(sizeof(t_pcb_exit));
+        pcb_exit_ok->pcb = pcb_encontrado;
+        pcb_exit_ok->pcb->contexto = pcb_wait;
+        pcb_exit_ok->pcb->quantum_utilizado = pcb_encontrado->quantum_utilizado;
+        pcb_exit_ok->motivo = codigo;
 
-    sem_post(&sem_listos_para_ready);
+        cambio_estado(pcb_exit_ok->pcb->contexto->pid, "EXEC", "EXIT");
+        pthread_mutex_lock(&mutex_cola_exit);
+        list_add(cola_exit, pcb_exit_ok);
+        pthread_mutex_unlock(&mutex_cola_exit);
+    } else {
+        pthread_mutex_unlock(&mutex_cola_exec);
+    }
 }
 
-void desbloquear_proceso(t_list* lista_recurso_liberar){
-    if (!list_is_empty(lista_recurso_liberar)){
-        
-        t_pcb* pcb_desbloqueado = list_get(lista_recurso_liberar,0);
-        cambio_estado(pcb_desbloqueado->contexto->pid, "BLOCK", "READY");
+void actualizar_pcb_envia_ready(t_contexto* pcb_wait) {
+    bool encontrar_pcb(t_pcb* pcb) {
+        return pcb->contexto->pid == pcb_wait->pid;
+    }
+
+    pthread_mutex_lock(&mutex_cola_exec);
+    t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
+    if (pcb_encontrado) {
+        list_remove_element(cola_exec, pcb_encontrado);
+        pthread_mutex_unlock(&mutex_cola_exec);
+
+        pcb_encontrado->contexto = pcb_wait;
+        cambio_estado(pcb_encontrado->contexto->pid, "EXEC", "READY");
         pthread_mutex_lock(&mutex_cola_ready);
-        list_add(lista_recurso_liberar,pcb_desbloqueado);
+        list_add(cola_ready, pcb_encontrado);
+        pthread_mutex_unlock(&mutex_cola_ready);
+
+        mostrar_prioridad_ready();
+        sem_post(&sem_listos_para_ready);
+    } else {
+        pthread_mutex_unlock(&mutex_cola_exec);
+    }
+}
+
+void desbloquear_proceso(t_list* lista_recurso_liberar) {
+    if (!list_is_empty(lista_recurso_liberar)) {
+        pthread_mutex_lock(&mutex_cola_ready);
+        t_pcb* pcb_desbloqueado = list_remove(lista_recurso_liberar, 0);
+        cambio_estado(pcb_desbloqueado->contexto->pid, "BLOCK", "READY");
+        list_add(cola_ready, pcb_desbloqueado);
         pthread_mutex_unlock(&mutex_cola_ready);
 
         mostrar_prioridad_ready();
@@ -1271,10 +1266,10 @@ void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid){
         };
     
 
-    
+    pthread_mutex_lock(&mutex_cola_exit);
     t_pcb* pcb_encontrado = list_find(lista, (void*) encontrar_pcb);
     list_remove_element(lista,pcb_encontrado);
-    
+    pthread_mutex_unlock(&mutex_cola_exit);
 
     t_pcb_exit* pcb_exit_ok = malloc(sizeof(t_pcb_exit));
     pcb_exit_ok->pcb = pcb_encontrado;
@@ -1284,151 +1279,184 @@ void sacar_de_lista_mover_exit_recurso(t_list* lista, uint32_t pid){
     pthread_mutex_unlock(&mutex_cola_exit);
 }
 
-int existe_interfaz_conectada(char* nombre_interfaz){
-    
-    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
-        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
-           return 1;
-         }
-        }
-   
-    return 0;
+int existe_interfaz_conectada(char* nombre_interfaz) {
+    int resultado = 0;
+    pthread_mutex_lock(&conexiones_io_mutex);
 
+    for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
+            resultado = 1;
+            break;
+        }
+    }
+
+    pthread_mutex_unlock(&conexiones_io_mutex);
+    return resultado;
 }
 
-int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t entero32, uint32_t pid){
-    int devolver;
+int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t entero32, uint32_t pid) {
+    int devolver = -1;
+    pthread_mutex_lock(&conexiones_io_mutex);
 
-    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
-        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
-           t_paquete* paquete = crear_paquete_op(codigo);
-           agregar_entero_a_paquete(paquete, pid);
-           agregar_a_paquete(paquete,nombre_interfaz, strlen(nombre_interfaz)+1);
-           agregar_entero_a_paquete(paquete, entero32);
-           enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
-           eliminar_paquete(paquete);
-           devolver = recibir_operacion(list_get(conexiones_io.conexiones_io,i));
-           return devolver;
-         }
+    for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
+            t_paquete* paquete = crear_paquete_op(codigo);
+            agregar_entero_a_paquete(paquete, pid);
+            agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
+            agregar_entero_a_paquete(paquete, entero32);
+            enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
+            eliminar_paquete(paquete);
+            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            break;
         }
+    }
+
+    pthread_mutex_unlock(&conexiones_io_mutex);
+    return devolver;
 }
 
-int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t pid){
-    int devolver;
+int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t pid) {
+    int devolver = -1;
+    pthread_mutex_lock(&conexiones_io_mutex);
 
-    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
-        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
-           t_paquete* paquete = crear_paquete_op(codigo);
-           agregar_entero_a_paquete(paquete, pid);
-           agregar_a_paquete(paquete,nombre_interfaz, strlen(nombre_interfaz)+1);
-           agregar_entero_a_paquete(paquete, primer_entero32);
-           agregar_entero_a_paquete(paquete, segundo_entero32);
-           enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
-           eliminar_paquete(paquete);
-           devolver = recibir_operacion(list_get(conexiones_io.conexiones_io,i));
-           return devolver;
-         }
+    for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
+            t_paquete* paquete = crear_paquete_op(codigo);
+            agregar_entero_a_paquete(paquete, pid);
+            agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
+            agregar_entero_a_paquete(paquete, primer_entero32);
+            agregar_entero_a_paquete(paquete, segundo_entero32);
+            enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
+            eliminar_paquete(paquete);
+            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            break;
         }
+    }
+
+    pthread_mutex_unlock(&conexiones_io_mutex);
+    return devolver;
 }
 
-int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t pid){
-    int devolver;
+int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t pid) {
+    int devolver = -1;
+    pthread_mutex_lock(&conexiones_io_mutex);
 
-    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
-        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
-           t_paquete* paquete = crear_paquete_op(codigo);
-           agregar_entero_a_paquete(paquete, pid);
-           agregar_a_paquete(paquete,nombre_interfaz, strlen(nombre_interfaz)+1);
-           agregar_a_paquete(paquete, palabra, strlen(palabra+1));
-           enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
-           eliminar_paquete(paquete);
-           devolver = recibir_operacion(list_get(conexiones_io.conexiones_io,i));
-           return devolver;
-         }
+    for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
+            t_paquete* paquete = crear_paquete_op(codigo);
+            agregar_entero_a_paquete(paquete, pid);
+            agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
+            agregar_a_paquete(paquete, palabra, strlen(palabra) + 1);
+            enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
+            eliminar_paquete(paquete);
+            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            break;
         }
+    }
+
+    pthread_mutex_unlock(&conexiones_io_mutex);
+    return devolver;
 }
 
-int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t primer_entero32, uint32_t pid){
-    int devolver;
+int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t primer_entero32, uint32_t pid) {
+    int devolver = -1;
+    pthread_mutex_lock(&conexiones_io_mutex);
 
-    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
-        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
-           t_paquete* paquete = crear_paquete_op(codigo);
-           agregar_entero_a_paquete(paquete, pid);
-           agregar_a_paquete(paquete,nombre_interfaz, strlen(nombre_interfaz)+1);
-           agregar_a_paquete(paquete, palabra, strlen(palabra+1));
-           agregar_entero_a_paquete(paquete, primer_entero32);
-           enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
-           eliminar_paquete(paquete);
-           devolver = recibir_operacion(list_get(conexiones_io.conexiones_io,i));
-           return devolver;
-         }
+    for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
+            t_paquete* paquete = crear_paquete_op(codigo);
+            agregar_entero_a_paquete(paquete, pid);
+            agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
+            agregar_a_paquete(paquete, palabra, strlen(palabra) + 1);
+            agregar_entero_a_paquete(paquete, primer_entero32);
+            enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
+            eliminar_paquete(paquete);
+            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            break;
         }
+    }
+
+    pthread_mutex_unlock(&conexiones_io_mutex);
+    return devolver;
 }
 
-int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo,char* palabra, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t tercer_entero32, uint32_t pid){
-    int devolver;
+int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t tercer_entero32, uint32_t pid) {
+    int devolver = -1;
+    pthread_mutex_lock(&conexiones_io_mutex);
 
-    for(int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
-        if(strcmp(list_get(conexiones_io.conexiones_io_nombres,i),nombre_interfaz) == 0) {
-           t_paquete* paquete = crear_paquete_op(codigo);
-           agregar_entero_a_paquete(paquete, pid);
-           agregar_a_paquete(paquete,nombre_interfaz, strlen(nombre_interfaz)+1);
-           agregar_a_paquete(paquete, palabra, strlen(palabra+1));
-           agregar_entero_a_paquete(paquete, primer_entero32);
-           agregar_entero_a_paquete(paquete, segundo_entero32);
-           agregar_entero_a_paquete(paquete, tercer_entero32);
-           enviar_paquete(paquete,list_get(conexiones_io.conexiones_io,i));
-           eliminar_paquete(paquete);
-           devolver = recibir_operacion(list_get(conexiones_io.conexiones_io,i));
-           return devolver;
-         }
+    for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
+        if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
+            t_paquete* paquete = crear_paquete_op(codigo);
+            agregar_entero_a_paquete(paquete, pid);
+            agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
+            agregar_a_paquete(paquete, palabra, strlen(palabra) + 1);
+            agregar_entero_a_paquete(paquete, primer_entero32);
+            agregar_entero_a_paquete(paquete, segundo_entero32);
+            agregar_entero_a_paquete(paquete, tercer_entero32);
+            enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
+            eliminar_paquete(paquete);
+            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            break;
         }
+    }
+
+    pthread_mutex_unlock(&conexiones_io_mutex);
+    return devolver;
 }
 
-void bloquear_pcb(t_contexto* contexto){
-        bool encontrar_pcb(t_pcb* pcb){
+void bloquear_pcb(t_contexto* contexto) {
+    bool encontrar_pcb(t_pcb* pcb) {
         return pcb->contexto->pid == contexto->pid;
-        };
-    
+    }
 
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    list_remove_element(cola_exec,pcb_encontrado);
-    free(pcb_encontrado);
-    t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
-    pcb_nuevo->contexto = contexto;
-    //pcb_nuevo->quantum = pcb_encontrado->quantum;
-    //pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
-    pthread_mutex_unlock(&mutex_cola_exec);
+    if (pcb_encontrado) {
+        list_remove_element(cola_exec, pcb_encontrado);
+        pthread_mutex_unlock(&mutex_cola_exec);
 
-    cambio_estado(pcb_nuevo->contexto->pid, "EXEC", "BLOCK");
-    mostrar_motivo_block(pcb_nuevo->contexto->pid, "INTEFAZ");
+        t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
+        pcb_nuevo->contexto = contexto;
+        // pcb_nuevo->quantum = pcb_encontrado->quantum;
+        // pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
 
-    pthread_mutex_lock(&mutex_cola_block);
-    list_add(cola_block,pcb_nuevo);
-    pthread_mutex_unlock(&mutex_cola_block);
-    sem_post(&esta_ejecutando);
+        cambio_estado(pcb_nuevo->contexto->pid, "EXEC", "BLOCK");
+        mostrar_motivo_block(pcb_nuevo->contexto->pid, "INTERFAZ");
+
+        pthread_mutex_lock(&mutex_cola_block);
+        list_add(cola_block, pcb_nuevo);
+        pthread_mutex_unlock(&mutex_cola_block);
+
+        sem_post(&esta_ejecutando);
+        free(pcb_encontrado);
+    } else {
+        pthread_mutex_unlock(&mutex_cola_exec);
+    }
 }
 
-void desbloquear_proceso_block(uint32_t pid){
-         bool encontrar_pcb(t_pcb* pcb){
+void desbloquear_proceso_block(uint32_t pid) {
+    bool encontrar_pcb(t_pcb* pcb) {
         return pcb->contexto->pid == pid;
-        };
-    
+    }
 
     pthread_mutex_lock(&mutex_cola_block);
     t_pcb* pcb_encontrado = list_find(cola_block, (void*) encontrar_pcb);
-    list_remove_element(cola_block,pcb_encontrado);
-    pthread_mutex_unlock(&mutex_cola_block);
-    cambio_estado(pcb_encontrado->contexto->pid,"BLOCK", "READY");
-    pthread_mutex_lock(&mutex_cola_ready);
-    list_add(cola_ready,pcb_encontrado);
-    pthread_mutex_unlock(&mutex_cola_ready); 
+    if (pcb_encontrado) {
+        list_remove_element(cola_block, pcb_encontrado);
+        pthread_mutex_unlock(&mutex_cola_block);
 
-    mostrar_prioridad_ready(); 
+        cambio_estado(pcb_encontrado->contexto->pid, "BLOCK", "READY");
 
-    sem_post(&sem_listos_para_ready);
+        pthread_mutex_lock(&mutex_cola_ready);
+        list_add(cola_ready, pcb_encontrado);
+        pthread_mutex_unlock(&mutex_cola_ready);
+
+        mostrar_prioridad_ready();
+
+        sem_post(&sem_listos_para_ready);
+    } else {
+        pthread_mutex_unlock(&mutex_cola_block);
+    }
 }
 
 char* motivo_exit_to_string(motivo_exit motivo){

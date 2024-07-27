@@ -35,6 +35,7 @@ pthread_mutex_t mutex_cola_ready_aux;
 pthread_mutex_t mutex_cola_exec;
 pthread_mutex_t mutex_cola_exit;
 pthread_mutex_t mutex_cola_block;
+pthread_mutex_t conexiones_io_mutex;
 pthread_mutex_t conexion;
 
 sem_t sem_listos_para_ready;
