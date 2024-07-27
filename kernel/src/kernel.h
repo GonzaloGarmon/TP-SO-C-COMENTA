@@ -46,6 +46,7 @@ sem_t sem_listos_para_exit;
 sem_t sem_empezar_quantum;
 sem_t sem_iniciar_consola;
 sem_t esta_ejecutando;
+sem_t sem_chequear_validacion;
 
 char* puerto_escucha;
 char* ip_memoria;
@@ -58,6 +59,7 @@ char* algoritmo;
 t_algoritmo algoritmo_planificacion;
 int quantum;
 int corto_VRR;
+uint32_t validacion;
 t_conexiones_kernel_io conexiones_io;
 char** recursos;
 int* instancias_recursos;

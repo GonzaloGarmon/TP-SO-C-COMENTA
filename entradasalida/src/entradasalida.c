@@ -183,13 +183,29 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     int desplazamiento = 0;
     char* buffer;
 
-    // Recibir operación
+    // RECIBO OPERACION PARA CHEQUEAR SI ES VALIDA
     int operacion = recibir_operacion(socket_cliente);
-    
+    buffer = recibir_buffer(&size, socket_cliente);
+
+    //ESTO LO RECIBO YA QUE TENGO QUE ENVIAR ALGO
+    pidRecibido = leer_entero_uint32(buffer, &desplazamiento);
+
     log_info(log_entradasalida, "recibi codigo: %d", operacion);
 
+    if(es_operacion_compatible(tipoInterfaz,operacion)){
+
+    //SI ES VALIDA LE ENVIO UN 1 Y RECIBO TODO
+    enviar_entero(conexion_entradasalida_kernel,1,OBTENER_VALIDACION);
+    sleep(3);
+
+    desplazamiento = 0;
+    size = 0;
+
+    int operacion2 = recibir_operacion(socket_cliente);
+    log_info(log_entradasalida, "recibi codigo: %d", operacion2);
+
     int *operacionPtr = malloc(sizeof(int));
-    *operacionPtr = operacion;
+    *operacionPtr = operacion2;
     list_add(lista_operaciones, operacionPtr);
 
     // Recibir el buffer
@@ -207,7 +223,7 @@ void recibir_y_procesar_paquete(int socket_cliente) {
                 list_add(lista_datos, nombreInterfazRecibido);
                 unidadesRecibidas = leer_entero_uint32(buffer, &desplazamiento);
                 list_add(lista_datos, malloc_copiar_uint32(unidadesRecibidas));
-                enviar_string(conexion_entradasalida_kernel, "PENEEE",MENSAJE);
+                //enviar_string(conexion_entradasalida_kernel, "PENEEE",MENSAJE);
                 log_info(log_entradasalida, "nombre interfaz: %s", nombreInterfazRecibido);
                 log_info(log_entradasalida, "unidades: %d", unidadesRecibidas);
             break;
@@ -253,6 +269,10 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     }
 
     free(buffer);
+    }else{
+        //SI NO ES VALIDA ENVIO 0 Y NO RECIBO NADA
+        enviar_entero(conexion_entradasalida_kernel,0,OBTENER_VALIDACION);
+    }
 }
 
 uint32_t* malloc_copiar_uint32(uint32_t valor) {

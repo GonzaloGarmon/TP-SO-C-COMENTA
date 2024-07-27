@@ -125,6 +125,7 @@ void iniciar_semaforos() {
     sem_init(&sem_listos_para_exit, 0, 0);
     sem_init(&sem_empezar_quantum, 0, 0);
     sem_init(&sem_iniciar_consola, 0, 0);
+    sem_init(&sem_chequear_validacion, 0, 0);
     sem_init(&esta_ejecutando, 0, 1);
 
     cola_new = list_create();
@@ -168,10 +169,17 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 break;
             case IDENTIFICACION: {
                 char* nombre_interfaz = recibir_string(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
-                //pthread_mutex_lock(&conexion);
+                pthread_mutex_lock(&conexion);
                 list_add(conexiones_io.conexiones_io_nombres, nombre_interfaz);
-                //pthread_mutex_unlock(&conexion);
+                pthread_mutex_unlock(&conexion);
                 log_trace(log_kernel, "Me llegó la interfaz: %s", nombre_interfaz);
+                break;
+            }
+            case OBTENER_VALIDACION: {
+                log_info(log_kernel, "llego validacion");
+                
+                validacion = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
+                sem_post(&sem_chequear_validacion);
                 break;
             }
             case TERMINO_INTERFAZ: {
@@ -1296,29 +1304,43 @@ int existe_interfaz_conectada(char* nombre_interfaz) {
 }
 
 int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t entero32, uint32_t pid) {
-    int devolver = -1;
-    pthread_mutex_lock(&conexiones_io_mutex);
-
+    //int devolver = -1;
+    //pthread_mutex_lock(&conexiones_io_mutex);
+   
     for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
         if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
+            //PAUQETE PARA VALIDAR SI LA INTERFAZ SE ADMITE O NO
             t_paquete* paquete = crear_paquete_op(codigo);
             agregar_entero_a_paquete(paquete, pid);
-            agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
-            agregar_entero_a_paquete(paquete, entero32);
             enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
             eliminar_paquete(paquete);
-            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
-            break;
+            sem_wait(&sem_chequear_validacion);
+            log_info(log_kernel, "la validacion es: %d", validacion);
+
+            if(validacion){
+            
+            t_paquete* paquete_2 = crear_paquete_op(codigo);
+            agregar_entero_a_paquete(paquete_2, pid);
+            agregar_a_paquete(paquete_2, nombre_interfaz, strlen(nombre_interfaz) + 1);
+            agregar_entero_a_paquete(paquete_2, entero32);
+            enviar_paquete(paquete_2, list_get(conexiones_io.conexiones_io, i));
+            eliminar_paquete(paquete_2);
+            
+            return 1;
+            //devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            }else{
+                return 0;
+            }
         }
     }
 
-    pthread_mutex_unlock(&conexiones_io_mutex);
-    return devolver;
+    //pthread_mutex_unlock(&conexiones_io_mutex);
+    //return 1;
 }
 
 int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t pid) {
     int devolver = -1;
-    pthread_mutex_lock(&conexiones_io_mutex);
+    //pthread_mutex_lock(&conexiones_io_mutex);
 
     for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
         if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
@@ -1329,18 +1351,18 @@ int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t pr
             agregar_entero_a_paquete(paquete, segundo_entero32);
             enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
             eliminar_paquete(paquete);
-            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            //devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
             break;
         }
     }
 
-    pthread_mutex_unlock(&conexiones_io_mutex);
-    return devolver;
+    //pthread_mutex_unlock(&conexiones_io_mutex);
+    return 1;
 }
 
 int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t pid) {
     int devolver = -1;
-    pthread_mutex_lock(&conexiones_io_mutex);
+    //pthread_mutex_lock(&conexiones_io_mutex);
 
     for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
         if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
@@ -1350,18 +1372,18 @@ int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* pal
             agregar_a_paquete(paquete, palabra, strlen(palabra) + 1);
             enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
             eliminar_paquete(paquete);
-            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
-            break;
+            //devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            //break;
         }
     }
 
-    pthread_mutex_unlock(&conexiones_io_mutex);
-    return devolver;
+    //pthread_mutex_unlock(&conexiones_io_mutex);
+    return 1;
 }
 
 int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t primer_entero32, uint32_t pid) {
     int devolver = -1;
-    pthread_mutex_lock(&conexiones_io_mutex);
+    //pthread_mutex_lock(&conexiones_io_mutex);
 
     for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
         if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
@@ -1372,18 +1394,18 @@ int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char*
             agregar_entero_a_paquete(paquete, primer_entero32);
             enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
             eliminar_paquete(paquete);
-            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
-            break;
+            //devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            //break;
         }
     }
 
-    pthread_mutex_unlock(&conexiones_io_mutex);
-    return devolver;
+    //pthread_mutex_unlock(&conexiones_io_mutex);
+    return 1;
 }
 
 int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo, char* palabra, uint32_t primer_entero32, uint32_t segundo_entero32, uint32_t tercer_entero32, uint32_t pid) {
     int devolver = -1;
-    pthread_mutex_lock(&conexiones_io_mutex);
+    //pthread_mutex_lock(&conexiones_io_mutex);
 
     for (int i = 0; i < list_size(conexiones_io.conexiones_io_nombres); i++) {
         if (strcmp(list_get(conexiones_io.conexiones_io_nombres, i), nombre_interfaz) == 0) {
@@ -1396,13 +1418,13 @@ int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo, char
             agregar_entero_a_paquete(paquete, tercer_entero32);
             enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
             eliminar_paquete(paquete);
-            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
-            break;
+            //devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            //break;
         }
     }
 
-    pthread_mutex_unlock(&conexiones_io_mutex);
-    return devolver;
+    //pthread_mutex_unlock(&conexiones_io_mutex);
+    return 1;
 }
 
 void bloquear_pcb(t_contexto* contexto) {
