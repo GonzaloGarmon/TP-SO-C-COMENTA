@@ -695,11 +695,11 @@ void funcResize(t_instruccion* instruccion){
         int cod_op = recibir_operacion(conexion_memoria);
         switch(cod_op) {
             case RESIZE_OK:
-            log_trace(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
+            log_trace(log_cpu, "Entro en RESIZE COD : %d", cod_op);
             log_info(log_cpu, "Se ajusta tamanio de proceso");
             break;
             case OUT_OF_MEMORY:
-            log_trace(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
+            log_trace(log_cpu, "Entro en OUT OF MEMORY COD : %d", cod_op);
             enviar_contexto(socket_cliente_kernel_interrupt, contexto, cod_op);
             break;
             default:

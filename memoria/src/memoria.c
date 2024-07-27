@@ -550,7 +550,7 @@ void finalizar_proceso(uint32_t proceso) {
     }
 }
 
-op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
+op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) { //USANDO MEMORIA_CONFIG NO SE CARGA NADA, ASI SI ANDA
     uint32_t nuevo_tamanio_resize = ceil(nuevo_tam / (double)tam_pagina);
     for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
         tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, i);
@@ -558,7 +558,7 @@ op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
             if (nuevo_tamanio_resize > tabla->cantidad_paginas) {
                 // Ampliar el tamaño del proceso
                 log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Ampliar: %i",
-                         pid, tabla->cantidad_paginas * memoria_config.tam_pagina, nuevo_tamanio_resize * memoria_config.tam_pagina);
+                         pid, tabla->cantidad_paginas * tam_pagina, nuevo_tamanio_resize * tam_pagina);
                 uint32_t paginas_a_asignar = nuevo_tamanio_resize;
                 if (marcos_libres < paginas_a_asignar) {
                     log_info(log_memoria, "No se pueden solicitar más marcos -> Memoria llena");
@@ -568,14 +568,14 @@ op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
                 tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tamanio_resize);
                 for (uint32_t i = tabla->cantidad_paginas; i < nuevo_tamanio_resize; i++) {
                     tabla->tabla_paginas[i].numero_pagina = i;
-                    tabla->tabla_paginas[i].numero_marco = (uint32_t)(uintptr_t)(ESPACIO_USUARIO + (i * memoria_config.tam_pagina));
+                    tabla->tabla_paginas[i].numero_marco = (uint32_t)(uintptr_t)(ESPACIO_USUARIO + (i * tam_pagina));
                 }
                 marcos_libres -= paginas_a_asignar;
 
             } else if (nuevo_tamanio_resize < tabla->cantidad_paginas) {
                 // Reducir el tamaño del proceso
                 log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Reducir: %i",
-                         pid, tabla->cantidad_paginas * memoria_config.tam_pagina, nuevo_tamanio_resize * memoria_config.tam_pagina);
+                         pid, tabla->cantidad_paginas * tam_pagina, nuevo_tamanio_resize * tam_pagina);
                 for (uint32_t i = nuevo_tamanio_resize; i < tabla->cantidad_paginas; i++) {
                     // Aquí podrías liberar recursos asociados a estas páginas si es necesario
                     tabla->tabla_paginas[i].numero_marco = 0;
