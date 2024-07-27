@@ -765,7 +765,7 @@ uint32_t traducirDireccion(uint32_t dirLogica, uint32_t tamanio_pagina) {
         {
         case 0:
             log_error(log_cpu, "Llego codigo operacion 0");
-            break;
+            log_error(log_cpu, "PRUEBA");
         case ACCESO_TABLA_PAGINAS_OK:
             log_info(log_cpu, "Codigo de operacion recibido en cpu : %d", cod_op);
             marco = recibir_entero_uint32(conexion_memoria, log_cpu);
