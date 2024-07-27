@@ -183,7 +183,7 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             crear_tabla_pagina(pid, cant_paginas);
             log_info(log_memoria, "PID: %i - Tamanio: %i", pid,cant_paginas);
             list_add(pids_archivos.nombres_archivos,path);
-            list_add(pids_archivos.pids,pid);
+            list_add(pids_archivos.pids, (void *)(uintptr_t)pid);
             //cargar_instrucciones_desde_archivo(path, &instrucciones);
             sem_post(&sem);
             //enviar_mensaje("Proceso creado", SOCKET_CLIENTE_KERNEL);
@@ -230,20 +230,22 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
         {
         case PEDIR_INSTRUCCION_MEMORIA:
             sem_wait(&sem);
-            sleep(retardo_respuesta/1000);
+            usleep(retardo_respuesta * 1000);  // Cambio sleep por usleep
             t_list* enteros = recibir_doble_entero(SOCKET_CLIENTE_CPU);
-            uint32_t ins = list_get(enteros,1);
+            uint32_t ins = (uint32_t)(uintptr_t)list_get(enteros, 1);
             for (int i = 0; i < list_size(pids_archivos.nombres_archivos); i++)
             {
-                if (list_get(pids_archivos.pids, i) == list_get(enteros,0)){
-                    log_info(log_memoria, "voy a abrir el archivo %s del pid: %d", list_get(pids_archivos.nombres_archivos, i), list_get(pids_archivos.pids, i));
-                    cargar_instrucciones_desde_archivo(list_get(pids_archivos.nombres_archivos, i),&instrucciones);
+                if ((uint32_t)(uintptr_t)list_get(pids_archivos.pids, i) == (uint32_t)(uintptr_t)list_get(enteros, 0)) {
+                    log_info(log_memoria, "voy a abrir el archivo %s del pid: %d", 
+                            (char *)list_get(pids_archivos.nombres_archivos, i), 
+                            (uint32_t)(uintptr_t)list_get(pids_archivos.pids, i));
+                            cargar_instrucciones_desde_archivo((char *)list_get(pids_archivos.nombres_archivos, i), instrucciones);
                 }
             }
             
-            enviar_instruccion(SOCKET_CLIENTE_CPU, instrucciones[ins],READY);
+            enviar_instruccion(SOCKET_CLIENTE_CPU, instrucciones[ins], READY);
             sem_post(&sem);
-        break;
+            break;
         case RESIZE: 
             usleep(retardo_respuesta * 1000);
             t_2_enteros* resize = recibir_2_enteros(SOCKET_CLIENTE_CPU);
@@ -291,8 +293,8 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             // Escribir en la dirección física
             escribir(direccion_fisica, escritura, tam_a_escribir);  
 
-            log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu",
-                        pid_mov_out, direccion_fisica, tam_a_escribir);
+            log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
+                pid_mov_out, direccion_fisica, tam_a_escribir);
 
             enviar_codop(SOCKET_CLIENTE_CPU, MOV_OUT_OK);
             
@@ -361,8 +363,8 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
 
                 escribir(direccion_fisica_stdout_write, escritura_stdout, tam_a_escribir_stdout_write);
                 enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_STDIN_READ);
-                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu",
-                         pid_stdout_write, direccion_fisica_stdout_write, tam_a_escribir_stdout_write);
+                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
+                pid_stdout_write, direccion_fisica_stdout_write, tam_a_escribir_stdout_write);
 
 
                 free(valor_stdout_write);
@@ -406,7 +408,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
 
                 escribir(direccion_fisica_io_write, escritura_io, tam_a_escribir_io_write);
                 enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_FS_READ);
-                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %zu",
+                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
                          pid_io_write, direccion_fisica_io_write, tam_a_escribir_io_write);
 
 
@@ -458,15 +460,15 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
 
 void levantar_estructuras_administrativas() {
     log_info(log_memoria, "principio de todo el cod");
-    ESPACIO_USUARIO = malloc(tam_memoria);
-    ESPACIO_LIBRE_TOTAL = tam_memoria;
+    ESPACIO_USUARIO = malloc(memoria_config.tam_memoria);
+    ESPACIO_LIBRE_TOTAL = memoria_config.tam_memoria;
 
     LISTA_ESPACIOS_LIBRES = list_create();
     LISTA_TABLA_PAGINAS = list_create();
 
     t_esp* espacio_inicial = malloc(sizeof(t_esp));
     espacio_inicial->base = 0;
-    espacio_inicial->limite = tam_memoria;
+    espacio_inicial->limite = memoria_config.tam_memoria;
 
     list_add(LISTA_ESPACIOS_LIBRES, espacio_inicial);
 
@@ -474,7 +476,7 @@ void levantar_estructuras_administrativas() {
 }
 
 void crear_tabla_pagina(uint32_t pid_t, uint32_t cant_paginas) {
-    uint32_t tam_total_paginas = cant_paginas * tam_pagina;
+    uint32_t tam_total_paginas = cant_paginas * memoria_config.tam_pagina;
 
     t_esp* espacio_libre = NULL;
     for (int i = 0; i < list_size(LISTA_ESPACIOS_LIBRES); i++) {
@@ -492,7 +494,7 @@ void crear_tabla_pagina(uint32_t pid_t, uint32_t cant_paginas) {
 
     for (int i = 0; i < cant_paginas; i++) {
         tabla_nueva->tabla_paginas[i].numero_pagina = i;
-        tabla_nueva->tabla_paginas[i].numero_marco = (uint32_t)((char*)ESPACIO_USUARIO + (i * tam_pagina));
+        tabla_nueva->tabla_paginas[i].numero_marco = (uintptr_t)(ESPACIO_USUARIO + (i * memoria_config.tam_pagina));
     }
 
     list_add(LISTA_TABLA_PAGINAS, tabla_nueva);
@@ -514,15 +516,15 @@ char* leer(uint32_t dir_fisca , uint32_t size) {
     return data;
 }
 
-char* obtener_instruccion(uint32_t pid, uint32_t pc) {
-    for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
-        tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, i);
-        if (tabla->pid == pid) {
-            return tabla->tabla_paginas[pc].numero_marco;
-        }
-    }
-    return NULL;
-}
+// char* obtener_instruccion(uint32_t pid, uint32_t pc) {
+//     for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
+//         tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, i);
+//         if (tabla->pid == pid) {
+//             return tabla->tabla_paginas[pc].numero_marco;
+//         }
+//     }
+//     return NULL;
+// }
 
 uint32_t obtener_marco_pagina(uint32_t pid, uint32_t num_pagina) {
     for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
@@ -549,15 +551,14 @@ void finalizar_proceso(uint32_t proceso) {
 }
 
 op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
-    op_code ret;
-    uint32_t nuevo_tamanio_resize = ceil(nuevo_tam / tam_pagina);
+    uint32_t nuevo_tamanio_resize = ceil(nuevo_tam / (double)tam_pagina);
     for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
         tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, i);
         if (tabla->pid == pid) {
             if (nuevo_tamanio_resize > tabla->cantidad_paginas) {
                 // Ampliar el tamaño del proceso
                 log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Ampliar: %i",
-                         pid, tabla->cantidad_paginas * tam_pagina, nuevo_tamanio_resize * tam_pagina);
+                         pid, tabla->cantidad_paginas * memoria_config.tam_pagina, nuevo_tamanio_resize * memoria_config.tam_pagina);
                 uint32_t paginas_a_asignar = nuevo_tamanio_resize;
                 if (marcos_libres < paginas_a_asignar) {
                     log_info(log_memoria, "No se pueden solicitar más marcos -> Memoria llena");
@@ -567,14 +568,14 @@ op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
                 tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tamanio_resize);
                 for (uint32_t i = tabla->cantidad_paginas; i < nuevo_tamanio_resize; i++) {
                     tabla->tabla_paginas[i].numero_pagina = i;
-                    tabla->tabla_paginas[i].numero_marco = (uint32_t)((char*)ESPACIO_USUARIO + (i * tam_pagina));
+                    tabla->tabla_paginas[i].numero_marco = (uint32_t)(uintptr_t)(ESPACIO_USUARIO + (i * memoria_config.tam_pagina));
                 }
                 marcos_libres -= paginas_a_asignar;
 
             } else if (nuevo_tamanio_resize < tabla->cantidad_paginas) {
                 // Reducir el tamaño del proceso
                 log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Reducir: %i",
-                         pid, tabla->cantidad_paginas * tam_pagina, nuevo_tamanio_resize * tam_pagina);
+                         pid, tabla->cantidad_paginas * memoria_config.tam_pagina, nuevo_tamanio_resize * memoria_config.tam_pagina);
                 for (uint32_t i = nuevo_tamanio_resize; i < tabla->cantidad_paginas; i++) {
                     // Aquí podrías liberar recursos asociados a estas páginas si es necesario
                     tabla->tabla_paginas[i].numero_marco = 0;
@@ -587,7 +588,7 @@ op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
             return RESIZE_OK;
         }
     }
-    return 0; // Indicar error si no se encuentra el proceso
+    return -1; // Indicar error si no se encuentra el proceso
 }
 
 

@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <assert.h>
+#include <math.h>
 
 typedef struct{
     uint8_t AX;
