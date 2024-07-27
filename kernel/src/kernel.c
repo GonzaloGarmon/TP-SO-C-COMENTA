@@ -167,8 +167,8 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 recibir_string(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
                 break;
             case IDENTIFICACION: {
-                char* nombre_interfaz = recibir_string(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
                 //pthread_mutex_lock(&conexion);
+                char* nombre_interfaz = recibir_string(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
                 list_add(conexiones_io.conexiones_io_nombres, nombre_interfaz);
                 //pthread_mutex_unlock(&conexion);
                 log_trace(log_kernel, "Me llegó la interfaz: %s", nombre_interfaz);
@@ -228,7 +228,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
         case INTERRUPCION:
             t_contexto* pcb_interrumpido = recibir_contexto(conexion_kernel_cpu_dispatch);
             //LOG OBLIGATORIO
-            log_info(log_kernel,"PID: %d - Desalojado por fin de Quantum");
+            log_info(log_kernel,"PID: %d - Desalojado por fin de Quantum",pcb_interrumpido->pid);
 
             actualizar_pcb_envia_ready(pcb_interrumpido);
             sem_post(&esta_ejecutando);
@@ -487,7 +487,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
 void recibir_cpu_interrupt(int conexion_kernel_cpu_interrupt){
     int noFinalizar = 0;
     while(noFinalizar != -1){
-        int op_code = recibir_operacion(conexion_kernel_cpu_interrupt);
+        //int op_code = recibir_operacion(conexion_kernel_cpu_interrupt);
     }
 }
 
@@ -656,7 +656,7 @@ void iniciar_consola(){
 }
 
 
-void ejecutar_script(char* path){
+int ejecutar_script(char* path){
     printf("path: %s", path);
     FILE* archivo = fopen(path, "r");
 
@@ -679,7 +679,9 @@ void ejecutar_script(char* path){
         printf("Operacion: %s, Path: %s\n", operacion, path_operacion);
     }
 
+    free(path_operacion);
     fclose(archivo);
+    return EXIT_SUCCESS;
 }
 
 void iniciar_proceso(char* path){
@@ -1103,8 +1105,7 @@ void dispatch(t_pcb* pcb_enviar){
         
         log_trace(log_kernel, "envio pcb de pid: %d", pcb_enviar->contexto->pid);
         log_trace(log_kernel, "envio pcb de pc: %d", pcb_enviar->contexto->pc);
-        log_trace(log_kernel, "envio pcb de qq: %d", pcb_enviar->quantum);
-        //ENVIAR CONTEXTO DE EJECUCION A CPU
+        log_trace(log_kernel, "envio pcb de qq: %d", pcb_enviar->quantum_utilizado);        //ENVIAR CONTEXTO DE EJECUCION A CPU
         enviar_contexto(conexion_kernel_cpu_dispatch, pcb_enviar->contexto,EXEC);
 
         corto_VRR = 0;
@@ -1305,9 +1306,10 @@ int admite_operacion_con_u32(char* nombre_interfaz, op_code codigo, uint32_t ent
             agregar_entero_a_paquete(paquete, pid);
             agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
             agregar_entero_a_paquete(paquete, entero32);
-            enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
+            int socket = (int)(intptr_t)list_get(conexiones_io.conexiones_io, i);
+            enviar_paquete(paquete, socket);
             eliminar_paquete(paquete);
-            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            devolver = recibir_operacion(socket);
             break;
         }
     }
@@ -1327,9 +1329,10 @@ int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t pr
             agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
             agregar_entero_a_paquete(paquete, primer_entero32);
             agregar_entero_a_paquete(paquete, segundo_entero32);
-            enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
+            int socket = (int)(intptr_t)list_get(conexiones_io.conexiones_io, i);
+            enviar_paquete(paquete, socket);
             eliminar_paquete(paquete);
-            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            devolver = recibir_operacion(socket);
             break;
         }
     }
@@ -1348,9 +1351,10 @@ int admite_operacion_con_string(char* nombre_interfaz, op_code codigo, char* pal
             agregar_entero_a_paquete(paquete, pid);
             agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
             agregar_a_paquete(paquete, palabra, strlen(palabra) + 1);
-            enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
+            int socket = (int)(intptr_t)list_get(conexiones_io.conexiones_io, i);
+            enviar_paquete(paquete, socket);
             eliminar_paquete(paquete);
-            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            devolver = recibir_operacion(socket);
             break;
         }
     }
@@ -1370,9 +1374,10 @@ int admite_operacion_con_string_u32(char* nombre_interfaz, op_code codigo, char*
             agregar_a_paquete(paquete, nombre_interfaz, strlen(nombre_interfaz) + 1);
             agregar_a_paquete(paquete, palabra, strlen(palabra) + 1);
             agregar_entero_a_paquete(paquete, primer_entero32);
-            enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
+            int socket = (int)(intptr_t)list_get(conexiones_io.conexiones_io, i);
+            enviar_paquete(paquete, socket);
             eliminar_paquete(paquete);
-            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            devolver = recibir_operacion(socket);
             break;
         }
     }
@@ -1394,9 +1399,10 @@ int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo, char
             agregar_entero_a_paquete(paquete, primer_entero32);
             agregar_entero_a_paquete(paquete, segundo_entero32);
             agregar_entero_a_paquete(paquete, tercer_entero32);
-            enviar_paquete(paquete, list_get(conexiones_io.conexiones_io, i));
+            int socket = (int)(intptr_t)list_get(conexiones_io.conexiones_io, i);
+            enviar_paquete(paquete, socket);
             eliminar_paquete(paquete);
-            devolver = recibir_operacion(list_get(conexiones_io.conexiones_io, i));
+            devolver = recibir_operacion(socket);
             break;
         }
     }
