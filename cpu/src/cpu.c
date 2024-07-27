@@ -164,7 +164,7 @@ t_instruccion* fetch(uint32_t pid, uint32_t pc){
     pedir_instruccion_memoria(pid, pc, log_cpu);
     log_info(log_cpu, "PID: %i - FETCH - Program Counter: %i", pid, pc);
     t_instruccion* instruccion = malloc(sizeof(t_instruccion));
-    int codigo = recibir_operacion(conexion_memoria);
+    (void)recibir_operacion(conexion_memoria);
     instruccion = recibir_instruccion(conexion_memoria);
   return instruccion;
 }
@@ -277,7 +277,7 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
 void checkInturrupt(uint32_t pid){
     if (hay_interrupcion){
         hay_interrupcion = 0;
-        if(contexto->pid = pid_interrupt){
+        if(contexto->pid == pid_interrupt){
             seguir_ejecutando = 0;
             if(!es_por_usuario){
             enviar_contexto(socket_cliente_kernel_dispatch, contexto,INTERRUPCION);
@@ -432,7 +432,7 @@ uint8_t obtener_valor_registro_XX(char* parametro){
         valor_registro = contexto->registros->DX;
     }else {
         printf("Registro desconocido: %s\n", parametro);
-        return;
+        return 0;
     }
     return valor_registro;
 }
@@ -449,7 +449,7 @@ uint32_t obtener_valor_registro_XXX(char* parametro){
         valor_registro = contexto->registros->EDX;
     }else {
         printf("Registro desconocido: %s\n", parametro);
-        return;
+        return 0;
     }
     return valor_registro;
 }
@@ -672,7 +672,7 @@ void funcIoFsRead(t_instruccion* instruccion) {
 
 void funcCopyString(t_instruccion *instruccion) {
     
-    uint32_t tamanio = instruccion->parametros2;
+    uint32_t tamanio = atoi(instruccion->parametros2);
 
     t_paquete *paquete = crear_paquete_op(COPY_STRING);
     agregar_entero_a_paquete(paquete, tamanio);
@@ -682,7 +682,7 @@ void funcCopyString(t_instruccion *instruccion) {
 }
 
 void funcResize(t_instruccion* instruccion){
-    uint32_t tamanio = instruccion->parametros2;
+    uint32_t tamanio = atoi(instruccion->parametros2);
 
     t_paquete *paquete = crear_paquete_op(RESIZE);
     agregar_entero_a_paquete(paquete, tamanio);
@@ -753,7 +753,7 @@ uint32_t traducirDireccion(uint32_t dirLogica, uint32_t tamanio_pagina) {
 
     //TLB miss
     log_info(log_cpu, "TLB Hit: “PID: %i - TLB MISS - Pagina: %i", contexto->pid, numero_pagina);
-    t_2_enteros *algo;
+    t_2_enteros *algo = malloc(sizeof(t_2_enteros));
     algo->entero1 = numero_pagina;
     algo->entero2 = contexto->pid;
     enviar_2_enteros(conexion_memoria, algo, ACCESO_TABLA_PAGINAS);
@@ -793,15 +793,11 @@ uint32_t traducirDireccion(uint32_t dirLogica, uint32_t tamanio_pagina) {
 
 void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina){ //actualizar tlb
 
-//PREGUNTAR NICO 
-// 
-// 
-// 
-//     
+
     bool  espacio_libre = false; //flag
     // todavia tengo espacios libres
     for(int i=pid ;i < cantidad_entradas_tlb; i++){
-        if(entrada_tlb[i].pid == NULL){
+        if(entrada_tlb[i].pid == 0){
             entrada_tlb[i].pid = pid;
             entrada_tlb[i].numero_de_pagina = pagina;
             entrada_tlb[i].marco = marco;
@@ -868,12 +864,13 @@ uint32_t tamanio_registro(char *registro){
     else if (strcmp(registro, "EBX") == 0) return 8;
     else if (strcmp(registro, "ECX") == 0) return 8;
     else if (strcmp(registro, "EDX") == 0) return 8;
+    return 0;
 }
 
 char *leer_valor_de_memoria(uint32_t direccionFisica, uint32_t tamanio) {
 
     t_paquete *paquete = crear_paquete_op(MOV_IN);
-    agregar_string_a_paquete(paquete, direccionFisica);
+    agregar_entero_a_paquete(paquete, direccionFisica);
     agregar_entero_a_paquete(paquete, contexto->pid);
     agregar_entero_a_paquete(paquete, tamanio);
 
@@ -893,7 +890,7 @@ char *leer_valor_de_memoria(uint32_t direccionFisica, uint32_t tamanio) {
             
             char *valor_recibido = recibir_string(conexion_memoria, log_cpu);
 
-            log_info(log_cpu, "PID: %d - Acción: LEER - Dirección física: %d - Valor: %d",
+            log_info(log_cpu, "PID: %d - Acción: LEER - Dirección física: %d - Valor: %s",
                         contexto->pid, direccionFisica, valor_recibido);
             log_info(log_cpu, "Recibo string :%s", valor_recibido);
             return valor_recibido;
@@ -915,34 +912,26 @@ void guardar_valor_en_registro(char *valor, char *registro) {
 }
 
 void agregar_valor_a_registro(char *reg, char *val) { 
-    
     log_trace(log_cpu, "Caracteres a sumarle al registro %s", val);
     if (strcmp(reg, "AX") == 0) {
-        strncpy(contexto->registros->AX , val, 1);
+        contexto->registros->AX = (uint8_t) atoi(val);
+    } else if (strcmp(reg, "BX") == 0) {
+        contexto->registros->BX = (uint8_t) atoi(val);
+    } else if (strcmp(reg, "CX") == 0) {
+        contexto->registros->CX = (uint8_t) atoi(val);
+    } else if (strcmp(reg, "DX") == 0) {
+        contexto->registros->DX = (uint8_t) atoi(val);
+    } else if (strcmp(reg, "EAX") == 0) {
+        contexto->registros->EAX = (uint32_t) strtoul(val, NULL, 10);
+    } else if (strcmp(reg, "EBX") == 0) {
+        contexto->registros->EBX = (uint32_t) strtoul(val, NULL, 10);
+    } else if (strcmp(reg, "ECX") == 0) {
+        contexto->registros->ECX = (uint32_t) strtoul(val, NULL, 10);
+    } else if (strcmp(reg, "EDX") == 0) {
+        contexto->registros->EDX = (uint32_t) strtoul(val, NULL, 10);
     }
-    else if (strcmp(reg, "BX") == 0) {
-        strncpy(contexto->registros->BX, val, 1);
-    }
-    else if (strcmp(reg, "CX") == 0) {
-        strncpy(contexto->registros->CX, val, 1);
-    }
-    else if (strcmp(reg, "DX") == 0) {
-        strncpy(contexto->registros->DX, val, 1);
-    }
-    else if (strcmp(reg, "EAX") == 0) {
-        strncpy(contexto->registros->EAX, val, 4);
-    }
-    else if (strcmp(reg, "EBX") == 0) {
-        strncpy(contexto->registros->EBX, val, 4);
-    }
-    else if (strcmp(reg, "ECX") == 0) {
-        strncpy(contexto->registros->ECX, val, 4);
-    }
-    else if (strcmp(reg, "EDX") == 0) {
-        strncpy(contexto->registros->EDX, val, 4);
-    }
-    
 }
+
 
 void funcMovIn(t_instruccion *instruccion) { 
     log_info(log_cpu, "Instruccion MOV_IN ejecutada");
@@ -951,29 +940,52 @@ void funcMovIn(t_instruccion *instruccion) {
     char *registroDatos = instruccion->parametros2;
     char *registroDireccionLogica = instruccion->parametros3;
 
-    //ahora tendria que traducir la direccion logica a fisica
+    // Convertir la dirección lógica de cadena a entero
+    uint32_t direccionLogica = (uint32_t) strtoul(registroDireccionLogica, NULL, 10);
+
+    // Ahora traducir la dirección lógica a física
     int tamanio_regDatos = tamanio_registro(registroDatos);
-    uint32_t direccionFisica = traducirDireccion(registroDireccionLogica, tamanio_regDatos);
+    uint32_t direccionFisica = traducirDireccion(direccionLogica, tamanio_regDatos);
 
     char *valor = leer_valor_de_memoria(direccionFisica, tamanio_regDatos);
 
-    //guardo el valor en registro datos
+    // Guardar el valor en registro datos
     guardar_valor_en_registro(valor, registroDatos);
     log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección Fisica: %d", contexto->pid, direccionFisica);
     log_info(log_cpu, "Valor guardado en registro");
 }
 
 char *leer_valor_de_registro(char *registro) {
-    if (strcmp(registro, "AX") == 0) return contexto->registros->AX;
-    else if (strcmp(registro, "BX") == 0) return contexto->registros->BX;
-    else if (strcmp(registro, "CX") == 0) return contexto->registros->CX;
-    else if (strcmp(registro, "DX") == 0) return contexto->registros->DX;
-    else if (strcmp(registro, "EAX") == 0) return contexto->registros->EAX;
-    else if (strcmp(registro, "EBX") == 0) return contexto->registros->EBX;
-    else if (strcmp(registro, "ECX") == 0) return contexto->registros->ECX;
-    else if (strcmp(registro, "EDX") == 0) return contexto->registros->EDX;
-    return NULL;
+    char *valor = (char *)malloc(12 * sizeof(char));  // Reserva suficiente memoria para el valor convertido a cadena
+    if (valor == NULL) {
+        log_error(log_cpu, "Error al asignar memoria para 'valor'");
+        return NULL;
+    }
+
+    if (strcmp(registro, "AX") == 0) {
+        sprintf(valor, "%u", contexto->registros->AX);
+    } else if (strcmp(registro, "BX") == 0) {
+        sprintf(valor, "%u", contexto->registros->BX);
+    } else if (strcmp(registro, "CX") == 0) {
+        sprintf(valor, "%u", contexto->registros->CX);
+    } else if (strcmp(registro, "DX") == 0) {
+        sprintf(valor, "%u", contexto->registros->DX);
+    } else if (strcmp(registro, "EAX") == 0) {
+        sprintf(valor, "%u", contexto->registros->EAX);
+    } else if (strcmp(registro, "EBX") == 0) {
+        sprintf(valor, "%u", contexto->registros->EBX);
+    } else if (strcmp(registro, "ECX") == 0) {
+        sprintf(valor, "%u", contexto->registros->ECX);
+    } else if (strcmp(registro, "EDX") == 0) {
+        sprintf(valor, "%u", contexto->registros->EDX);
+    } else {
+        free(valor);  // Libera la memoria si no se encontró el registro
+        return NULL;
+    }
+
+    return valor;  // Recuerda liberar la memoria devuelta por esta función cuando ya no sea necesaria
 }
+
 
 void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, int tamanio) {
     t_paquete *paquete = crear_paquete_op(MOV_OUT);
@@ -995,7 +1007,7 @@ void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, int tamani
         case MOV_OUT_OK:
             log_info(log_cpu, "Código de operación recibido en cpu: %d", cod_op);
             log_info(log_cpu, "Valor escrito en memoria correctamente");
-            log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Valor: %d",
+            log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Valor: %s",
                         contexto->pid, direccionFisica, valor);
             return;
         default:
@@ -1015,7 +1027,7 @@ void funcMovOut(t_instruccion* instruccion){
 
     // Traduzco la direc
     int tamanio_regDatos = tamanio_registro(registroDatos);
-    uint32_t direccionFisica = traducirDireccion(registroDireccionLogica, tamanio_regDatos);
+    uint32_t direccionFisica = traducirDireccion(atoi(registroDireccionLogica), tamanio_regDatos);
 
     // Leer el valor del registro de datos
     char *valor = leer_valor_de_registro(registroDatos);
