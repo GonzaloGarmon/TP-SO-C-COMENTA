@@ -117,6 +117,7 @@ void iniciar_semaforos() {
     pthread_mutex_init(&mutex_cola_ready_aux, NULL);
     pthread_mutex_init(&conexion, NULL);
     pthread_mutex_init(&conexiones_io_mutex, NULL);
+    pthread_mutex_init(&mutex_recurso, NULL);
 
     sem_init(&sem_multiprogamacion, 0, grado_multiprogramacion);
     sem_init(&sem_listos_para_ready, 0, 0);
@@ -167,9 +168,9 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 break;
             case IDENTIFICACION: {
                 char* nombre_interfaz = recibir_string(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
-                pthread_mutex_lock(&conexion);
+                //pthread_mutex_lock(&conexion);
                 list_add(conexiones_io.conexiones_io_nombres, nombre_interfaz);
-                pthread_mutex_unlock(&conexion);
+                //pthread_mutex_unlock(&conexion);
                 log_trace(log_kernel, "Me llegó la interfaz: %s", nombre_interfaz);
                 break;
             }
@@ -209,38 +210,37 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
         switch (codigo)
         {
         case TERMINO_PROCESO:
-            t_contexto* contexto_finaliza = malloc(sizeof(t_contexto));
-            contexto_finaliza = recibir_contexto(conexion_kernel_cpu_dispatch);
+            t_contexto* contexto_finaliza = recibir_contexto(conexion_kernel_cpu_dispatch);
             log_trace(log_kernel,"recibi un pcb por finalizacion de proceso");
             actualizar_pcb_envia_exit(contexto_finaliza,SUCCESS);
             sem_post(&sem_listos_para_exit);
             sem_post(&esta_ejecutando);
+            free(contexto_finaliza);
             break;
         case OUT_OF_MEMORY:
-            t_contexto* contexto_finaliza_memory = malloc(sizeof(t_contexto));
-            contexto_finaliza_memory = recibir_contexto(conexion_kernel_cpu_dispatch);
+            t_contexto* contexto_finaliza_memory = recibir_contexto(conexion_kernel_cpu_dispatch);
             
             actualizar_pcb_envia_exit(contexto_finaliza_memory,OUT_OF_MEMORY);
             sem_post(&sem_listos_para_exit);
             sem_post(&esta_ejecutando);
+            free(contexto_finaliza_memory);
             break;
         case INTERRUPCION:
-            t_contexto* pcb_interrumpido = malloc(sizeof(t_contexto));
-            pcb_interrumpido = recibir_contexto(conexion_kernel_cpu_dispatch);
-
+            t_contexto* pcb_interrumpido = recibir_contexto(conexion_kernel_cpu_dispatch);
             //LOG OBLIGATORIO
             log_info(log_kernel,"PID: %d - Desalojado por fin de Quantum");
 
             actualizar_pcb_envia_ready(pcb_interrumpido);
             sem_post(&esta_ejecutando);
             //log_trace(log_kernel,"recibi un pcb por fin de quantum");
+            free(pcb_interrumpido);
             break;
         case INTERRUPCION_USUARIO:
-            t_contexto* pcb_interrumpido_usuario = malloc(sizeof(t_contexto));
-            pcb_interrumpido_usuario = recibir_contexto(conexion_kernel_cpu_dispatch);
+            t_contexto* pcb_interrumpido_usuario = recibir_contexto(conexion_kernel_cpu_dispatch);
             actualizar_pcb_envia_exit(pcb_interrumpido_usuario,INTERRUPTED_BY_USER);
             sem_post(&sem_listos_para_exit);
             sem_post(&esta_ejecutando);
+            free(pcb_interrumpido_usuario);
             break;
         case EJECUTAR_WAIT:
             log_info(log_kernel,"log 1 ");
@@ -250,7 +250,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             log_info(log_kernel,"log 2 %s", recurso_wait);
             
             if(existe_recurso(recurso_wait)){
-
+                pthread_mutex_lock(&mutex_recurso);
                 for(int i = 0; i < cantidad_recursos; i++) {
                     if(strcmp(recursos[i],recurso_wait) == 0) {
                         
@@ -269,6 +269,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
 
                     }
                 }
+                pthread_mutex_unlock(&mutex_recurso);
 
             }else{
                 actualizar_pcb_envia_exit(pcb_wait,INVALID_RESOURCE);
