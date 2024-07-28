@@ -98,7 +98,7 @@ void generar_conexiones(){
     establecer_conexion_cpu_dispatch(ip_cpu, puerto_cpu_dispatch, config_kernel, log_kernel);
 
 
-    sleep(3);
+    
 
 
     establecer_conexion_cpu_interrupt(ip_cpu, puerto_cpu_interrupt, config_kernel, log_kernel);
@@ -223,6 +223,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             actualizar_pcb_envia_exit(contexto_finaliza,SUCCESS);
             sem_post(&sem_listos_para_exit);
             sem_post(&esta_ejecutando);
+            es_otro = 1;
             //free(contexto_finaliza);
             break;
         case OUT_OF_MEMORY:
@@ -231,6 +232,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             actualizar_pcb_envia_exit(contexto_finaliza_memory,OUT_OF_MEMORY);
             sem_post(&sem_listos_para_exit);
             sem_post(&esta_ejecutando);
+            es_otro = 1;
             //free(contexto_finaliza_memory);
             break;
         case INTERRUPCION:
@@ -240,6 +242,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
 
             actualizar_pcb_envia_ready(pcb_interrumpido);
             sem_post(&esta_ejecutando);
+            es_otro = 1;
             //log_trace(log_kernel,"recibi un pcb por fin de quantum");
             //free(pcb_interrumpido);
             break;
@@ -248,6 +251,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             actualizar_pcb_envia_exit(pcb_interrumpido_usuario,INTERRUPTED_BY_USER);
             sem_post(&sem_listos_para_exit);
             sem_post(&esta_ejecutando);
+            es_otro = 1;
             //free(pcb_interrumpido_usuario);
             break;
         case EJECUTAR_WAIT:
@@ -272,6 +276,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                             mostrar_motivo_block(pcb_wait->pid,recursos[i]);
                             enviar_contexto(conexion_kernel_cpu_dispatch,pcb_wait,BLOCK);
                             sem_post(&esta_ejecutando);
+                            es_otro = 1;
                             
                         }
 
@@ -283,6 +288,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 actualizar_pcb_envia_exit(pcb_wait,INVALID_RESOURCE);
                 enviar_contexto(conexion_kernel_cpu_dispatch,pcb_wait,EXIT);
                 sem_post(&esta_ejecutando);
+                es_otro = 1;
             }
             break;
         case EJECUTAR_SIGNAL:
@@ -304,6 +310,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 actualizar_pcb_envia_exit(pcb_signal,INVALID_RESOURCE);
                 enviar_contexto(conexion_kernel_cpu_dispatch,pcb_wait,EXIT);
                 sem_post(&esta_ejecutando);
+                es_otro = 1;
             }
             break;
         case EJECUTAR_IO_GEN_SLEEP:
@@ -322,6 +329,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                     actualizar_pcb_envia_exit(pcb_IO_GEN_SLEEP,INVALID_INTERFACE);
                     
                     sem_post(&esta_ejecutando);
+                    es_otro = 1;
                 }
 
             }else{
@@ -329,6 +337,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 actualizar_pcb_envia_exit(pcb_IO_GEN_SLEEP,INVALID_INTERFACE);
                 
                 sem_post(&esta_ejecutando);
+                es_otro = 1;
             }
 
             break;
@@ -343,12 +352,14 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                     actualizar_pcb_envia_exit(pcb_IO_STDIN_READ,INVALID_INTERFACE);
                     enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_STDIN_READ,EXIT);
                     sem_post(&esta_ejecutando);
+                    es_otro = 1;
                 }
 
             }else{
                 actualizar_pcb_envia_exit(pcb_IO_STDIN_READ,INVALID_INTERFACE);
                 enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_STDIN_READ,EXIT);
                 sem_post(&esta_ejecutando);
+                es_otro = 1;
             }            
             break;
         case EJECUTAR_IO_STDOUT_WRITE:
@@ -362,12 +373,14 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                     actualizar_pcb_envia_exit(pcb_IO_STDOUT_WRITE,INVALID_INTERFACE);
                     enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_STDOUT_WRITE,EXIT);
                     sem_post(&esta_ejecutando);
+                    es_otro = 1;
                 }
 
             }else{
                 actualizar_pcb_envia_exit(pcb_IO_STDOUT_WRITE,INVALID_INTERFACE);
                 enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_STDOUT_WRITE,EXIT);
                 sem_post(&esta_ejecutando);
+                es_otro = 1;
             }            
             break;
         case EJECUTAR_IO_FS_CREATE:
@@ -382,12 +395,14 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                     actualizar_pcb_envia_exit(pcb_IO_FS_CREATE,INVALID_INTERFACE);
                     enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_CREATE,EXIT);
                     sem_post(&esta_ejecutando);
+                    es_otro = 1;
                 }
 
             }else{
                 actualizar_pcb_envia_exit(pcb_IO_FS_CREATE,INVALID_INTERFACE);
                 enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_CREATE,EXIT);
                 sem_post(&esta_ejecutando);
+                es_otro = 1;
 
             }            
             break;
@@ -403,6 +418,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                     actualizar_pcb_envia_exit(pcb_IO_FS_DELETE,INVALID_INTERFACE);
                     enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_DELETE,EXIT);
                     sem_post(&esta_ejecutando);
+                    es_otro = 1;
 
                 }
 
@@ -410,6 +426,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 actualizar_pcb_envia_exit(pcb_IO_FS_DELETE,INVALID_INTERFACE);
                 enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_DELETE,EXIT);
                 sem_post(&esta_ejecutando);
+                es_otro = 1;
 
             }            
             break;
@@ -426,6 +443,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                     actualizar_pcb_envia_exit(pcb_IO_FS_TRUNCATE,INVALID_INTERFACE);
                     enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_TRUNCATE,EXIT);
                     sem_post(&esta_ejecutando);
+                    es_otro = 1;
 
                 }
 
@@ -433,6 +451,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 actualizar_pcb_envia_exit(pcb_IO_FS_TRUNCATE,INVALID_INTERFACE);
                 enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_TRUNCATE,EXIT);
                 sem_post(&esta_ejecutando);
+                es_otro = 1;
 
             }
             break;
@@ -451,6 +470,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                     actualizar_pcb_envia_exit(pcb_IO_FS_WRITE,INVALID_INTERFACE);
                     enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_WRITE,EXIT);
                     sem_post(&esta_ejecutando);
+                    es_otro = 1;
 
                 }
 
@@ -458,6 +478,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 actualizar_pcb_envia_exit(pcb_IO_FS_WRITE,INVALID_INTERFACE);
                 enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_WRITE,EXIT);
                 sem_post(&esta_ejecutando);
+                es_otro = 1;
 
             }            
             break;
@@ -476,6 +497,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                     actualizar_pcb_envia_exit(pcb_IO_FS_READ,INVALID_INTERFACE);
                     enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_FS_READ,EXIT);
                     sem_post(&esta_ejecutando);
+                    es_otro = 1;
 
                 }
 
@@ -483,6 +505,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
                 actualizar_pcb_envia_exit(pcb_IO_FS_READ,INVALID_INTERFACE);
                 enviar_contexto(conexion_kernel_cpu_dispatch,pcb_IO_GEN_SLEEP,EXIT);
                 sem_post(&esta_ejecutando);
+                es_otro = 1;
 
             }            
             break;
@@ -877,7 +900,7 @@ void planificar(){
     switch (algoritmo_planificacion)
     {
     case RR:
-        planificar_rr();
+        //planificar_rr();
         break;
     case VRR:
         planificar_vrr();
@@ -918,17 +941,17 @@ void planificar_corto_plazo(){
 }
 
 void contador_quantum_RR(){
-    while(1){
+    
         if(!apagar_planificacion){
-        sem_wait(&sem_empezar_quantum);
+        //sem_wait(&sem_empezar_quantum);
         
         sleep(quantum / 1000);
-        if (strcmp(algoritmo, "RR") == 0)
+        if (!es_otro)
         {
             enviar_interrupcion();
         }
         }
-    }
+    
 
     
 }
@@ -981,22 +1004,32 @@ void manejar_VRR(){
 
 void enviar_interrupcion(){
     t_paquete* paquete = crear_paquete_op(FIN_QUANTUM_RR);
+    t_pcb* pcb_interrumpir;
+    if(!list_is_empty(cola_exec)){
     pthread_mutex_lock(&mutex_cola_exec);
-    t_pcb* pcb_interrumpir = list_get(cola_exec,0);
+    pcb_interrumpir = list_get(cola_exec,0);
     pthread_mutex_unlock(&mutex_cola_exec);
     agregar_entero_a_paquete(paquete,pcb_interrumpir->contexto->pid);
+    //if(pcb_interrumpir->contexto->pid == pid_ejecutando){
     enviar_paquete(paquete,conexion_kernel_cpu_interrupt);
+    //}
     eliminar_paquete(paquete);
+    }
+    
 }
 
 void enviar_interrupcion_fin_proceso(){
     t_paquete* paquete = crear_paquete_op(INTERRUPCION_USUARIO);
+    t_pcb* pcb_interrumpir;
+    if(!list_is_empty(cola_exec)){
     pthread_mutex_lock(&mutex_cola_exec);
-    t_pcb* pcb_interrumpir = list_get(cola_exec,0);
+    pcb_interrumpir = list_get(cola_exec,0);
     pthread_mutex_unlock(&mutex_cola_exec);
     agregar_entero_a_paquete(paquete,pcb_interrumpir->contexto->pid);
     enviar_paquete(paquete,conexion_kernel_cpu_interrupt);
     eliminar_paquete(paquete);
+    }
+    
 }
 
 t_pcb* remover_pcb_de_lista(t_list *list, pthread_mutex_t *mutex)
@@ -1117,12 +1150,18 @@ void dispatch(t_pcb* pcb_enviar){
         enviar_contexto(conexion_kernel_cpu_dispatch, pcb_enviar->contexto,EXEC);
         corto_VRR = 0;
         cambio_estado(pcb_enviar->contexto->pid, "READY", "EXEC");
-
+        //pid_ejecutando = pcb_enviar->contexto->pid;
         pthread_mutex_lock(&mutex_cola_exec);
         list_add(cola_exec, pcb_enviar);
         pthread_mutex_unlock(&mutex_cola_exec);
-        sem_post(&sem_empezar_quantum);
-        
+        //sem_post(&sem_empezar_quantum);
+        es_otro = 0;
+        if (strcmp(algoritmo, "RR") == 0){
+            log_info(log_kernel, "mando hilo");
+        pthread_t hilo_manejo_quantum;
+        pthread_create(&hilo_manejo_quantum, NULL, (void *)contador_quantum_RR, NULL);
+        pthread_detach(hilo_manejo_quantum);
+        }
         
 }
 
@@ -1205,25 +1244,28 @@ void actualizar_pcb_envia_exit(t_contexto* pcb_wait, motivo_exit codigo) {
 void actualizar_pcb_envia_ready(t_contexto* pcb_wait) {
     bool encontrar_pcb(t_pcb* pcb) {
         return pcb->contexto->pid == pcb_wait->pid;
-    }
+    };
 
-    pthread_mutex_lock(&mutex_cola_exec);
-    t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    if (pcb_encontrado) {
+        pthread_mutex_lock(&mutex_cola_exec);
+        t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
+        //if (pcb_encontrado) {
         list_remove_element(cola_exec, pcb_encontrado);
         pthread_mutex_unlock(&mutex_cola_exec);
 
         pcb_encontrado->contexto = pcb_wait;
+        
         cambio_estado(pcb_encontrado->contexto->pid, "EXEC", "READY");
+
         pthread_mutex_lock(&mutex_cola_ready);
         list_add(cola_ready, pcb_encontrado);
         pthread_mutex_unlock(&mutex_cola_ready);
 
+        sem_post(&sem_listos_para_exec);
         mostrar_prioridad_ready();
-        sem_post(&sem_listos_para_ready);
-    } else {
-        pthread_mutex_unlock(&mutex_cola_exec);
-    }
+        
+    //} else {
+        //pthread_mutex_unlock(&mutex_cola_ready);
+    //}
 }
 
 void desbloquear_proceso(t_list* lista_recurso_liberar) {
@@ -1448,32 +1490,33 @@ int admite_operacion_con_string_3u32(char* nombre_interfaz, op_code codigo, char
 void bloquear_pcb(t_contexto* contexto) {
     bool encontrar_pcb(t_pcb* pcb) {
         return pcb->contexto->pid == contexto->pid;
-    }
+    };
 
-    pthread_mutex_lock(&mutex_cola_exec);
-    t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
-    if (pcb_encontrado) {
+        pthread_mutex_lock(&mutex_cola_exec);
+        t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
+    //if (pcb_encontrado) {
         list_remove_element(cola_exec, pcb_encontrado);
         pthread_mutex_unlock(&mutex_cola_exec);
 
-        t_pcb* pcb_nuevo = malloc(sizeof(t_pcb));
-        pcb_nuevo->contexto = contexto;
+        
+        pcb_encontrado->contexto = contexto;
         // pcb_nuevo->quantum = pcb_encontrado->quantum;
         // pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
-        pcb_nuevo->contexto->pc++;
+        pcb_encontrado->contexto->pc++;
 
-        cambio_estado(pcb_nuevo->contexto->pid, "EXEC", "BLOCK");
-        mostrar_motivo_block(pcb_nuevo->contexto->pid, "INTERFAZ");
+        cambio_estado(pcb_encontrado->contexto->pid, "EXEC", "BLOCK");
+        mostrar_motivo_block(pcb_encontrado->contexto->pid, "INTERFAZ");
 
         pthread_mutex_lock(&mutex_cola_block);
-        list_add(cola_block, pcb_nuevo);
+        list_add(cola_block, pcb_encontrado);
         pthread_mutex_unlock(&mutex_cola_block);
 
         sem_post(&esta_ejecutando);
-        free(pcb_encontrado);
-    } else {
-        pthread_mutex_unlock(&mutex_cola_exec);
-    }
+        es_otro = 1;
+        //free(pcb_encontrado);
+    //} else {
+      //  pthread_mutex_unlock(&mutex_cola_exec);
+    //}
 }
 
 void desbloquear_proceso_block(uint32_t pid) {

@@ -58,6 +58,7 @@ char* puerto_cpu_dispatch;
 char* algoritmo;
 t_algoritmo algoritmo_planificacion;
 int quantum;
+int es_otro;
 int corto_VRR;
 uint32_t validacion;
 t_conexiones_kernel_io conexiones_io;
