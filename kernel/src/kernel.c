@@ -1191,7 +1191,6 @@ void actualizar_pcb_envia_exit(t_contexto* pcb_wait, motivo_exit codigo) {
         pcb_exit_ok->pcb->contexto = pcb_wait;
         pcb_exit_ok->pcb->quantum_utilizado = pcb_encontrado->quantum_utilizado;
         pcb_exit_ok->motivo = codigo;
-        pcb_exit_ok->pcb->contexto->pid = pcb_encontrado->contexto->pid;
 
         cambio_estado(pcb_exit_ok->pcb->contexto->pid, "EXEC", "EXIT");
         pthread_mutex_lock(&mutex_cola_exit);
