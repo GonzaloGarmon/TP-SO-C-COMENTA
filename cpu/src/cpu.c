@@ -164,7 +164,7 @@ t_instruccion* fetch(uint32_t pid, uint32_t pc){
     pedir_instruccion_memoria(pid, pc, log_cpu);
     log_info(log_cpu, "PID: %i - FETCH - Program Counter: %i", pid, pc);
     t_instruccion* instruccion = malloc(sizeof(t_instruccion));
-    (void)recibir_operacion(conexion_memoria);
+    op_code codigo = recibir_operacion(conexion_memoria);
     instruccion = recibir_instruccion(conexion_memoria);
   return instruccion;
 }
@@ -691,8 +691,8 @@ void funcResize(t_instruccion* instruccion){
     eliminar_paquete(paquete);
     log_info(log_cpu, "Tamanio enviado");
 
-    while(1) {
-        int cod_op = recibir_operacion(conexion_memoria);
+    op_code cod_op = recibir_operacion(conexion_memoria);
+        
         switch(cod_op) {
             case RESIZE_OK:
             log_trace(log_cpu, "Entro en RESIZE COD : %d", cod_op);
@@ -707,7 +707,7 @@ void funcResize(t_instruccion* instruccion){
             break;
         }
     }
-}
+
 
 uint32_t obtener_valor_registro(char* registro){
     uint32_t devolver;
