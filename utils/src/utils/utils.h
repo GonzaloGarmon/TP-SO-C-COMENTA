@@ -10,6 +10,7 @@
 #include <commons/config.h>
 #include <commons/bitarray.h>
 #include <commons/temporal.h>
+#include <commons/string.h>
 #include <commons/collections/list.h>
 #include <pthread.h>
 #include <semaphore.h>

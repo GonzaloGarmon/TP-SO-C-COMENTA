@@ -89,12 +89,13 @@ void esperar_cliente_especial(int socket_cliente_entradasalida);
 /*
 ------------------------CONFIGS, INICIACION, COMUNICACIONES-------------------------------------
 */
+void mostrar_prioridad_ready();
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA);
 void establecer_conexion_memoria(char * ip_memoria, char* puerto_memoria, t_config* config, t_log* logger);
 void establecer_conexion_cpu_dispatch(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* logger);
 void establecer_conexion_cpu_interrupt(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* logger);
 void iniciar_consola();
-void ejecutar_script(char* path);
+int ejecutar_script(char* path);
 void iniciar_proceso(char* path);
 void finalizar_proceso(uint32_t pid);
 void iniciar_planificacion();
@@ -138,4 +139,6 @@ void desbloquear_proceso_block(uint32_t pid);
 char* motivo_exit_to_string(motivo_exit motivo);
 void cambio_estado(uint32_t pid, char* estado_anterior, char* estado_nuevo);
 void mostrar_motivo_block(uint32_t pid, char* motivo_block);
+int proceso_activos();
+
 #endif
