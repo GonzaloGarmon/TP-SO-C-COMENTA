@@ -192,10 +192,9 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
         case FINALIZAR_PROCESO:
             usleep(retardo_respuesta * 1000);
             uint32_t proceso = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
-            log_info(log_memoria, "Finalizacion de proceso PID: %d", proceso);
+            log_info(log_memoria, "Finalizacion de proceso PID: %i", proceso);
             //finalizar_proceso(proceso);
             finalizar_proceso(proceso);
-            log_info(log_memoria, "Finalizacion del proceso PID: %d", proceso);
             enviar_mensaje("Proceso finalizado", SOCKET_CLIENTE_KERNEL);
             break;
         case ACCESO_TABLA_PAGINAS: 
@@ -205,7 +204,7 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             uint32_t marco_correspondiente = obtener_marco_pagina(pid, num_pagina);
             
             enviar_entero(SOCKET_CLIENTE_KERNEL, marco_correspondiente, ACCESO_TABLA_PAGINAS_OK);
-            log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pidr, num_pagina, marco_correspondiente);
+            log_info(log_memoria, "Acceso a tabla de pagina PID: %i - Numero e pagina: %d - Marco: %d", pidr, num_pagina, marco_correspondiente);
             break;
             case -1:
             codigoOperacion=codOperacion;

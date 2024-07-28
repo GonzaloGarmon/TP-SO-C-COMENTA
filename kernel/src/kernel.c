@@ -1018,7 +1018,7 @@ void pcb_exit(){
     pthread_mutex_unlock(&mutex_cola_exit);
 
     //LOG OBLIGATORIO
-    log_info(log_kernel, "Finaliza el proceso pid: %d - Motivo: %s", pcb_finaliza->pcb->contexto->pid, motivo_exit_to_string(pcb_finaliza->motivo));
+    log_info(log_kernel, "Finaliza el proceso pid: %i - Motivo: %s", pcb_finaliza->pcb->contexto->pid, motivo_exit_to_string(pcb_finaliza->motivo));
     
     t_paquete* paquete = crear_paquete_op(FINALIZAR_PROCESO);
     agregar_entero_a_paquete(paquete,pcb_finaliza->pcb->contexto->pid);
@@ -1115,7 +1115,6 @@ void dispatch(t_pcb* pcb_enviar){
         log_trace(log_kernel, "envio pcb de pc: %d", pcb_enviar->contexto->pc);
         log_trace(log_kernel, "envio pcb de qq: %d", pcb_enviar->quantum_utilizado);        //ENVIAR CONTEXTO DE EJECUCION A CPU
         enviar_contexto(conexion_kernel_cpu_dispatch, pcb_enviar->contexto,EXEC);
-
         corto_VRR = 0;
         cambio_estado(pcb_enviar->contexto->pid, "READY", "EXEC");
 
@@ -1192,6 +1191,7 @@ void actualizar_pcb_envia_exit(t_contexto* pcb_wait, motivo_exit codigo) {
         pcb_exit_ok->pcb->contexto = pcb_wait;
         pcb_exit_ok->pcb->quantum_utilizado = pcb_encontrado->quantum_utilizado;
         pcb_exit_ok->motivo = codigo;
+        pcb_exit_ok->pcb->contexto->pid = pcb_encontrado->contexto->pid;
 
         cambio_estado(pcb_exit_ok->pcb->contexto->pid, "EXEC", "EXIT");
         pthread_mutex_lock(&mutex_cola_exit);
@@ -1353,6 +1353,7 @@ int admite_operacion_con_2u32(char* nombre_interfaz, op_code codigo, uint32_t pr
             } else {
                 return 0;
             }
+
         }
     }
     return 0;
@@ -1459,6 +1460,7 @@ void bloquear_pcb(t_contexto* contexto) {
         pcb_nuevo->contexto = contexto;
         // pcb_nuevo->quantum = pcb_encontrado->quantum;
         // pcb_nuevo->quantum_utilizado = pcb_encontrado->quantum_utilizado;
+        pcb_nuevo->contexto->pc++;
 
         cambio_estado(pcb_nuevo->contexto->pid, "EXEC", "BLOCK");
         mostrar_motivo_block(pcb_nuevo->contexto->pid, "INTERFAZ");
@@ -1493,7 +1495,7 @@ void desbloquear_proceso_block(uint32_t pid) {
 
         mostrar_prioridad_ready();
 
-        sem_post(&sem_listos_para_ready);
+        sem_post(&sem_listos_para_exec);
     } else {
         pthread_mutex_unlock(&mutex_cola_block);
     }
