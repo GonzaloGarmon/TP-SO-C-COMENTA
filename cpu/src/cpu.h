@@ -10,7 +10,8 @@ typedef struct {
     uint32_t contador_reciente; // LRU
 }tlb;
 
-tlb entrada_tlb[]; //verificar que funcione
+tlb* entrada_tlb; //verificar que funcione
+int tamanioTLB;
 t_log* log_cpu;
 t_config* config_cpu;
 t_contexto *contexto;
