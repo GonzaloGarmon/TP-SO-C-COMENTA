@@ -19,10 +19,6 @@ typedef struct {
     uint32_t numero_marco;
 } entrada_tabla_pagina_t;
 
-typedef struct {
-    t_list* pids;
-    t_list* nombres_archivos;
-} t_pids_archivos;
 
 typedef struct {
     uint32_t pid;
@@ -41,7 +37,9 @@ char* path_instrucciones;
 int retardo_respuesta;
 pthread_mutex_t mutex_memoria;
 sem_t sem;
-t_pids_archivos pids_archivos;
+
+t_list* pids_ejecucion;
+t_list** listas_instrucciones;
 
 int longitud_maxima=100;
 int parametros_maximos=6;
@@ -76,6 +74,6 @@ void copiarBytes(uint32_t tamanio, t_contexto *contexto);
 void escribir(uint32_t dir_fisca, void* data, uint32_t size);
 char* leer(uint32_t dir_fisca, uint32_t size);
 uint32_t obtener_marco_pagina(uint32_t pid, uint32_t num_pagina);
-void* cargar_instrucciones_desde_archivo(char* nombre_archivo, t_instruccion* instrucciones[instrucciones_maximas]);
+void cargar_instrucciones_desde_archivo(char* nombre_archivo, uint32_t pid);
 
 #endif // MEMORIA_H_
