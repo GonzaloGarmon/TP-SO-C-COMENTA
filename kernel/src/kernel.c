@@ -230,7 +230,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             break;
         case OUT_OF_MEMORY:
             t_contexto* contexto_finaliza_memory = recibir_contexto(conexion_kernel_cpu_dispatch);
-            
+            log_trace(log_kernel,"Recibi contexto de cpu: FINALIZADO POR OUT OF MEMORY");
             actualizar_pcb_envia_exit(contexto_finaliza_memory,OUT_OF_MEMORY);
             sem_post(&sem_listos_para_exit);
             

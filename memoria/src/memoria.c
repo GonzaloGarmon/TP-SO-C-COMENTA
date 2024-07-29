@@ -52,8 +52,14 @@ int main(int argc, char** argv) {
 }
 
 void inicializar_memoria() {
-    marcos = tam_memoria / tam_pagina;
-    log_info(log_memoria, "CANT MARCOS %i", marcos);
+    marcos_totales = tam_memoria / tam_pagina;
+    log_info(log_memoria, "CANT MARCOS %i", marcos_totales);
+
+    marcos_asignados = (uint32_t*)malloc(marcos_totales * sizeof(uint32_t));
+
+    for (int i = 0; i < marcos_totales; i++) {
+        marcos_asignados[i] = 0;
+    }
 
     pids_ejecucion = list_create();
     
@@ -209,12 +215,17 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             break;
         case ACCESO_TABLA_PAGINAS: 
             usleep(retardo_respuesta * 1000);
-            uint32_t num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
-            uint32_t pidr = recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
-            uint32_t marco_correspondiente = obtener_marco_pagina(pid, num_pagina);
+            t_2_enteros *accesoPagina_kernel = recibir_2_enteros(SOCKET_CLIENTE_KERNEL);
+            uint32_t pidx_kernel = accesoPagina_kernel->entero1;
+            uint32_t num_paginax_kernel = accesoPagina_kernel->entero2;
             
-            enviar_entero(SOCKET_CLIENTE_KERNEL, marco_correspondiente, ACCESO_TABLA_PAGINAS_OK);
-            log_info(log_memoria, "Acceso a tabla de pagina PID: %i - Numero e pagina: %d - Marco: %d", pidr, num_pagina, marco_correspondiente);
+            log_info(log_memoria, "num pagina : %i", num_paginax_kernel);
+            log_info(log_memoria, "num pid : %i", pidx_kernel);
+            uint32_t marco_correspondiente_kernel = obtener_marco_pagina(pidx_kernel, num_paginax_kernel);
+            log_info(log_memoria, "MARCO CORRESPONDIENTE: %i", marco_correspondiente_kernel);
+            
+            enviar_entero(SOCKET_CLIENTE_KERNEL, marco_correspondiente_kernel, ACCESO_TABLA_PAGINAS_OK);
+            log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero de pagina: %d - Marco: %d", pidx_kernel, num_paginax_kernel, marco_correspondiente_kernel);
             break;
             case -1:
             codigoOperacion=codOperacion;
@@ -255,6 +266,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             uint32_t pid_resize = resize->entero2;
             op_code res = ajustar_tamanio_proceso(nuevo_tam,pid_resize);
             enviar_codop(SOCKET_CLIENTE_CPU, res);
+            log_info(log_memoria, "MANDE RESPUESTA A CPU");
             
             break;
         case MOV_IN:
@@ -314,11 +326,11 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             
             log_info(log_memoria, "num pagina : %i", num_paginax);
             log_info(log_memoria, "num pid : %i", pidx);
-            uint32_t marco_correspondiente = obtener_marco_pagina(pidx, num_paginax);
-            log_info(log_memoria, "MARCO CORRESPONDIENTE: %i", marco_correspondiente);
+            uint32_t marco_correspondiente_cpu = obtener_marco_pagina(pidx, num_paginax);
+            log_info(log_memoria, "MARCO CORRESPONDIENTE: %i", marco_correspondiente_cpu);
             
-            enviar_entero(SOCKET_CLIENTE_CPU, marco_correspondiente, ACCESO_TABLA_PAGINAS_OK);
-            log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero de pagina: %d - Marco: %d", pidx, num_paginax, marco_correspondiente);
+            enviar_entero(SOCKET_CLIENTE_CPU, marco_correspondiente_cpu, ACCESO_TABLA_PAGINAS_OK);
+            log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero de pagina: %d - Marco: %d", pidx, num_paginax, marco_correspondiente_cpu);
             break;
         case COPY_STRING:
             usleep(retardo_respuesta * 1000);
@@ -448,11 +460,17 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 break;
             case ACCESO_TABLA_PAGINAS: 
                 usleep(retardo_respuesta * 1000);
-                uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
-                uint32_t num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
-                uint32_t marco_correspondiente = obtener_marco_pagina(pid, num_pagina);
+                t_2_enteros *accesoPagina_entrada = recibir_2_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
+                uint32_t pidx_entrada = accesoPagina_entrada->entero1;
+                uint32_t num_paginax_entrada = accesoPagina_entrada->entero2;
                 
-                log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
+                log_info(log_memoria, "num pagina : %i", num_paginax_entrada);
+                log_info(log_memoria, "num pid : %i", pidx_entrada);
+                uint32_t marco_correspondiente_entrada = obtener_marco_pagina(pidx_entrada, num_paginax_entrada);
+                log_info(log_memoria, "MARCO CORRESPONDIENTE: %i", marco_correspondiente_entrada);
+                
+                enviar_entero(SOCKET_CLIENTE_ENTRADASALIDA, marco_correspondiente_entrada, ACCESO_TABLA_PAGINAS_OK);
+                log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero de pagina: %d - Marco: %d", pidx_entrada, num_paginax_entrada, marco_correspondiente_entrada);
                 break;
             case -1:
                 codigoOperacion=codOperacion;
@@ -483,25 +501,49 @@ void levantar_estructuras_administrativas() {
 
 }
 
-void crear_tabla_pagina(uint32_t pid, uint32_t cantidad_paginas) {
-    //pthread_mutex_lock(&mutex_lista_tablas);
-
+void crear_tabla_pagina(uint32_t pid, uint32_t tamanio) {
+    
     tabla_pagina_t* tabla = malloc(sizeof(tabla_pagina_t));
+    int cantPaginas = tamanio/ tam_pagina;
     tabla->pid = pid;
-    tabla->cantidad_paginas = cantidad_paginas;
-    tabla->tabla_paginas = malloc(cantidad_paginas * sizeof(entrada_tabla_pagina_t));
+    tabla->tabla_paginas = list_create();
 
-    for (uint32_t i = 0; i < cantidad_paginas; i++) {
-        tabla->tabla_paginas[i].numero_pagina = i;
-        tabla->tabla_paginas[i].numero_marco = (uint32_t)-1; // Marca como no asignado
+    for (uint32_t i = 0; i < cantPaginas; i++) {
+        entrada_tabla_pagina_t *nueva_pagina = malloc(sizeof(entrada_tabla_pagina_t));
+        log_trace(log_memoria, "MARCO ELEGIDO PARA LA PAGINA %d: %d", i, nueva_pagina->numero_marco);
+        log_trace(log_memoria, "LA CANT DE PAG ES %d", cantPaginas);
+        nueva_pagina->numero_marco = buscar_marco_libre();
+        list_add(tabla->tabla_paginas, nueva_pagina);
+        marco_ocupado(nueva_pagina->numero_marco);
     }
-
+    pthread_mutex_lock(&mutex_de_tabla_Paginas);
     list_add(LISTA_TABLA_PAGINAS, tabla);
-
-    //pthread_mutex_unlock(&mutex_lista_tablas);
+    pthread_mutex_unlock(&mutex_de_tabla_Paginas);
 }
 
+uint32_t buscar_marco_libre() {
+    for (uint32_t i = 0; i < marcos_totales; i++) {
+        if (marcos_asignados[i] == 0)
+            return i;
+    }
+    return (uint32_t)-1;
+}
 
+void marco_ocupado(uint32_t numero_marco) {
+    if (numero_marco >= 0 && numero_marco < marcos_totales) {
+        marcos_asignados[numero_marco] = 1;
+    } else {
+        log_info(log_memoria, "Marco invalido");
+    }
+}
+
+void marco_libre(uint32_t numero_marco) {
+    if (numero_marco >= 0 && numero_marco < marcos_totales) {
+        marcos_asignados[numero_marco] = 0;
+    } else {
+        log_info(log_memoria, "Marco invalido");
+    }
+}
 
 void escribir(uint32_t dir_fisca, void* data, uint32_t size) {
     //log_warning(log_memoria,"el size en escribir es :%d", size);
@@ -524,16 +566,26 @@ char* leer(uint32_t dir_fisca , uint32_t size) {
 //     return NULL;
 // }
 
-uint32_t obtener_marco_pagina(uint32_t pid, uint32_t num_pagina) {
+tabla_pagina_t* obtenerTablaPorPID(uint32_t pid) {
     for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
         tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, i);
-        if (tabla->pid == pid) {
-            if (num_pagina < tabla->cantidad_paginas) {
-                return (uint32_t)tabla->tabla_paginas[num_pagina].numero_marco;
-            }
-        }
+        if (tabla->pid == pid)
+            return tabla;
     }
-    return (uint32_t)-1; // Indicar error si no se encuentra
+    return NULL;
+}
+
+uint32_t obtener_marco_pagina(uint32_t pid, uint32_t num_pagina) {
+    tabla_pagina_t* tabla = obtenerTablaPorPID(pid);
+	entrada_tabla_pagina_t *pagina = list_get(tabla->tabla_paginas, num_pagina);
+	if (pagina->numero_marco >= 0 && pagina->numero_marco < marcos_totales){
+		log_info(log_memoria,"PID: <%d> - Pagina: <%d> - Marco: <%d>", pid, num_pagina, pagina->numero_marco); //log obligatorio
+		return pagina->numero_marco;
+	}
+    else{
+		log_trace(log_memoria,"No encontre frame de la pag %d", num_pagina); //log obligatorio
+		return (uint32_t)-1;
+    }
 }
 
 void finalizar_proceso(uint32_t proceso) {
@@ -548,46 +600,50 @@ void finalizar_proceso(uint32_t proceso) {
     }
 }
 
-op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) { //USANDO MEMORIA_CONFIG NO SE CARGA NADA, ASI SI ANDA
+op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid) {
     uint32_t nuevo_tamanio_resize = ceil(nuevo_tam / (double)tam_pagina);
     for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
         tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, i);
         if (tabla->pid == pid) {
-            if (nuevo_tamanio_resize > tabla->cantidad_paginas) {
+            uint32_t cantidad_paginas_actual = list_size(tabla->tabla_paginas);
+            if (nuevo_tamanio_resize > cantidad_paginas_actual) {
                 // Ampliar el tamaño del proceso
                 log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Ampliar: %i",
-                         pid, tabla->cantidad_paginas * tam_pagina, nuevo_tamanio_resize * tam_pagina);
-                uint32_t paginas_a_asignar = nuevo_tamanio_resize;
+                         pid, 5 * tam_pagina, nuevo_tamanio_resize * tam_pagina);
+                uint32_t paginas_a_asignar = nuevo_tamanio_resize - cantidad_paginas_actual;
                 if (marcos_libres < paginas_a_asignar) {
                     log_info(log_memoria, "No se pueden solicitar más marcos -> Memoria llena");
                     return OUT_OF_MEMORY;
                 }
 
-                tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tamanio_resize);
-                for (uint32_t i = tabla->cantidad_paginas; i < nuevo_tamanio_resize; i++) {
-                    tabla->tabla_paginas[i].numero_pagina = i;
-                    tabla->tabla_paginas[i].numero_marco = (uint32_t)(uintptr_t)(ESPACIO_USUARIO + (i * tam_pagina));
+                for (uint32_t i = cantidad_paginas_actual; i < nuevo_tamanio_resize; i++) {
+                    entrada_tabla_pagina_t* nueva_entrada = malloc(sizeof(entrada_tabla_pagina_t));
+                    nueva_entrada->numero_marco = buscar_marco_libre(); // Aquí se debe buscar un marco libre.
+                    list_add(tabla->tabla_paginas, nueva_entrada);
+                    marco_ocupado(nueva_entrada->numero_marco); // Marcar el marco como ocupado.
                 }
                 marcos_libres -= paginas_a_asignar;
 
-            } else if (nuevo_tamanio_resize < tabla->cantidad_paginas) {
+            } else if (nuevo_tamanio_resize < cantidad_paginas_actual) {
                 // Reducir el tamaño del proceso
                 log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Reducir: %i",
-                         pid, tabla->cantidad_paginas * tam_pagina, nuevo_tamanio_resize * tam_pagina);
-                for (uint32_t i = nuevo_tamanio_resize; i < tabla->cantidad_paginas; i++) {
-                    // Aquí podrías liberar recursos asociados a estas páginas si es necesario
-                    tabla->tabla_paginas[i].numero_marco = 0;
+                         pid, cantidad_paginas_actual * tam_pagina, nuevo_tamanio_resize * tam_pagina);
+                for (uint32_t i = nuevo_tamanio_resize; i < cantidad_paginas_actual; i++) {
+                    entrada_tabla_pagina_t* entrada = list_remove(tabla->tabla_paginas, nuevo_tamanio_resize);
+                    // Liberar recursos asociados a estas páginas si es necesario
+                    marco_libre(entrada->numero_marco); // Marcar el marco como libre.
+                    free(entrada);
                 }
-                tabla->tabla_paginas = realloc(tabla->tabla_paginas, sizeof(entrada_tabla_pagina_t) * nuevo_tamanio_resize);
-                marcos_libres += (tabla->cantidad_paginas - nuevo_tamanio_resize);
+                marcos_libres += (cantidad_paginas_actual - nuevo_tamanio_resize);
             }
 
-            tabla->cantidad_paginas = nuevo_tamanio_resize;
             return RESIZE_OK;
         }
     }
     return -1; // Indicar error si no se encuentra el proceso
 }
+
+
 
 
 void copiarBytes(uint32_t tamanio, t_contexto *contexto) {

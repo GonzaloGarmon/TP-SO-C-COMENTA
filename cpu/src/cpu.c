@@ -277,7 +277,7 @@ void execute(op_code instruccion_nombre, t_instruccion* instruccion) {
             esperar_devolucion_pcb();
             break;
         default:
-            printf("Instrucción desconocida\n");
+            log_info(log_cpu, "Instrucción desconocida\n");
             break;
     }
 

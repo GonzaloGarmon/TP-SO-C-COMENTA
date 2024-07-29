@@ -15,15 +15,12 @@ typedef struct {
 } t_esp; // Para marcar un hueco en la memoria
 
 typedef struct {
-    uint32_t numero_pagina;
     uint32_t numero_marco;
 } entrada_tabla_pagina_t;
 
-
 typedef struct {
     uint32_t pid;
-    uint32_t cantidad_paginas;
-    entrada_tabla_pagina_t* tabla_paginas;
+    t_list *tabla_paginas;
 } tabla_pagina_t;
 
 t_log* log_memoria;
@@ -36,6 +33,7 @@ int tam_pagina;
 char* path_instrucciones;
 int retardo_respuesta;
 pthread_mutex_t mutex_memoria;
+pthread_mutex_t mutex_de_tabla_Paginas;
 sem_t sem;
 
 t_list* pids_ejecucion;
@@ -55,7 +53,8 @@ uint32_t ESPACIO_LIBRE_TOTAL;
 t_list *LISTA_ESPACIOS_LIBRES;
 t_list *LISTA_TABLA_PAGINAS;
 uint32_t marcos_libres;
-uint32_t marcos;
+uint32_t marcos_totales;
+uint32_t *marcos_asignados;
 
 void *ESPACIO_USUARIO;
 
@@ -76,5 +75,11 @@ void escribir(uint32_t dir_fisca, void* data, uint32_t size);
 char* leer(uint32_t dir_fisca, uint32_t size);
 uint32_t obtener_marco_pagina(uint32_t pid, uint32_t num_pagina);
 void cargar_instrucciones_desde_archivo(char* nombre_archivo, uint32_t pid);
+uint32_t buscar_marco_libre();
+void marco_ocupado(uint32_t numero_marco);
+void marco_libre(uint32_t numero_marco);
+void liberarPagina(entrada_tabla_pagina_t* pagina);
+op_code agrandar(tabla_pagina_t* tabla, uint32_t tamanio);
+op_code achicar(tabla_pagina_t* tabla, uint32_t tamanio);
 
 #endif // MEMORIA_H_
