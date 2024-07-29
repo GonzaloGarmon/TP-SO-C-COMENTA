@@ -55,6 +55,7 @@ uint32_t ESPACIO_LIBRE_TOTAL;
 t_list *LISTA_ESPACIOS_LIBRES;
 t_list *LISTA_TABLA_PAGINAS;
 uint32_t marcos_libres;
+uint32_t marcos;
 
 void *ESPACIO_USUARIO;
 

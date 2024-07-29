@@ -52,7 +52,8 @@ int main(int argc, char** argv) {
 }
 
 void inicializar_memoria() {
-    marcos_libres = tam_memoria / tam_pagina;
+    marcos = tam_memoria / tam_pagina;
+    log_info(log_memoria, "CANT MARCOS %i", marcos);
 
     pids_ejecucion = list_create();
     
@@ -281,18 +282,19 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             usleep(retardo_respuesta * 1000);
             pthread_mutex_lock(&mutex_memoria);
 
-            t_string_3enteros* mov_out_data = recibir_string_3_enteros(SOCKET_CLIENTE_CPU);
-            uint32_t direccion_fisica = mov_out_data->entero1; // Cambiado el nombre de dir_fisica a direccion_fisica
+            t_4_enteros* mov_out_data = recibir_4_enteros(SOCKET_CLIENTE_CPU);
+            uint32_t direccion_fisica = mov_out_data->entero1;
             uint32_t pid_mov_out = mov_out_data->entero2;
-            uint32_t tam_a_escribir = mov_out_data->entero2;
-            char* escritura = mov_out_data->string;
+            uint32_t tam_a_escribir = mov_out_data->entero3;
+            uint32_t escritura = mov_out_data->entero4;
 
             char* valor_mov_out = malloc(tam_a_escribir);
 
-            strcpy(valor_mov_out,escritura);
+            // Copiar el valor entero a una cadena de caracteres (si es necesario)
+            snprintf(valor_mov_out, tam_a_escribir, "%u", escritura);
 
             // Escribir en la dirección física
-            escribir(direccion_fisica, escritura, tam_a_escribir);  
+            escribir(direccion_fisica, valor_mov_out, tam_a_escribir);
 
             log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
                 pid_mov_out, direccion_fisica, tam_a_escribir);
@@ -300,17 +302,23 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             enviar_codop(SOCKET_CLIENTE_CPU, MOV_OUT_OK);
             
             free(valor_mov_out);
+            free(mov_out_data);
             
             pthread_mutex_unlock(&mutex_memoria);
             break;
-        case ACCESO_TABLA_PAGINAS: 
+        case ACCESO_TABLA_PAGINAS:
             usleep(retardo_respuesta * 1000);
-            uint32_t num_paginax = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
-            uint32_t pidx = recibir_entero_uint32(SOCKET_CLIENTE_CPU, log_memoria);
+            t_2_enteros *accesoPagina = recibir_2_enteros(SOCKET_CLIENTE_CPU);
+            uint32_t pidx = accesoPagina->entero1;
+            uint32_t num_paginax = accesoPagina->entero2;
+            
+            log_info(log_memoria, "num pagina : %i", num_paginax);
+            log_info(log_memoria, "num pid : %i", pidx);
             uint32_t marco_correspondiente = obtener_marco_pagina(pidx, num_paginax);
+            log_info(log_memoria, "MARCO CORRESPONDIENTE: %i", marco_correspondiente);
             
             enviar_entero(SOCKET_CLIENTE_CPU, marco_correspondiente, ACCESO_TABLA_PAGINAS_OK);
-            log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pidx, num_paginax, marco_correspondiente);
+            log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero de pagina: %d - Marco: %d", pidx, num_paginax, marco_correspondiente);
             break;
         case COPY_STRING:
             usleep(retardo_respuesta * 1000);
@@ -440,8 +448,8 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 break;
             case ACCESO_TABLA_PAGINAS: 
                 usleep(retardo_respuesta * 1000);
-                uint32_t num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
                 uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
+                uint32_t num_pagina = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_memoria);
                 uint32_t marco_correspondiente = obtener_marco_pagina(pid, num_pagina);
                 
                 log_info(log_memoria, "Acceso a tabla de pagina PID: %d - Numero e pagina: %d - Marco: %d", pid, num_pagina, marco_correspondiente);
@@ -460,50 +468,39 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
 }
 
 void levantar_estructuras_administrativas() {
-    log_info(log_memoria, "principio de todo el cod");
-    ESPACIO_USUARIO = malloc(memoria_config.tam_memoria);
-    ESPACIO_LIBRE_TOTAL = memoria_config.tam_memoria;
+    ESPACIO_USUARIO = malloc(tam_memoria);
+    ESPACIO_LIBRE_TOTAL = tam_memoria;
 
     LISTA_ESPACIOS_LIBRES = list_create();
     LISTA_TABLA_PAGINAS = list_create();
 
     t_esp* espacio_inicial = malloc(sizeof(t_esp));
     espacio_inicial->base = 0;
-    espacio_inicial->limite = memoria_config.tam_memoria;
+    espacio_inicial->limite = tam_memoria;
 
     list_add(LISTA_ESPACIOS_LIBRES, espacio_inicial);
 
-    log_info(log_memoria, "fin de todo el cod");
+
 }
 
-void crear_tabla_pagina(uint32_t pid_t, uint32_t cant_paginas) {
-    uint32_t tam_total_paginas = cant_paginas * memoria_config.tam_pagina;
+void crear_tabla_pagina(uint32_t pid, uint32_t cantidad_paginas) {
+    //pthread_mutex_lock(&mutex_lista_tablas);
 
-    t_esp* espacio_libre = NULL;
-    for (int i = 0; i < list_size(LISTA_ESPACIOS_LIBRES); i++) {
-        t_esp* espacio = list_get(LISTA_ESPACIOS_LIBRES, i);
-        if (espacio->limite >= tam_total_paginas) {
-            espacio_libre = espacio;
-            break;
-        }
+    tabla_pagina_t* tabla = malloc(sizeof(tabla_pagina_t));
+    tabla->pid = pid;
+    tabla->cantidad_paginas = cantidad_paginas;
+    tabla->tabla_paginas = malloc(cantidad_paginas * sizeof(entrada_tabla_pagina_t));
+
+    for (uint32_t i = 0; i < cantidad_paginas; i++) {
+        tabla->tabla_paginas[i].numero_pagina = i;
+        tabla->tabla_paginas[i].numero_marco = (uint32_t)-1; // Marca como no asignado
     }
 
-    tabla_pagina_t *tabla_nueva = malloc(sizeof(tabla_pagina_t));
-    tabla_nueva->pid = pid_t;
-    tabla_nueva->tabla_paginas = malloc(sizeof(entrada_tabla_pagina_t) * cant_paginas);
-    tabla_nueva->cantidad_paginas = cant_paginas;
+    list_add(LISTA_TABLA_PAGINAS, tabla);
 
-    for (int i = 0; i < cant_paginas; i++) {
-        tabla_nueva->tabla_paginas[i].numero_pagina = i;
-        tabla_nueva->tabla_paginas[i].numero_marco = (uintptr_t)(ESPACIO_USUARIO + (i * memoria_config.tam_pagina));
-    }
-
-    list_add(LISTA_TABLA_PAGINAS, tabla_nueva);
-
-    espacio_libre->base += tam_total_paginas;
-    espacio_libre->limite -= tam_total_paginas;
-    ESPACIO_LIBRE_TOTAL -= tam_total_paginas;
+    //pthread_mutex_unlock(&mutex_lista_tablas);
 }
+
 
 
 void escribir(uint32_t dir_fisca, void* data, uint32_t size) {

@@ -198,6 +198,12 @@ typedef struct {
     uint32_t entero3;
 }t_3_enteros;
 
+typedef struct {
+    uint32_t entero1;
+    uint32_t entero2;
+    uint32_t entero3;
+    uint32_t entero4;
+}t_4_enteros;
 
 typedef struct {
     char *string;
@@ -293,6 +299,7 @@ void recibir_2_string_con_contexto(int conexion_kernel_cpu_dispatch, char** pala
 t_string_2enteros* recibir_string_2enteros_con_contexto(int socket, t_contexto** contexto);
 t_2_enteros * recibir_2_enteros(int socket);
 t_3_enteros* recibir_3_enteros(int socket);
+t_4_enteros* recibir_4_enteros(int socket);
 t_string_3enteros* recibir_string_3_enteros(int socket);
 t_string_2enteros* recibir_string_2enteros(int socket);
 

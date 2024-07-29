@@ -12,6 +12,7 @@ typedef struct {
 
 tlb* entrada_tlb; //verificar que funcione
 int tamanioTLB;
+int tamanioActualTlb;
 t_log* log_cpu;
 t_config* config_cpu;
 t_contexto *contexto;
@@ -68,7 +69,7 @@ void funcIoFsWrite(t_instruccion *instruccion);
 
 op_code decode(t_instruccion *instruccion);
 void agregar_valor_a_registro(char *reg, char *val);
-void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina);
+void agregarEntradaTLB(uint32_t pid, uint32_t numPag, uint32_t marco);
 uint32_t leer_valor_de_registro(char *registro);
 void guardar_valor_en_registro(char *valor, char *registro);
 char * leer_valor_de_memoria(uint32_t direccionFisica, uint32_t tamanio);
@@ -83,8 +84,9 @@ void checkInturrupt(uint32_t pid);
 void esperar_devolucion_pcb();
 uint32_t obtener_valor_registro(char* registro);
 void ejecutar_ciclo_de_instruccion(t_log *loggs);
-void reemplazarXLRU(uint32_t pid, uint32_t marco, uint32_t pagina);
-void reemplazarXFIFO(uint32_t pid, uint32_t marco, uint32_t pagina);
+void agregarEntradaTLB_FIFO(uint32_t pid, uint32_t numPag, uint32_t marco);
+void agregarEntradaTLB_LRU(uint32_t pid, uint32_t numPag, uint32_t marco);
 uint32_t traducirDireccion(uint32_t dirLogica, uint32_t tamanio_pagina);
+uint32_t buscarMarcoEnTLB(uint32_t pidBuscar, uint32_t numPagBuscar);
 
 #endif

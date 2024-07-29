@@ -64,6 +64,7 @@ void leer_config(char* path){
         entrada_tlb[i].marco = 0;
         entrada_tlb[i].contador_reciente = 0;
     }
+    tamanioActualTlb = 0;
 
     log_info(log_cpu, "TLB inicializada con %d entradas", tamanioTLB);
     log_info(log_cpu, "levanto la configuracion del cpu");
@@ -744,114 +745,228 @@ uint32_t obtener_valor_registro(char* registro){
 }
 
 uint32_t traducirDireccion(uint32_t dirLogica, uint32_t tamanio_pagina) {
+    // uint32_t numero_pagina = dirLogica / tamanio_pagina;
+    // uint32_t desplazamiento = dirLogica - numero_pagina * tamanio_pagina;
+    // log_info(log_cpu, "direccion logica : %i", dirLogica);
+    // log_info(log_cpu, "numero pag : %i", numero_pagina);
+    // log_info(log_cpu, "desplazamiento : %i", desplazamiento);
+    // int marco = -1;
+
+    // // Búsqueda en la TLB
+    // for (int i = 0; i < cantidad_entradas_tlb; i++) {
+    //     if (contexto->pid == entrada_tlb[i].pid && numero_pagina == entrada_tlb[i].numero_de_pagina) { // TLB hit
+    //         log_info(log_cpu, "TLB Hit: PID: %i - Pagina: %i", contexto->pid, numero_pagina);
+    //         dirFisica = entrada_tlb[i].marco * tamanio_pagina + desplazamiento;
+    //         return dirFisica;
+    //     }
+    // }
+
+    // // TLB miss
+    // log_info(log_cpu, "TLB Miss: PID: %i - Pagina: %i", contexto->pid, numero_pagina);
+    // t_2_enteros algo = { .entero1 = numero_pagina, .entero2 = contexto->pid };
+    // enviar_2_enteros(conexion_memoria, &algo, ACCESO_TABLA_PAGINAS);
+
+    // uint32_t marco;
+    // while (1) {
+    //     int cod_op = recibir_operacion(conexion_memoria);
+    //     if (cod_op == ACCESO_TABLA_PAGINAS_OK) {
+    //         log_info(log_cpu, "Codigo de operacion recibido en CPU: %d", cod_op);
+    //         marco = recibir_entero_uint32(conexion_memoria, log_cpu);
+    //         log_info(log_cpu, "Recibido marco: %i", marco);
+    //         break;
+    //     } else {
+    //         log_warning(log_cpu, "Codigo de operacion desconocido: %d", cod_op);
+    //     }
+    // }
+
+    // log_info(log_cpu, "PID: %i - OBTENER MARCO - Página: %i - Marco: %i", contexto->pid, numero_pagina, marco);
+    
+    // // Actualizar la TLB
+    // agregar_entrada_tlb(contexto->pid, marco, numero_pagina);
+
+    // dirFisica = marco * tamanio_pagina + desplazamiento;
+    // return dirFisica;
+    //nuevo---------------------
     uint32_t numero_pagina = dirLogica / tamanio_pagina;
+    log_info(log_cpu, "num pagina calculada: %i", numero_pagina);
     uint32_t desplazamiento = dirLogica - numero_pagina * tamanio_pagina;
-    log_info(log_cpu, "direccion logica : %i", dirLogica);
-    log_info(log_cpu, "numero pag : %i", numero_pagina);
-    log_info(log_cpu, "desplazamiento : %i", desplazamiento);
-    uint32_t dirFisica;
-
-    // Búsqueda en la TLB
-    for (int i = 0; i < cantidad_entradas_tlb; i++) {
-        if (contexto->pid == entrada_tlb[i].pid && numero_pagina == entrada_tlb[i].numero_de_pagina) { // TLB hit
-            log_info(log_cpu, "TLB Hit: PID: %i - Pagina: %i", contexto->pid, numero_pagina);
-            dirFisica = entrada_tlb[i].marco * tamanio_pagina + desplazamiento;
-            return dirFisica;
-        }
+    log_info(log_cpu, "num DESPLAZA: %i", desplazamiento);
+    int marco = -1;
+    log_info(log_cpu, "DIR LOGICA _%i - TAM PAGINA: %i", dirLogica, tamanio_pagina);
+    if(cantidad_entradas_tlb) {
+        marco = buscarMarcoEnTLB(contexto->pid, numero_pagina);
     }
 
-    // TLB miss
-    log_info(log_cpu, "TLB Miss: PID: %i - Pagina: %i", contexto->pid, numero_pagina);
-    t_2_enteros algo = { .entero1 = numero_pagina, .entero2 = contexto->pid };
-    enviar_2_enteros(conexion_memoria, &algo, ACCESO_TABLA_PAGINAS);
+    if(marco == -1) {
+        log_info(log_cpu, "EL MARCO ES -1");
+        //crear estruct necesarias
+        t_paquete *paquete = crear_paquete_op(ACCESO_TABLA_PAGINAS);
+        t_2_enteros *pagMarco = malloc(sizeof(t_2_enteros));
+        pagMarco->entero1 = contexto->pid;
+        pagMarco->entero2 = numero_pagina;
+        log_info(log_cpu, "pid: %i", contexto->pid);
+        log_info(log_cpu, "num pagina: %i", numero_pagina);
+        agregar_2_enteros_a_paquete(paquete, pagMarco);
+        enviar_paquete(paquete, conexion_memoria);
+        eliminar_paquete(paquete);
+        log_info(log_cpu, "EL MARCO ES -1");
 
-    uint32_t marco;
-    while (1) {
-        int cod_op = recibir_operacion(conexion_memoria);
-        if (cod_op == ACCESO_TABLA_PAGINAS_OK) {
-            log_info(log_cpu, "Codigo de operacion recibido en CPU: %d", cod_op);
+        op_code cod = recibir_operacion(conexion_memoria);
+        log_info(log_cpu, "CODIGO RECIBIDO DE MEMORIA: %i", cod);
+
+        if(cod == ACCESO_TABLA_PAGINAS_OK) {
+            log_info(log_cpu, "ENTRO EN ACC TABLA PAG");
             marco = recibir_entero_uint32(conexion_memoria, log_cpu);
-            log_info(log_cpu, "Recibido marco: %i", marco);
-            break;
-        } else {
-            log_warning(log_cpu, "Codigo de operacion desconocido: %d", cod_op);
+            log_info(log_cpu, "Marco: %i", marco);
+            agregarEntradaTLB(contexto->pid, numero_pagina, marco);
         }
+        else {
+            log_info(log_cpu, "codigo :%i", cod);
+            perror("FALLO en la obtencion del marco");
+            marco = (uint32_t)-1;
+        }
+
+
     }
 
-    log_info(log_cpu, "PID: %i - OBTENER MARCO - Página: %i - Marco: %i", contexto->pid, numero_pagina, marco);
-    
-    // Actualizar la TLB
-    agregar_entrada_tlb(contexto->pid, marco, numero_pagina);
+    int dirFisica = marco * tamanio_pagina + desplazamiento;
 
-    dirFisica = marco * tamanio_pagina + desplazamiento;
+    log_info(log_cpu, "PID: <%i> - OBTENER MARCO - Página: <%i> - Marco: <%i>", contexto->pid, numero_pagina, marco);
+
+	log_info(log_cpu, "direccion fisica = marco * tam_pagina + desplazamiento: %i", dirFisica);
+
     return dirFisica;
+
 }
 
-void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina) {
-    bool espacio_libre = false;
-
-    // Buscar un espacio libre en la TLB
-    for (int i = 0; i < cantidad_entradas_tlb; i++) {
-        if (entrada_tlb[i].pid == 0) {
-            entrada_tlb[i].pid = pid;
-            entrada_tlb[i].numero_de_pagina = pagina;
-            entrada_tlb[i].marco = marco;
-            entrada_tlb[i].contador_reciente = 0; // Inicializar el contador LRU
-            espacio_libre = true;
-            break;
+uint32_t buscarMarcoEnTLB(uint32_t pidBuscar, uint32_t numPagBuscar) {
+    for (size_t i = 0; i < tamanioActualTlb; ++i) {
+        if (entrada_tlb[i].pid == pidBuscar && entrada_tlb[i].numero_de_pagina == numPagBuscar) {
+            if (strcmp(algoritmo_tlb, "LRU") == 0) {
+                // Mover la entrada encontrada al final (simulando LRU)
+                tlb entrada = entrada_tlb[i];
+                for (size_t j = i; j < tamanioActualTlb - 1; ++j) {
+                    entrada_tlb[j] = entrada_tlb[j + 1];
+                }
+                entrada_tlb[tamanioActualTlb - 1] = entrada;
+            }
+            log_info(log_cpu,"PID: <%i> - TLB HIT - Pagina: <%i>", pidBuscar, numPagBuscar);
+            return entrada_tlb[tamanioActualTlb - 1].marco;
         }
     }
+    log_info(log_cpu, "PID: <%d> - TLB MISS - Pagina: <%d>\n", pidBuscar, numPagBuscar);
+    return (uint32_t)-1;
+}
 
-    // Si no hay espacio libre, usar el algoritmo de reemplazo
-    if (!espacio_libre) {
-        if (strcmp(algoritmo_tlb, "FIFO") == 0) {
-            reemplazarXFIFO(pid, marco, pagina);
-        } else if (strcmp(algoritmo_tlb, "LRU") == 0) {
-            reemplazarXLRU(pid, marco, pagina);
-        }
+void agregarEntradaTLB(uint32_t pid, uint32_t numPag, uint32_t marco) {
+    if (strcmp(algoritmo_tlb, "LRU") == 0) {
+        agregarEntradaTLB_LRU(pid, numPag, marco);
+    } else {
+        agregarEntradaTLB_FIFO(pid, numPag, marco);
     }
 }
 
-void reemplazarXFIFO(uint32_t pid, uint32_t marco, uint32_t pagina){
-    int cantidad_entradas_tlb_valor = cantidad_entradas_tlb;  // Obtener el valor entero desde el puntero
+void agregarEntradaTLB_FIFO(uint32_t pid, uint32_t numPag, uint32_t marco) {
+    if (tamanioActualTlb == tamanioTLB) {
+        // La TLB está llena, hay que eliminar la entrada más antigua (FIFO)
+        // En este caso, simplemente desplazamos todas las entradas una posición a la izquierda
+        for (size_t i = 0; i < tamanioActualTlb - 1; ++i) {
+            entrada_tlb[i] = entrada_tlb[i + 1];
+        }
+        tamanioActualTlb--;
+    }
+
+    // Añadir la nueva entrada al final
+    entrada_tlb[tamanioActualTlb].pid = pid;
+    entrada_tlb[tamanioActualTlb].numero_de_pagina = numPag;
+    entrada_tlb[tamanioActualTlb].marco = marco;
+    entrada_tlb[tamanioActualTlb].contador_reciente = 0; // Inicializar contador LRU
+    tamanioActualTlb++;
+}
+
+void agregarEntradaTLB_LRU(uint32_t pid, uint32_t numPag, uint32_t marco) {
+    if (tamanioActualTlb == tamanioTLB) {
+        // La TLB está llena, hay que eliminar la entrada menos reciente (LRU)
+        // En este caso, simplemente desplazamos todas las entradas una posición a la izquierda
+        for (size_t i = 0; i < tamanioActualTlb - 1; ++i) {
+            entrada_tlb[i] = entrada_tlb[i + 1];
+        }
+        tamanioActualTlb--;
+    }
+
+    // Añadir la nueva entrada al final
+    entrada_tlb[tamanioActualTlb].pid = pid;
+    entrada_tlb[tamanioActualTlb].numero_de_pagina = numPag;
+    entrada_tlb[tamanioActualTlb].marco = marco;
+    entrada_tlb[tamanioActualTlb].contador_reciente = 0; // Inicializar contador LRU
+    tamanioActualTlb++;
+}
+
+// void agregar_entrada_tlb(uint32_t pid, uint32_t marco, uint32_t pagina) {
+//     bool espacio_libre = false;
+
+//     // Buscar un espacio libre en la TLB
+//     for (int i = 0; i < cantidad_entradas_tlb; i++) {
+//         if (entrada_tlb[i].pid == 0) {
+//             entrada_tlb[i].pid = pid;
+//             entrada_tlb[i].numero_de_pagina = pagina;
+//             entrada_tlb[i].marco = marco;
+//             entrada_tlb[i].contador_reciente = 0; // Inicializar el contador LRU
+//             espacio_libre = true;
+//             break;
+//         }
+//     }
+
+//     // Si no hay espacio libre, usar el algoritmo de reemplazo
+//     if (!espacio_libre) {
+//         if (strcmp(algoritmo_tlb, "FIFO") == 0) {
+//             reemplazarXFIFO(pid, marco, pagina);
+//         } else if (strcmp(algoritmo_tlb, "LRU") == 0) {
+//             reemplazarXLRU(pid, marco, pagina);
+//         }
+//     }
+// }
+
+// void reemplazarXFIFO(uint32_t pid, uint32_t marco, uint32_t pagina){
+//     int cantidad_entradas_tlb_valor = cantidad_entradas_tlb;  // Obtener el valor entero desde el puntero
     
-    indice_frente = 0; // Obtener índice a reemplazar
+//     indice_frente = 0; // Obtener índice a reemplazar
 
-    entrada_tlb[indice_frente].pid = contexto->pid;
-    entrada_tlb[indice_frente].numero_de_pagina = pagina;
-    entrada_tlb[indice_frente].marco = marco;
+//     entrada_tlb[indice_frente].pid = contexto->pid;
+//     entrada_tlb[indice_frente].numero_de_pagina = pagina;
+//     entrada_tlb[indice_frente].marco = marco;
 
-    indice_frente = (indice_frente + 1) % cantidad_entradas_tlb_valor;
-}
+//     indice_frente = (indice_frente + 1) % cantidad_entradas_tlb_valor;
+// }
 
 
-void reemplazarXLRU(uint32_t pid, uint32_t marco, uint32_t pagina){
+// void reemplazarXLRU(uint32_t pid, uint32_t marco, uint32_t pagina){
     
-    int indice_menos_reciente = 0;
-    uint32_t menos_reciente = entrada_tlb[0].contador_reciente;
+//     int indice_menos_reciente = 0;
+//     uint32_t menos_reciente = entrada_tlb[0].contador_reciente;
 
-    for(int i = 1; i < cantidad_entradas_tlb; i++){
-        if (entrada_tlb[i].contador_reciente < menos_reciente){
-            menos_reciente = entrada_tlb[i].contador_reciente;
-            indice_menos_reciente = i;
-        }
-    }
+//     for(int i = 1; i < cantidad_entradas_tlb; i++){
+//         if (entrada_tlb[i].contador_reciente < menos_reciente){
+//             menos_reciente = entrada_tlb[i].contador_reciente;
+//             indice_menos_reciente = i;
+//         }
+//     }
 
-    //reemplazar la entrada menos reciente usada con la nueva entrada de la tlb
-    entrada_tlb[indice_menos_reciente].pid = contexto->pid;
-    entrada_tlb[indice_menos_reciente].numero_de_pagina = pagina;
-    entrada_tlb[indice_menos_reciente].marco = marco;
+//     //reemplazar la entrada menos reciente usada con la nueva entrada de la tlb
+//     entrada_tlb[indice_menos_reciente].pid = contexto->pid;
+//     entrada_tlb[indice_menos_reciente].numero_de_pagina = pagina;
+//     entrada_tlb[indice_menos_reciente].marco = marco;
 
-    //reiniciar el cont reciente de la entrada reemplazada, porque se acabo de usar
-    entrada_tlb[indice_menos_reciente].contador_reciente = 0;
+//     //reiniciar el cont reciente de la entrada reemplazada, porque se acabo de usar
+//     entrada_tlb[indice_menos_reciente].contador_reciente = 0;
 
-    for(int i = 0; i < cantidad_entradas_tlb ; i++){
-        if(i != indice_menos_reciente){
-            entrada_tlb[i].contador_reciente++;
-        }
-    }
+//     for(int i = 0; i < cantidad_entradas_tlb ; i++){
+//         if(i != indice_menos_reciente){
+//             entrada_tlb[i].contador_reciente++;
+//         }
+//     }
 
-}
+// }
 
 uint32_t tamanio_registro(char *registro){
     if (strcmp(registro, "AX") == 0) return 1;
