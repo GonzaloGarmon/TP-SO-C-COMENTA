@@ -147,7 +147,9 @@ typedef enum
     MOV_OUT_OK,
     MOV_IN_OK,
     RESIZE_OK,
-    ACCESO_TABLA_PAGINAS_OK
+    ACCESO_TABLA_PAGINAS_OK,
+    PEDIR_TAM_MEMORIA,
+    TAMANIO_RECIBIDO
 
 }op_code;
 

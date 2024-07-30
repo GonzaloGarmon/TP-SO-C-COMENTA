@@ -78,8 +78,9 @@ void cargar_instrucciones_desde_archivo(char* nombre_archivo, uint32_t pid);
 uint32_t buscar_marco_libre();
 void marco_ocupado(uint32_t numero_marco);
 void marco_libre(uint32_t numero_marco);
-void liberarPagina(entrada_tabla_pagina_t* pagina);
-op_code agrandar(tabla_pagina_t* tabla, uint32_t tamanio);
-op_code achicar(tabla_pagina_t* tabla, uint32_t tamanio);
+uint32_t cantidad_marcos_vacios();
+op_code ampliar(tabla_pagina_t *tabla, uint32_t nuevo_tam);
+void reducir(tabla_pagina_t* tabla, uint32_t nuevo_tam);
+
 
 #endif // MEMORIA_H_
