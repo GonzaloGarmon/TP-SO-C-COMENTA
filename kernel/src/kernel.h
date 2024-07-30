@@ -20,6 +20,7 @@ typedef enum{
     VRR
 } t_algoritmo;
 
+
 t_log* log_kernel;
 t_config* config_kernel;
 t_list* cola_new;
@@ -45,9 +46,10 @@ sem_t sem_listos_para_exec;
 sem_t sem_listos_para_exit;
 sem_t sem_empezar_quantum;
 sem_t sem_iniciar_consola;
-sem_t sem_eliminar_quantum;
+sem_t sem_terminar_quantum;
 sem_t esta_ejecutando;
 sem_t sem_chequear_validacion;
+sem_t sem_habilitar_desbloqueo;
 
 char* puerto_escucha;
 char* ip_memoria;
@@ -61,6 +63,7 @@ t_algoritmo algoritmo_planificacion;
 int quantum;
 
 int corto_VRR;
+int terminar_instru;
 uint32_t validacion;
 t_conexiones_kernel_io conexiones_io;
 char** recursos;
@@ -68,6 +71,7 @@ int* instancias_recursos;
 int cantidad_recursos;
 int grado_multiprogramacion;
 t_list** lista_recurso;
+t_list** lista_recurso_asignados;
 
 
 int socket_servidor_kernel_dispatch;
