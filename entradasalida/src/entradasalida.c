@@ -311,14 +311,11 @@ void funcIoGenSleep(t_entero_bool** ejecucion){
     int unidades = unidadesRecibidas*tiempo_unidad_trabajo;
     log_info(log_entradasalida, "Eperando durante %d unidades",unidades);
     usleep(unidadesRecibidas*tiempo_unidad_trabajo);
-    
-    log_info(log_entradasalida, "pid justo antes de enviar %d",(*ejecucion)->entero);
-    
+        
     enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero, TERMINO_INTERFAZ);
 
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
-    avanzar_a_siguiente_operacion();
 }
 
 void funcIoStdRead(t_entero_bool** ejecucion){

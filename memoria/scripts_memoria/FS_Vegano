@@ -1,0 +1,10 @@
+SET AX 10
+IO_FS_CREATE FS salida.txt
+SET AX 10
+IO_FS_CREATE FS cronologico.txt
+SUM AX 10
+IO_FS_DELETE FS salida.txt
+SET AX 10
+IO_FS_TRUNCATE FS salida.txt BX
+SET AX 10
+IO_FS_TRUNCATE FS cronologico.txt BX
