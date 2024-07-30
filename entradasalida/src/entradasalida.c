@@ -196,7 +196,7 @@ void recibir_y_procesar_paquete(int socket_cliente) {
 
     //SI ES VALIDA LE ENVIO UN 1 Y RECIBO TODO
     enviar_entero(conexion_entradasalida_kernel,1,OBTENER_VALIDACION);
-    sleep(3);
+    //sleep(3);
 
     desplazamiento = 0;
     size = 0;
@@ -316,6 +316,8 @@ void funcIoGenSleep(t_entero_bool** ejecucion){
 
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
+
+    avanzar_a_siguiente_operacion();
 }
 
 void funcIoStdRead(t_entero_bool** ejecucion){
@@ -349,6 +351,8 @@ void funcIoStdRead(t_entero_bool** ejecucion){
     enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
+
+    avanzar_a_siguiente_operacion();
     free(buffer);
 }
 
@@ -384,6 +388,8 @@ void funcIoFsWrite(t_entero_bool** ejecucion){
     enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
+
+    avanzar_a_siguiente_operacion();
 }
 
 void funcIoFsRead(t_entero_bool** ejecucion){
@@ -404,6 +410,8 @@ void funcIoFsRead(t_entero_bool** ejecucion){
     enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
+
+    avanzar_a_siguiente_operacion();
 }
 
 void funcIoFsTruncate(t_entero_bool** ejecucion) {
@@ -411,6 +419,8 @@ void funcIoFsTruncate(t_entero_bool** ejecucion) {
     enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
+
+    avanzar_a_siguiente_operacion();
 }
 
 void funcIoFsCreate(t_entero_bool** ejecucion) {
@@ -425,6 +435,8 @@ void funcIoFsCreate(t_entero_bool** ejecucion) {
     enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
+
+    avanzar_a_siguiente_operacion();
 }
 
 void funcIoFsDelete(t_entero_bool** ejecucion) {
@@ -432,6 +444,8 @@ void funcIoFsDelete(t_entero_bool** ejecucion) {
     enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
+
+    avanzar_a_siguiente_operacion();
 }
 
 void generar_conexiones(){   

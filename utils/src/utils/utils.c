@@ -1,32 +1,48 @@
 #include"utils.h"
+#define handle_error(msg) \
+           do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
 t_log* logger;
 
-int iniciar_servidor(char *puerto, t_log* loggs)
-{
-
+int iniciar_servidor(char* puerto, t_log* logger) {
     int socket_servidor;
-
     struct addrinfo hints, *servinfo;
 
+    // Inicializando hints
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-
+    // Recibe los addrinfo
     getaddrinfo(NULL, puerto, &hints, &servinfo);
 
-    // Creamos el socket de escucha del servidor
-    socket_servidor = socket(servinfo->ai_family,
-                         servinfo->ai_socktype,
-                         servinfo->ai_protocol);
+    bool conecto = false;
 
-    // Asociamos el socket a un puerto
-    bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen);
+    // Itera por cada addrinfo devuelto
+    for (struct addrinfo *p = servinfo; p != NULL; p = p->ai_next) {
+        socket_servidor = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (socket_servidor == -1) // fallo de crear socket
+            continue;
+        int yes=1;
+        setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes);
+        if (bind(socket_servidor, p->ai_addr, p->ai_addrlen) == -1) {
+            // Si entra aca fallo el bind
+            handle_error("bind");
+            close(socket_servidor);
+            continue;
+        }
+        // Ni bien conecta uno nos vamos del for
+        conecto = true;
+        break;
+    }
 
-    // Escuchamos las conexiones entrantes
-    listen(socket_servidor, SOMAXCONN);
+    if(!conecto) {
+        free(servinfo);
+        return 0;
+    }
+
+    listen(socket_servidor, SOMAXCONN); // Escuchando (hasta SOMAXCONN conexiones simultaneas)
 
     freeaddrinfo(servinfo);
 

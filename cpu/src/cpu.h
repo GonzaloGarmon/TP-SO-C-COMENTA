@@ -90,5 +90,9 @@ void agregarEntradaTLB_LRU(uint32_t pid, uint32_t numPag, uint32_t marco);
 uint32_t traducirDireccion(uint32_t dirLogica);
 uint32_t buscarMarcoEnTLB(uint32_t pidBuscar, uint32_t numPagBuscar);
 char* encontrarValorDeRegistro(char* register_to_find_value);
+void conexionRecMem();
+void recibirOpMemoria(int socket);
+void recibirOpMemoria_movOut(t_string_2enteros_dato_movOut *datos_mov_out);
+void conexionRecMem_movOut(char *valor, uint32_t direcFisica);
 
 #endif

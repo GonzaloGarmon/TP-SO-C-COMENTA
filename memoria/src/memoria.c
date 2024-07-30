@@ -188,11 +188,11 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
            t_string_mas_entero *data = recibir_string_mas_entero(SOCKET_CLIENTE_KERNEL, log_memoria);
             uint32_t pid = data->entero1;
             char *path = data->string;
-            uint32_t cant_paginas = tam_memoria / tam_pagina; //recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
+            uint32_t cant_paginas = 0; //recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
             //devolver tabla inicial de alguna manera
             log_info(log_memoria, "Creacion del proceso PID %d", pid);
             crear_tabla_pagina(pid, cant_paginas);
-            log_info(log_memoria, "PID: %i - Tamanio: %i", pid,cant_paginas);
+            log_info(log_memoria, "PID: %i - Tamanio: %i", pid, cant_paginas);
             
             list_add(pids_ejecucion, (void *)(uintptr_t)pid);
 
@@ -257,13 +257,16 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             enviar_instruccion(SOCKET_CLIENTE_CPU,list_get(listas_instrucciones[pid-1], ins) , READY);
             sem_post(&sem);
             break;
-        case RESIZE: 
+        case RESIZE:
+            
             usleep(retardo_respuesta * 1000);
             t_2_enteros* resize = recibir_2_enteros(SOCKET_CLIENTE_CPU);
             uint32_t nuevo_tam = resize->entero1;
             uint32_t pid_resize = resize->entero2;
             op_code res = ajustar_tamanio_proceso(nuevo_tam,pid_resize);
-            enviar_codop(SOCKET_CLIENTE_CPU, res);
+            t_paquete *paquete = crear_paquete_op(res);
+            enviar_paquete(paquete, SOCKET_CLIENTE_CPU);
+            eliminar_paquete(paquete);
             log_info(log_memoria, "MANDE RESPUESTA A CPU");
             
             break;
@@ -343,8 +346,6 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
         codigoOperacion=codOperacion;
         break;
         default:
-            
-            log_trace(log_memoria, "1 Recibí el código de operación %d y entré en DEFAULT", codigoOperacion);
             break;
         }
     }

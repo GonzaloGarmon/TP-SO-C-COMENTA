@@ -176,7 +176,12 @@ t_instruccion* fetch(uint32_t pid, uint32_t pc){
     log_info(log_cpu, "PID: %i - FETCH - Program Counter: %i", pid, pc);
     t_instruccion* instruccion = malloc(sizeof(t_instruccion));
     op_code codigo = recibir_operacion(conexion_memoria);
-    instruccion = recibir_instruccion(conexion_memoria);
+    if(codigo == READY){
+        log_info(log_cpu, "COPOP: %i", codigo);
+        instruccion = recibir_instruccion(conexion_memoria);
+    }else{
+        return -1;
+    }
   return instruccion;
 }
 
@@ -702,22 +707,36 @@ void funcResize(t_instruccion* instruccion){
     eliminar_paquete(paquete);
     log_info(log_cpu, "Tamanio enviado");
 
-    op_code cod_op = recibir_operacion(conexion_memoria);
-        
-        switch(cod_op) {
-            case RESIZE_OK:
-            log_trace(log_cpu, "Entro en RESIZE COD : %d", cod_op);
+    conexionRecMem();
+
+}
+
+void conexionRecMem(){
+    pthread_t atiende_cliente_memoria; 
+    pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpMemoria, (void *) (intptr_t) conexion_memoria);
+    pthread_detach(atiende_cliente_memoria);
+}
+
+void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
+    op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
+    int size = 0;
+    char * buffer;
+    buffer = recibir_buffer(&size, conexion_memoria);
+    
+    switch (operacion){
+        case RESIZE_OK:
+            log_trace(log_cpu, "Entro en RESIZE COD : %d", operacion);
             log_info(log_cpu, "Se ajusta tamanio de proceso");
             break;
-            case OUT_OF_MEMORY:
-            log_trace(log_cpu, "Entro en OUT OF MEMORY COD : %d", cod_op);
-            enviar_contexto(socket_cliente_kernel_interrupt, contexto, cod_op);
+        case OUT_OF_MEMORY:
+            log_trace(log_cpu, "Entro en OUT OF MEMORY COD : %d", operacion);
+            enviar_contexto(socket_cliente_kernel_interrupt, contexto, operacion);
             break;
-            default:
-            log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", cod_op);
+        default:
+            log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", operacion);
             break;
-        }
     }
+}
 
 
 uint32_t obtener_valor_registro(char* registro){
@@ -762,7 +781,6 @@ uint32_t traducirDireccion(uint32_t dirLogica) {
     }
 
     if(marco == -1) {
-        log_info(log_cpu, "logs debugging");
         //crear estruct necesarias
         t_paquete *paquete = crear_paquete_op(ACCESO_TABLA_PAGINAS);
         t_2_enteros *pagMarco = malloc(sizeof(t_2_enteros));
@@ -773,13 +791,11 @@ uint32_t traducirDireccion(uint32_t dirLogica) {
         agregar_2_enteros_a_paquete(paquete, pagMarco);
         enviar_paquete(paquete, conexion_memoria);
         eliminar_paquete(paquete);
-        log_info(log_cpu, "logs debugging");
 
         op_code cod = recibir_operacion(conexion_memoria);
         log_info(log_cpu, "CODIGO RECIBIDO DE MEMORIA: %i", cod);
 
         if(cod == ACCESO_TABLA_PAGINAS_OK) {
-            log_info(log_cpu, "logs debugging");
             marco = recibir_entero_uint32(conexion_memoria, log_cpu);
             log_info(log_cpu, "Marco: %i", marco);
             agregarEntradaTLB(contexto->pid, numero_pagina, marco);
@@ -1149,6 +1165,38 @@ char* encontrarValorDeRegistro(char* register_to_find_value) {
     return NULL;
 }
 
+void conexionRecMem_movOut(char *valor, uint32_t direcFisica) {
+    t_string_2enteros_dato_movOut *datos_mov_out = malloc(sizeof(t_string_2enteros_dato_movOut));
+    datos_mov_out->entero1 = direcFisica;
+    datos_mov_out->entero2 = conexion_memoria;
+    datos_mov_out->string = valor;
+    pthread_t atiende_cliente_memoria; 
+    pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpMemoria_movOut, (void *) (intptr_t) datos_mov_out);
+    pthread_detach(atiende_cliente_memoria);
+}
+
+void recibirOpMemoria_movOut(t_string_2enteros_dato_movOut *datos_mov_out) {
+    op_code operacion = recibir_operacion(datos_mov_out->entero2);
+    int size = 0;
+    char * buffer;
+    buffer = recibir_buffer(&size, datos_mov_out->entero2);
+    
+    switch (operacion){
+        case 0:
+            log_error(log_cpu, "Llego código operación 0");
+            break;
+        case MOV_OUT_OK:
+            log_info(log_cpu, "Código de operación recibido en cpu: %d", operacion);
+            log_info(log_cpu, "Valor escrito en memoria correctamente");
+            log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección física: %i - Valor: %s",
+                        contexto->pid, datos_mov_out->entero1, datos_mov_out->string);
+            return;
+        default:
+            log_warning(log_cpu, "Llegó un código de operación desconocido, %i", operacion);
+            break;
+        }
+    
+}
 
 void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, uint32_t tamanio) {
     t_paquete *paquete = crear_paquete_op(MOV_OUT);
@@ -1160,24 +1208,8 @@ void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, uint32_t t
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete);
     log_trace(log_cpu, "MOV OUT enviado");
-
     
-    int cod_op = recibir_operacion(conexion_memoria);
-    switch (cod_op) {
-    case 0:
-        log_error(log_cpu, "Llego código operación 0");
-        break;
-    case MOV_OUT_OK:
-        log_info(log_cpu, "Código de operación recibido en cpu: %d", cod_op);
-        log_info(log_cpu, "Valor escrito en memoria correctamente");
-        log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección física: %i - Valor: %s",
-                    contexto->pid, direccionFisica, valor);
-        return;
-    default:
-        log_warning(log_cpu, "Llegó un código de operación desconocido, %i", cod_op);
-        break;
-    }
-    
+    conexionRecMem_movOut(valor, direccionFisica);
 
 }
 

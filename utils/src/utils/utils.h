@@ -216,6 +216,12 @@ typedef struct {
 typedef struct {
     char *string;
     uint32_t entero1;
+    int entero2;
+}t_string_2enteros_dato_movOut;
+
+typedef struct {
+    char *string;
+    uint32_t entero1;
     uint32_t entero2;
 	uint32_t entero3;
 }t_string_3enteros;
