@@ -188,7 +188,7 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
            t_string_mas_entero *data = recibir_string_mas_entero(SOCKET_CLIENTE_KERNEL, log_memoria);
             uint32_t pid = data->entero1;
             char *path = data->string;
-            uint32_t cant_paginas = 0; //recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
+            uint32_t cant_paginas = 32; //recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
             //devolver tabla inicial de alguna manera
             log_info(log_memoria, "Creacion del proceso PID %d", pid);
             crear_tabla_pagina(pid, cant_paginas);
@@ -260,8 +260,11 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
         case RESIZE:
             
             usleep(retardo_respuesta * 1000);
+            log_info(log_memoria, "MANDE RESPUESTA A CPU");
             t_2_enteros* resize = recibir_2_enteros(SOCKET_CLIENTE_CPU);
+            log_info(log_memoria, "MANDE RESPUESTA A CPU");
             uint32_t nuevo_tam = resize->entero1;
+            
             uint32_t pid_resize = resize->entero2;
             op_code res = ajustar_tamanio_proceso(nuevo_tam,pid_resize);
             t_paquete *paquete = crear_paquete_op(res);
@@ -388,7 +391,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
                 pid_stdout_write, direccion_fisica_stdout_write, tam_a_escribir_stdout_write);
 
-
+                free(stdout_write);
                 free(valor_stdout_write);
                 pthread_mutex_unlock(&mutex_memoria);
 
@@ -433,7 +436,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
                          pid_io_write, direccion_fisica_io_write, tam_a_escribir_io_write);
 
-
+                free(io_write);
                 free(valor_io_write);
                 pthread_mutex_unlock(&mutex_memoria);
 
@@ -635,30 +638,31 @@ void finalizar_proceso(uint32_t proceso) {
     }
 }
 
-op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid){   
-        tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, pid-1);
+op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid){
+    log_info(log_memoria, "MANDE RESPUESTA A CPU"); 
+        tabla_pagina_t* tabla = obtenerTablaPorPID(pid);
+        log_info(log_memoria, "MANDE RESPUESTA A CPU");
         uint32_t tamanio_actual = list_size(tabla->tabla_paginas) * tam_pagina;
+        log_info(log_memoria, "MANDE RESPUESTA A CPU");
         op_code codigo_devolucion = RESIZE_OK;
-        if (tabla->pid == pid) {
-            if  (nuevo_tam >= list_size(tabla->tabla_paginas) * tam_pagina) {
-                //  AGRANDAR TAMANIO PROCESO
-                codigo_devolucion = ampliar(tabla, nuevo_tam);
-                log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Ampliar: %i",pid, tamanio_actual, nuevo_tam - tamanio_actual);
-            // REDUCIR TAMANIO PROCESO
-            } 
-            else {
-                reducir(tabla, nuevo_tam);
-                if(nuevo_tam != 0) { 
-                    log_info(log_memoria, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>", pid, tamanio_actual, tamanio_actual-nuevo_tam); //log obligatorio
-                }else{ 
-                    log_info(log_memoria, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Reducir: <%d", pid, tamanio_actual, nuevo_tam);
-	
-                }
+        log_info(log_memoria, "MANDE RESPUESTA A CPU");
+        
+        if  (nuevo_tam >= list_size(tabla->tabla_paginas) * tam_pagina) {
+            //  AGRANDAR TAMANIO PROCESO
+            codigo_devolucion = ampliar(tabla, nuevo_tam);
+            log_info(log_memoria, "PID: %i - Tamanio actual: %i - Tamanio a Ampliar: %i",pid, tamanio_actual, nuevo_tam - tamanio_actual);
+        // REDUCIR TAMANIO PROCESO
+        } 
+        else {
+            reducir(tabla, nuevo_tam);
+            if(nuevo_tam != 0) { 
+                log_info(log_memoria, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Reducir: <%d>", pid, tamanio_actual, tamanio_actual-nuevo_tam); //log obligatorio
+            }else{ 
+                log_info(log_memoria, "PID: <%d> - Tamaño Actual: <%d> - Tamaño a Reducir: <%d", pid, tamanio_actual, nuevo_tam);
+
             }
-            return codigo_devolucion;
         }
-    
-    return -1;
+        return codigo_devolucion;
 }
 
 op_code ampliar(tabla_pagina_t *tabla, uint32_t nuevo_tam) {

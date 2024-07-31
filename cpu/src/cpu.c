@@ -1173,6 +1173,7 @@ void conexionRecMem_movOut(char *valor, uint32_t direcFisica) {
     pthread_t atiende_cliente_memoria; 
     pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpMemoria_movOut, (void *) (intptr_t) datos_mov_out);
     pthread_detach(atiende_cliente_memoria);
+    
 }
 
 void recibirOpMemoria_movOut(t_string_2enteros_dato_movOut *datos_mov_out) {
