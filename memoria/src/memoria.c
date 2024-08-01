@@ -375,13 +375,13 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
             case IO_STDIN_READ:
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);
-
+                log_info(log_memoria, "voy a recibir 3 enteros y string");
                 t_string_3enteros* stdout_write = recibir_string_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
                 uint32_t direccion_fisica_stdout_write = stdout_write->entero1; // Cambiado el nombre de dir_fisica a direccion_fisica
                 uint32_t pid_stdout_write = stdout_write->entero2;
-                uint32_t tam_a_escribir_stdout_write = stdout_write->entero2;
+                uint32_t tam_a_escribir_stdout_write = stdout_write->entero3;
                 char* escritura_stdout = stdout_write->string;
-
+                log_info(log_memoria, "recibi 3 enteros y string");
                 char* valor_stdout_write = malloc(tam_a_escribir_stdout_write);
 
                 strcpy(valor_stdout_write,escritura_stdout);

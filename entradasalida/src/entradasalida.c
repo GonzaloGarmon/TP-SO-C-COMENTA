@@ -298,6 +298,7 @@ uint32_t* malloc_copiar_uint32(uint32_t valor) {
 
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
+    log_info(log_entradasalida, "codop rec de memoria: %i",operacion);
     char *mensaje;
     uint32_t pid = *(uint32_t *)list_get(lista_pids, 0);
     switch (operacion){
