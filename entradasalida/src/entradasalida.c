@@ -338,7 +338,9 @@ void funcIoGenSleep(t_entero_bool** ejecucion){
     log_info(log_entradasalida, "Generica: PID: <%d> - Gen_Sleep",pidRecibido);
     int unidades = unidadesRecibidas*tiempo_unidad_trabajo;
     log_info(log_entradasalida, "Eperando durante %d unidades",unidades);
-    usleep(unidadesRecibidas*tiempo_unidad_trabajo);
+
+    //el *1000 es ya que el usleep hace en microsegundos y nosotros necesitamos milisegundos
+    usleep(unidadesRecibidas*tiempo_unidad_trabajo*1000);
         
     enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero, TERMINO_INTERFAZ);
 

@@ -558,10 +558,7 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
 }
 
 void recibir_cpu_interrupt(int conexion_kernel_cpu_interrupt){
-    int noFinalizar = 0;
-    while(noFinalizar != -1){
-        //int op_code = recibir_operacion(conexion_kernel_cpu_interrupt);
-    }
+    
 }
 
 void establecer_conexion_cpu_dispatch(char * ip_cpu, char* puerto_cpu, t_config* config, t_log* loggs){
@@ -1004,23 +1001,23 @@ void contador_quantum_RR(uint32_t pid){
 
         if(!apagar_planificacion){
             //sem_wait(&sem_empezar_quantum);
-            t_temporal* round_robin = temporal_create();
-            while(1){
+            //t_temporal* round_robin = temporal_create();
+            //while(1){
             
-
-            if(temporal_gettime(round_robin) >= quantum ){
+            usleep(quantum*1000);
+            //if(temporal_gettime(round_robin) >= quantum ){
                 
                 //log_info(log_kernel, "acabe en: %d", (temporal_gettime(round_robin)));
                 //log_info(log_kernel, "acabe despues");
                 enviar_interrupcion(pid);
-                temporal_stop(round_robin);
-                temporal_destroy(round_robin);
+                //temporal_stop(round_robin);
+                //temporal_destroy(round_robin);
                 //sem_post(&sem_eliminar_quantum);
-                break;
-                }
+                //break;
+                //}
            
 
-            }
+            //}
 
             
            
@@ -1164,13 +1161,13 @@ void exec_pcb()
 {
     while(1){
         if(!apagar_planificacion){
-        if(!list_is_empty(cola_ready)){
+        //if(!list_is_empty(cola_ready)){
         sem_wait(&esta_ejecutando);
         sem_wait(&sem_listos_para_exec);
         t_pcb* pcb_enviar = elegir_pcb_segun_algoritmo();
 
         dispatch(pcb_enviar);
-        }
+        //}
         }
     }
 }
@@ -1178,7 +1175,7 @@ void exec_pcb()
 void pcb_ready(){
  while(1){
     if (!apagar_planificacion){
-    if (proceso_activos() < grado_multiprogramacion && !list_is_empty(cola_new)){
+    if (proceso_activos() < grado_multiprogramacion){
     sem_wait(&sem_listos_para_ready);
     
     t_pcb* pcb = remover_pcb_de_lista(cola_new, &mutex_cola_new);
