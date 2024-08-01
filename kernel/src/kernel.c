@@ -133,6 +133,7 @@ void iniciar_semaforos() {
     sem_init(&sem_planificacion_ready, 0, 1);
     sem_init(&sem_planificacion_exec, 0, 1);
     sem_init(&sem_planificacion_exit, 0, 1);
+    //sem_init(&sem_esperar_finalizacion, 0, 0);
     sem_init(&esta_ejecutando, 0, 1);
 
 
@@ -195,7 +196,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 
                 log_info(log_kernel, "Terminó una interfaz");
                 uint32_t pid = recibir_entero_uint32(SOCKET_CLIENTE_ENTRADASALIDA, log_kernel);
-                log_info(log_kernel, "Desbloqueo pid: %d", pid);
+                //log_info(log_kernel, "Desbloqueo pid: %d", pid);
                 desbloquear_proceso_block(pid);
                 break;
             }
@@ -268,11 +269,11 @@ void recibir_cpu_dispatch(int conexion_kernel_cpu_dispatch){
             //free(pcb_interrumpido_usuario);
             break;
         case EJECUTAR_WAIT:
-            log_info(log_kernel,"log 1 ");
+            //log_info(log_kernel,"log 1 ");
             t_contexto* pcb_wait;
             char* recurso_wait;
             recibir_string_mas_contexto(conexion_kernel_cpu_dispatch,&pcb_wait,&recurso_wait);
-            log_info(log_kernel,"log 2 %s", recurso_wait);
+            //log_info(log_kernel,"log 2 %s", recurso_wait);
             
             if(existe_recurso(recurso_wait)){
                 pthread_mutex_lock(&mutex_recurso);
@@ -674,6 +675,7 @@ void iniciar_consola(){
     printf("4. Iniciar planificación\n");
     printf("5. Detener planificación\n");
     printf("6. Listar procesos por estado\n");
+    printf("7. Modificar grado de multiprogramacion\n");
 
     printf("seleccione la opción que desee: ");
     //scanf("%d", &eleccion);
@@ -801,6 +803,7 @@ void finalizar_proceso(uint32_t pid){
     if(esta_en_esta_lista(cola_new, pid)){
         sacar_de_lista_mover_exit(cola_new,mutex_cola_new,pid);
         cambio_estado(pid,"NEW", "EXIT");
+        
         sem_post(&sem_listos_para_exit);
     }
 
@@ -1165,7 +1168,10 @@ void pcb_exit(){
     enviar_paquete(paquete,conexion_kernel_memoria);
     eliminar_paquete(paquete);
     //sem_post(&sem_multiprogamacion);
-    free(pcb_finaliza); 
+    //free(pcb_finaliza->pcb->contexto->registros);
+    //free(pcb_finaliza->pcb->contexto);
+    //free(pcb_finaliza->pcb); 
+    //free(pcb_finaliza); 
      
    // }
     }
@@ -1321,7 +1327,10 @@ void actualizar_contexto(t_contexto* pcb_wait) {
 void actualizar_pcb_con_cambiar_lista(t_contexto* pcb_wait, t_list* lista_bloq_recurso) {
     bool encontrar_pcb(t_pcb* pcb) {
         return pcb->contexto->pid == pcb_wait->pid;
-    }
+    };
+
+    sem_wait(&sem_planificacion_exec);
+    sem_post(&sem_planificacion_exec);
 
     pthread_mutex_lock(&mutex_cola_exec);
     t_pcb* pcb_encontrado = list_find(cola_exec, (void*) encontrar_pcb);
@@ -1442,7 +1451,8 @@ void sacar_de_lista_mover_exit(t_list* lista, pthread_mutex_t mutex_lista, uint3
     bool encontrar_pcb(t_pcb* pcb){
         return pcb->contexto->pid == pid;
         };
-    
+    sem_wait(&sem_planificacion_exec);
+    sem_post(&sem_planificacion_exec);
 
     pthread_mutex_lock(&mutex_lista);
     t_pcb* pcb_encontrado = list_find(lista, (void*) encontrar_pcb);
