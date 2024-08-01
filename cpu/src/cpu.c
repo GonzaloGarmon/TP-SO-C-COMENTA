@@ -729,33 +729,33 @@ void funcResize(t_instruccion* instruccion){
 
 }
 
-void conexionRecMem(){
-    pthread_t atiende_cliente_memoria; 
-    pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpMemoria, (void *) (intptr_t) conexion_memoria);
-    pthread_detach(atiende_cliente_memoria);
-}
+// void conexionRecMem(){
+//     pthread_t atiende_cliente_memoria; 
+//     pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpMemoria, (void *) (intptr_t) conexion_memoria);
+//     pthread_detach(atiende_cliente_memoria);
+// }
 
-void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
-    op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
-    int size = 0;
-    char * buffer;
-    buffer = recibir_buffer(&size, conexion_memoria);
+// void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
+//     op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
+//     int size = 0;
+//     char * buffer;
+//     buffer = recibir_buffer(&size, conexion_memoria);
     
-    switch (operacion){
-        case RESIZE_OK:
-            log_trace(log_cpu, "Entro en RESIZE COD : %d", operacion);
-            log_info(log_cpu, "Se ajusta tamanio de proceso");
-            break;
-        case OUT_OF_MEMORY:
-            log_trace(log_cpu, "Entro en OUT OF MEMORY COD : %d", operacion);
-            enviar_contexto(socket_cliente_kernel_interrupt, contexto, operacion);
-            break;
-        default:
-            log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", operacion);
-            break;
-    }
+//     switch (operacion){
+//         case RESIZE_OK:
+//             log_trace(log_cpu, "Entro en RESIZE COD : %d", operacion);
+//             log_info(log_cpu, "Se ajusta tamanio de proceso");
+//             break;
+//         case OUT_OF_MEMORY:
+//             log_trace(log_cpu, "Entro en OUT OF MEMORY COD : %d", operacion);
+//             enviar_contexto(socket_cliente_kernel_interrupt, contexto, operacion);
+//             break;
+//         default:
+//             log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", operacion);
+//             break;
+//     }
     
-}
+//
 
 
 uint32_t obtener_valor_registro(char* registro){
@@ -1090,7 +1090,6 @@ void funcMovIn(t_instruccion *instruccion) {
         int valor = leer_valor_de_memoria(direccionFisica, tamanio_bytes);
         char buffer[20];
         sprintf(buffer, "%d", valor);
-        log_info(log_cpu, "Pongo valor %s en el registro %s", buffer, registro);
         valor_registro_cpu(registro,buffer);
     }
     log_info(log_cpu, "PID: %d - Acción: LEER - Dirección Fisica: %d", contexto->pid, direccionFisica);
@@ -1205,39 +1204,39 @@ char* encontrarValorDeRegistro(char* register_to_find_value) {
     return NULL;
 }
 
-void conexionRecMem_movOut(char *valor, uint32_t direcFisica) {
-    t_string_2enteros_dato_movOut *datos_mov_out = malloc(sizeof(t_string_2enteros_dato_movOut));
-    datos_mov_out->entero1 = direcFisica;
-    datos_mov_out->entero2 = conexion_memoria;
-    datos_mov_out->string = valor;
-    pthread_t atiende_cliente_memoria; 
-    pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpMemoria_movOut, (void *) (intptr_t) datos_mov_out);
-    pthread_detach(atiende_cliente_memoria);
+// void conexionRecMem_movOut(char *valor, uint32_t direcFisica) {
+//     t_string_2enteros_dato_movOut *datos_mov_out = malloc(sizeof(t_string_2enteros_dato_movOut));
+//     datos_mov_out->entero1 = direcFisica;
+//     datos_mov_out->entero2 = conexion_memoria;
+//     datos_mov_out->string = valor;
+//     pthread_t atiende_cliente_memoria; 
+//     pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpMemoria_movOut, (void *) (intptr_t) datos_mov_out);
+//     pthread_detach(atiende_cliente_memoria);
     
-}
+// }
 
-void recibirOpMemoria_movOut(t_string_2enteros_dato_movOut *datos_mov_out) {
-    op_code operacion = recibir_operacion(datos_mov_out->entero2);
-    int size = 0;
-    char * buffer;
-    buffer = recibir_buffer(&size, datos_mov_out->entero2);
+// void recibirOpMemoria_movOut(t_string_2enteros_dato_movOut *datos_mov_out) {
+//     op_code operacion = recibir_operacion(datos_mov_out->entero2);
+//     int size = 0;
+//     char * buffer;
+//     buffer = recibir_buffer(&size, datos_mov_out->entero2);
     
-    switch (operacion){
-        case 0:
-            log_error(log_cpu, "Llego código operación 0");
-            break;
-        case MOV_OUT_OK:
-            log_info(log_cpu, "Código de operación recibido en cpu: %d", operacion);
-            log_info(log_cpu, "Valor escrito en memoria correctamente");
-            log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección física: %i - Valor: %s",
-                        contexto->pid, datos_mov_out->entero1, datos_mov_out->string);
-            return;
-        default:
-            log_warning(log_cpu, "Llegó un código de operación desconocido, %i", operacion);
-            break;
-        }
+//     switch (operacion){
+//         case 0:
+//             log_error(log_cpu, "Llego código operación 0");
+//             break;
+//         case MOV_OUT_OK:
+//             log_info(log_cpu, "Código de operación recibido en cpu: %d", operacion);
+//             log_info(log_cpu, "Valor escrito en memoria correctamente");
+//             log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección física: %i - Valor: %s",
+//                         contexto->pid, datos_mov_out->entero1, datos_mov_out->string);
+//             return;
+//         default:
+//             log_warning(log_cpu, "Llegó un código de operación desconocido, %i", operacion);
+//             break;
+//         }
     
-}
+// }
 
 void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, uint32_t tamanio) {
     t_paquete *paquete = crear_paquete_op(MOV_OUT);

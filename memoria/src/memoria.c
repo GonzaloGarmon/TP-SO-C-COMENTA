@@ -190,7 +190,7 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
            t_string_mas_entero *data = recibir_string_mas_entero(SOCKET_CLIENTE_KERNEL, log_memoria);
             uint32_t pid = data->entero1;
             char *path = data->string;
-            uint32_t cant_paginas = 32; //recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
+            uint32_t cant_paginas = 0; //recibir_entero_uint32(SOCKET_CLIENTE_KERNEL, log_memoria);
             //devolver tabla inicial de alguna manera
             log_info(log_memoria, "Creacion del proceso PID %d", pid);
             crear_tabla_pagina(pid, cant_paginas);
@@ -291,14 +291,13 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             uint32_t tam_a_leer = mov_in_data->entero3;
 
             char* valor_mov_in = leer(dir_fisica, tam_a_leer);
-
+            enviar_paquete_string(SOCKET_CLIENTE_CPU, valor_mov_in, MOV_IN_OK, tam_a_leer);
 
             log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
                         pid_mov, dir_fisica, tam_a_leer);
-            enviar_paquete_string(SOCKET_CLIENTE_CPU, valor_mov_in, MOV_IN_OK, tam_a_leer);
 
             free(valor_mov_in);
-            
+            free(mov_in_data);
 
             pthread_mutex_unlock(&mutex_memoria);
             break;
@@ -312,7 +311,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             uint32_t tam_a_escribir = mov_out_data->entero3;
             char *escritura = mov_out_data->string;
 
-            char* valor_mov_out = malloc(tam_a_escribir);
+            char* valor_mov_out = malloc(sizeof(strlen(valor_mov_out)+1));
             strcpy(valor_mov_out, escritura);
             // Escribir en la dirección física
             escribir(direccion_fisica, valor_mov_out, tam_a_escribir);
@@ -385,7 +384,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t tam_a_escribir_stdout_write = stdout_write->entero3;
                 char* escritura_stdout = stdout_write->string;
                 log_info(log_memoria, "recibi 3 enteros y string");
-                char* valor_stdout_write = malloc(tam_a_escribir_stdout_write);
+                char* valor_stdout_write = malloc((strlen(valor_stdout_write)+1));
 
                 strcpy(valor_stdout_write,escritura_stdout);
 
@@ -397,7 +396,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 free(stdout_write);
                 free(valor_stdout_write);
                 pthread_mutex_unlock(&mutex_memoria);
-
+                
                 break;
             case IO_STDOUT_WRITE:
                 usleep(retardo_respuesta * 1000);
@@ -415,6 +414,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                          pid_leer_archivo_stdin, dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
 
                 free(valor_leer_archivo_stdin);
+                free(stdin_data);
 
                 pthread_mutex_unlock(&mutex_memoria);
                 
@@ -430,7 +430,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t tam_a_escribir_io_write = io_write->entero2;
                 char* escritura_io = io_write->string;
 
-                char* valor_io_write = malloc(tam_a_escribir_io_write);
+                char* valor_io_write = malloc(sizeof(strlen(valor_io_write)+1));
 
                 strcpy(valor_io_write,escritura_io);
 
@@ -438,7 +438,6 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_FS_READ);
                 log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
                          pid_io_write, direccion_fisica_io_write, tam_a_escribir_io_write);
-
                 free(io_write);
                 free(valor_io_write);
                 pthread_mutex_unlock(&mutex_memoria);
@@ -456,12 +455,13 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
 
                 char* valor_leer_archivo = leer(dir_fisica_leer_archivo, tamanio_io_read);
                 enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo, IO_FS_WRITE, tamanio_io_read);
-                free(valor_leer_archivo);
+                
 
                 log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
                          pid_leer_archivo, dir_fisica_leer_archivo, tamanio_io_read);
 
                 free(valor_leer_archivo);
+                free(fread_data);
 
                 pthread_mutex_unlock(&mutex_memoria);
                 break;

@@ -685,7 +685,7 @@ void dialfs_init(DialFS *dialfs, int block_size, int block_count, const char *pa
 
 // Función para destruir DialFS
 void dialfs_destroy(DialFS *fs) {
-    usleep(tiempo_unidad_trabajo);
+    usleep(tiempo_unidad_trabajo*1000);
     for (int i = 0; i < list_size(fs->archivos); ++i) {
         Archivo *archivo = (Archivo *)list_get(fs->archivos, i);
         free(archivo->nombre_archivo);
@@ -771,7 +771,7 @@ int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo) {
 
 // Función para eliminar un archivo en DialFS
 void dialfs_eliminar_archivo(DialFS *fs, const char *nombre_archivo) {
-    usleep(tiempo_unidad_trabajo);
+    usleep(tiempo_unidad_trabajo*1000);
     Archivo *archivo = NULL;
 
     // Buscar el archivo en la lista de archivos
@@ -810,7 +810,7 @@ void dialfs_eliminar_archivo(DialFS *fs, const char *nombre_archivo) {
 
 // Función para redimensionar un archivo en DialFS
 void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo_size) {
-    usleep(tiempo_unidad_trabajo);
+    usleep(tiempo_unidad_trabajo*1000);
     Archivo *archivo = buscar_archivo(fs, nombre_archivo);
     if (archivo == NULL) {
         fprintf(stderr, "Archivo '%s' no encontrado.\n", nombre_archivo);
@@ -865,7 +865,7 @@ void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo
 
 // Función para escribir datos en un archivo en DialFS
 void dialfs_escribir_archivo(DialFS *fs, const char *nombre_archivo, size_t offset, size_t size, const void *buffer) {
-    usleep(tiempo_unidad_trabajo);
+    usleep(tiempo_unidad_trabajo*1000);
     Archivo *archivo = buscar_archivo(fs, nombre_archivo);
     if (archivo == NULL) {
         log_error(log_entradasalida, "DialFS: PID: <%d> - Archivo no encontrado: %s", pidRecibido, nombre_archivo);
@@ -887,7 +887,7 @@ void dialfs_escribir_archivo(DialFS *fs, const char *nombre_archivo, size_t offs
 void dialfs_leer_archivo(DialFS *fs, const char *nombre_archivo, void *registro_direccion, int registro_tamaño, int registro_puntero_archivo) {
     pthread_mutex_lock(&mutex_dialfs);
 
-    usleep(tiempo_unidad_trabajo);
+    usleep(tiempo_unidad_trabajo*1000);
     Archivo *archivo = buscar_archivo(fs, nombre_archivo);
     if (archivo == NULL) {
         log_error(log_entradasalida, "DialFS: PID: <%d> - Archivo no encontrado: %s", pidRecibido, nombre_archivo);
@@ -911,7 +911,7 @@ void dialfs_leer_archivo(DialFS *fs, const char *nombre_archivo, void *registro_
 
 // Función para compactar archivos en DialFS
 void dialfs_compactar_archivos(DialFS *fs) {
-    usleep(tiempo_unidad_trabajo);
+    usleep(tiempo_unidad_trabajo*1000);
 
     t_list *archivos_ordenados = list_duplicate(fs->archivos);
     list_sort(archivos_ordenados, (void *)comparar_archivos_por_bloque_inicio);
