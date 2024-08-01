@@ -50,6 +50,10 @@ sem_t sem_terminar_quantum;
 sem_t esta_ejecutando;
 sem_t sem_chequear_validacion;
 sem_t sem_habilitar_desbloqueo;
+sem_t sem_planificacion_new;
+sem_t sem_planificacion_ready;
+sem_t sem_planificacion_exec;
+sem_t sem_planificacion_exit;
 
 char* puerto_escucha;
 char* ip_memoria;
