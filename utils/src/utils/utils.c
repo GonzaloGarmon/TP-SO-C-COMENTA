@@ -426,14 +426,14 @@ void agregar_3_enteros_a_paquete(t_paquete *paquete, t_3_enteros * enteros){
 void agregar_2_enteros_1_string_a_paquete(t_paquete *paquete, t_string_2enteros * enteros_string){
     agregar_entero_a_paquete(paquete, enteros_string->entero1);
     agregar_entero_a_paquete(paquete, enteros_string->entero2);
-    agregar_string_a_paquete(paquete,enteros_string->string); 
+    agregar_a_paquete(paquete,enteros_string->string, strlen(enteros_string->string)+1);  
 }
 
 void agregar_3_enteros_1_string_a_paquete(t_paquete *paquete, t_string_3enteros * enteros_string){
     agregar_entero_a_paquete(paquete, enteros_string->entero1);
     agregar_entero_a_paquete(paquete, enteros_string->entero2);
     agregar_entero_a_paquete(paquete, enteros_string->entero3);
-    agregar_string_a_paquete(paquete,enteros_string->string); 
+    agregar_a_paquete(paquete,enteros_string->string, strlen(enteros_string->string)+1); 
 }
 
 

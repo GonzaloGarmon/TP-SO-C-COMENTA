@@ -375,6 +375,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 break;
 
             case IO_STDIN_READ:
+                sem_wait(&sem);
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);
                 log_info(log_memoria, "voy a recibir 3 enteros y string");
@@ -384,7 +385,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t tam_a_escribir_stdout_write = stdout_write->entero3;
                 char* escritura_stdout = stdout_write->string;
                 log_info(log_memoria, "recibi 3 enteros y string");
-                char* valor_stdout_write = malloc((strlen(valor_stdout_write)+1));
+                char* valor_stdout_write = malloc(tam_a_escribir_stdout_write+1);
 
                 strcpy(valor_stdout_write,escritura_stdout);
 
@@ -396,9 +397,10 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 free(stdout_write);
                 free(valor_stdout_write);
                 pthread_mutex_unlock(&mutex_memoria);
-                
+                sem_post(&sem);
                 break;
             case IO_STDOUT_WRITE:
+                sem_wait(&sem);
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);
 
@@ -417,10 +419,10 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 free(stdin_data);
 
                 pthread_mutex_unlock(&mutex_memoria);
-                
+                sem_post(&sem);
                 break;
             case IO_FS_READ:
-            
+                sem_wait(&sem);
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);
 
@@ -441,10 +443,10 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 free(io_write);
                 free(valor_io_write);
                 pthread_mutex_unlock(&mutex_memoria);
-
+                sem_post(&sem);
                 break;
             case IO_FS_WRITE:
-                
+                sem_wait(&sem);
                 usleep(retardo_respuesta * 1000);
                 pthread_mutex_lock(&mutex_memoria);
 
@@ -464,6 +466,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 free(fread_data);
 
                 pthread_mutex_unlock(&mutex_memoria);
+                sem_post(&sem);
                 break;
             case ACCESO_TABLA_PAGINAS: 
                 usleep(retardo_respuesta * 1000);

@@ -420,7 +420,7 @@ void funcIoStdWrite(t_entero_bool** ejecucion){
 
     //Que memoria me pase lo leido y yo lo muestro en pantalla
     conexionRecMem();
-
+    sem_post(&sem_termino);
     free(mensaje);
 }
 
@@ -436,7 +436,7 @@ void funcIoFsWrite(t_entero_bool** ejecucion){
 
     //Escribo el valor en el archivo
     conexionRecMem();
-
+    sem_post(&sem_termino);
     free(mensaje);
 }
 
@@ -455,7 +455,7 @@ void funcIoFsRead(t_entero_bool** ejecucion){
 
     //recibo un OK de memoria o podemos hacer que se muestre lo que se escribio
     conexionRecMem();
-
+    sem_post(&sem_termino);
     free(mensaje);
 }
 

@@ -39,10 +39,10 @@ sem_t sem;
 t_list* pids_ejecucion;
 t_list** listas_instrucciones;
 
-int longitud_maxima=100;
+int longitud_maxima=200;
 int parametros_maximos=6;
-int instrucciones_maximas=100;
-t_instruccion* instrucciones[100];
+int instrucciones_maximas=200;
+t_instruccion* instrucciones[200];
 int socket_servidor_memoria_dispatch;
 int socket_servidor_memoria_interrupt;
 int socket_cliente_kernel;
