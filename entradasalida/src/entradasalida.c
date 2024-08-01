@@ -299,30 +299,31 @@ uint32_t* malloc_copiar_uint32(uint32_t valor) {
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
     char *mensaje;
+    uint32_t pid = *(uint32_t *)list_get(lista_pids, 0);
     switch (operacion){
         case IO_STDIN_READ:
             log_info(log_entradasalida, "Mensaje escrito correctamente");
-            enviar_entero(conexion_entradasalida_kernel, pidRecibido, TERMINO_INTERFAZ);
+            enviar_entero(conexion_entradasalida_kernel, pid, TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operación completada");
             avanzar_a_siguiente_operacion();
         break;
         case IO_STDOUT_WRITE:
             mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
             log_info(log_entradasalida, "Valor escrito en memoria: %p", mensaje);
-            enviar_entero(conexion_entradasalida_kernel,pidRecibido,TERMINO_INTERFAZ);
+            enviar_entero(conexion_entradasalida_kernel,pid,TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operacion completada");
             avanzar_a_siguiente_operacion();
         break;
-        case IO_FS_READ:
+        case IO_FS_READ:  
             log_info(log_entradasalida, "Mensaje escrito correctamente");
-            enviar_entero(conexion_entradasalida_kernel,pidRecibido,TERMINO_INTERFAZ);
+            enviar_entero(conexion_entradasalida_kernel,pid,TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operacion completada");
             avanzar_a_siguiente_operacion();
         break;
         case IO_FS_WRITE:
             mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
             dialfs_escribir_archivo(&fs,nombreArchivoRecibido,registroPunteroArchivoRecibido,tamañoRecibido,mensaje);
-            enviar_entero(conexion_entradasalida_kernel,pidRecibido,TERMINO_INTERFAZ);
+            enviar_entero(conexion_entradasalida_kernel,pid,TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operacion completada");
             avanzar_a_siguiente_operacion();
         break;
