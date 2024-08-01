@@ -302,17 +302,29 @@ void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
     switch (operacion){
         case IO_STDIN_READ:
             log_info(log_entradasalida, "Mensaje escrito correctamente");
+            enviar_entero(conexion_entradasalida_kernel, pidRecibido, TERMINO_INTERFAZ);
+            log_info(log_entradasalida, "Operación completada");
+            avanzar_a_siguiente_operacion();
         break;
         case IO_STDOUT_WRITE:
             mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
             log_info(log_entradasalida, "Valor escrito en memoria: %p", mensaje);
+            enviar_entero(conexion_entradasalida_kernel,pidRecibido,TERMINO_INTERFAZ);
+            log_info(log_entradasalida, "Operacion completada");
+            avanzar_a_siguiente_operacion();
         break;
         case IO_FS_READ:
             log_info(log_entradasalida, "Mensaje escrito correctamente");
+            enviar_entero(conexion_entradasalida_kernel,pidRecibido,TERMINO_INTERFAZ);
+            log_info(log_entradasalida, "Operacion completada");
+            avanzar_a_siguiente_operacion();
         break;
         case IO_FS_WRITE:
             mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
             dialfs_escribir_archivo(&fs,nombreArchivoRecibido,registroPunteroArchivoRecibido,tamañoRecibido,mensaje);
+            enviar_entero(conexion_entradasalida_kernel,pidRecibido,TERMINO_INTERFAZ);
+            log_info(log_entradasalida, "Operacion completada");
+            avanzar_a_siguiente_operacion();
         break;
         default:
         break;
@@ -334,39 +346,59 @@ void funcIoGenSleep(t_entero_bool** ejecucion){
     avanzar_a_siguiente_operacion();
 }
 
-void funcIoStdRead(t_entero_bool** ejecucion){
-    log_info(log_entradasalida, "Stdin: PID: <%d> - Leer.",pidRecibido);
+void limpiar_buffer_entrada() {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {}
+}
 
-    char *buffer = (char *)malloc(tamañoRecibido + 1);
+void funcIoStdRead(t_entero_bool** ejecucion) {
+    log_info(log_entradasalida, "Stdin: PID: <%d> - Leer.", pidRecibido);
 
-    // Leer entrada del usuario
-    if (fgets(buffer, tamañoRecibido + 1, stdin) == NULL) {
-        log_error(log_entradasalida, "Error al leer desde STDIN");
-        free(buffer);
+    // Asegurarse de que stdin esté en modo de búfer de línea
+    if (setvbuf(stdin, NULL, _IOLBF, 0) != 0) {
+        log_error(log_entradasalida, "No se pudo configurar el modo de búfer de stdin.");
         return;
     }
 
-    // Validar que el tamaño de la entrada no exceda el tamaño especificado
-    if (strlen(buffer) > tamañoRecibido) {
-        log_warning(log_entradasalida, "El texto ingresado es mayor al tamaño permitido. Se truncará.");
-        buffer[tamañoRecibido] = '\0';
+    char *buffer = malloc(tamañoRecibido + 1);
+
+    while (true) {
+        printf("Ingrese un mensaje menor o igual a %d caracteres: ", tamañoRecibido);
+        fflush(stdout);
+
+        // Limpiar el búfer de entrada antes de leer
+        limpiar_buffer_entrada();
+
+        if (fgets(buffer, tamañoRecibido + 1, stdin) != NULL) {
+            size_t len = strlen(buffer);
+            if (len > 0 && buffer[len - 1] == '\n') {
+                buffer[len - 1] = '\0';
+            }
+
+            if (strlen(buffer) <= tamañoRecibido) {
+                log_info(log_entradasalida, "Mensaje válido recibido.");
+                break; // Mensaje válido, salir del bucle
+            } else {
+                printf("El mensaje ingresado supera el tamaño permitido. Intente nuevamente.\n");
+            }
+        } else {
+            log_error(log_entradasalida, "Error al leer la entrada del usuario.");
+            free(buffer);
+            return;
+        }
     }
 
     t_string_3enteros *mensaje = malloc(sizeof(t_string_3enteros));
     mensaje->entero1 = direccionRecibida;
     mensaje->entero2 = pidRecibido;
     mensaje->entero3 = tamañoRecibido;
-    mensaje->string=buffer;
-    // Escribir el valor en la memoria. se encarga memoria yo solo le envio lo que escribio el usuario
+    mensaje->string = buffer;
+
     enviar_3_enteros_1_string(conexion_entradasalida_memoria, mensaje, IO_STDIN_READ);
 
-    //recibo un OK de memoria
     conexionRecMem();
-    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
-    log_info(log_entradasalida, "Operacion completada");
-    (*ejecucion)->operacion = true;
 
-    avanzar_a_siguiente_operacion();
+    free(mensaje);
     free(buffer);
 }
 
@@ -381,10 +413,7 @@ void funcIoStdWrite(t_entero_bool** ejecucion){
 
     //Que memoria me pase lo leido y yo lo muestro en pantalla
     conexionRecMem();
-    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
-    log_info(log_entradasalida, "Operacion completada");
-    (*ejecucion)->operacion = true;
-    avanzar_a_siguiente_operacion();
+
     free(mensaje);
 }
 
@@ -400,11 +429,7 @@ void funcIoFsWrite(t_entero_bool** ejecucion){
 
     //Escribo el valor en el archivo
     conexionRecMem();
-    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
-    log_info(log_entradasalida, "Operacion completada");
-    (*ejecucion)->operacion = true;
 
-    avanzar_a_siguiente_operacion();
     free(mensaje);
 }
 
@@ -423,11 +448,7 @@ void funcIoFsRead(t_entero_bool** ejecucion){
 
     //recibo un OK de memoria o podemos hacer que se muestre lo que se escribio
     conexionRecMem();
-    enviar_entero(conexion_entradasalida_kernel,(*ejecucion)->entero,TERMINO_INTERFAZ);
-    log_info(log_entradasalida, "Operacion completada");
-    (*ejecucion)->operacion = true;
 
-    avanzar_a_siguiente_operacion();
     free(mensaje);
 }
 

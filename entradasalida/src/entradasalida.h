@@ -95,6 +95,7 @@ void dialfs_leer_archivo(DialFS *fs, const char *nombre_archivo, void *registro_
 void dialfs_compactar_archivos(DialFS *fs);
 bool espacioContiguoDisponible(DialFS *fs, size_t bloques_necesarios);
 int comparar_archivos_por_bloque_inicio(const void *a, const void *b);
+void limpiar_buffer_entrada();
 
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL);
 void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA);
