@@ -405,8 +405,8 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 pthread_mutex_lock(&mutex_memoria);
 
                 t_3_enteros* stdin_data = recibir_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
-                uint32_t pid_leer_archivo_stdin = stdin_data->entero1;
-                uint32_t dir_fisica_leer_archivo_stdin = stdin_data->entero2;
+                uint32_t dir_fisica_leer_archivo_stdin = stdin_data->entero1;
+                uint32_t pid_leer_archivo_stdin = stdin_data->entero2;
                 uint32_t tamanio_io_read_stdin = stdin_data->entero3;
 
                 char* valor_leer_archivo_stdin = leer(dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);

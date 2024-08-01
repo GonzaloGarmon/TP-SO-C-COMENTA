@@ -212,7 +212,6 @@ void recibir_y_procesar_paquete(int socket_cliente) {
     size = 0;
 
     int operacion2 = recibir_operacion(socket_cliente);
-    log_info(log_entradasalida, "recibi codigo: %d", operacion2);
 
     int *operacionPtr = malloc(sizeof(int));
     *operacionPtr = operacion2;
