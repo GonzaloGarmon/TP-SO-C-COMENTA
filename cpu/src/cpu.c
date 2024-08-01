@@ -817,23 +817,44 @@ uint32_t traducirDireccion(uint32_t dirLogica) {
 
 }
 
-uint32_t buscarMarcoEnTLB(uint32_t pidBuscar, uint32_t numPagBuscar) {
-    for (size_t i = 0; i < tamanioActualTlb; ++i) {
-        if (entrada_tlb[i].pid == pidBuscar && entrada_tlb[i].numero_de_pagina == numPagBuscar) {
-            if (strcmp(algoritmo_tlb, "LRU") == 0) {
-                // Mover la entrada encontrada al final (simulando LRU)
-                tlb entrada = entrada_tlb[i];
-                for (size_t j = i; j < tamanioActualTlb - 1; ++j) {
-                    entrada_tlb[j] = entrada_tlb[j + 1];
-                }
-                entrada_tlb[tamanioActualTlb - 1] = entrada;
-            }
-            log_info(log_cpu,"PID: <%i> - TLB HIT - Pagina: <%i>", pidBuscar, numPagBuscar);
-            return entrada_tlb[tamanioActualTlb - 1].marco;
-        }
+// uint32_t buscarMarcoEnTLB(uint32_t pidBuscar, uint32_t numPagBuscar) {
+//     for (size_t i = 0; i < tamanioActualTlb; ++i) {
+//         if (entrada_tlb[i].pid == pidBuscar && entrada_tlb[i].numero_de_pagina == numPagBuscar) {
+//             if (strcmp(algoritmo_tlb, "LRU") == 0) {
+//                 // Mover la entrada encontrada al final (simulando LRU)
+//                 tlb entrada = entrada_tlb[i];
+//                 for (size_t j = i; j < tamanioActualTlb - 1; ++j) {
+//                     entrada_tlb[j] = entrada_tlb[j + 1];
+//                 }
+//                 entrada_tlb[tamanioActualTlb - 1] = entrada;
+//             }
+//             log_info(log_cpu,"PID: <%i> - TLB HIT - Pagina: <%i>", pidBuscar, numPagBuscar);
+//             return entrada_tlb[tamanioActualTlb - 1].marco;
+//         }
+//     }
+//     log_info(log_cpu, "PID: <%d> - TLB MISS - Pagina: <%d>\n", pidBuscar, numPagBuscar);
+//     return (uint32_t)-1;
+// }
+
+int buscarMarcoEnTLB(uint32_t pidBuscar, uint32_t numPagBuscar) {
+    bool coincidePidYPag(tlb* unaEntrada){
+        return unaEntrada->pid == pidBuscar && unaEntrada->numero_de_pagina ==numPagBuscar;
     }
-    log_info(log_cpu, "PID: <%d> - TLB MISS - Pagina: <%d>\n", pidBuscar, numPagBuscar);
-    return (uint32_t)-1;
+
+    tlb* entrada_encontrada = list_find(TLB, coincidePidYPag);
+    if(entrada_encontrada != NULL){
+        if(!strcmp(algoritmo_tlb, "LRU"))
+        {
+            list_remove_element(TLB, entrada_encontrada);
+            list_add(TLB, entrada_encontrada);
+        }
+        log_info(log_cpu, "PID: <%d> - TLB HIT - Pagina: <%d>", pidBuscar, numPagBuscar);
+    	return entrada_encontrada->marco;
+	}else
+    {
+        log_info(log_cpu, "PID: <%d> - TLB MISS - Pagina: <%d>", pidBuscar, numPagBuscar);
+        return -1;
+    }
 }
 
 void agregarEntradaTLB(uint32_t pid, uint32_t numPag, uint32_t marco) {
