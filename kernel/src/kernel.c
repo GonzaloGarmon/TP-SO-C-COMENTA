@@ -133,6 +133,7 @@ void iniciar_semaforos() {
     sem_init(&sem_planificacion_ready, 0, 1);
     sem_init(&sem_planificacion_exec, 0, 1);
     sem_init(&sem_planificacion_exit, 0, 1);
+    //sem_init(&sem_esperar_finalizacion, 0, 0);
     sem_init(&esta_ejecutando, 0, 1);
 
 
@@ -674,6 +675,7 @@ void iniciar_consola(){
     printf("4. Iniciar planificación\n");
     printf("5. Detener planificación\n");
     printf("6. Listar procesos por estado\n");
+    printf("7. Modificar grado de multiprogramacion\n");
 
     printf("seleccione la opción que desee: ");
     //scanf("%d", &eleccion);
