@@ -98,8 +98,7 @@ int comparar_archivos_por_bloque_inicio(const void *a, const void *b);
 void limpiar_buffer_entrada();
 
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL);
-void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA);
-void conexionRecMem();
+void recibirOpMemoria();
 void funcIoGenSleep(t_entero_bool** ejecucion);
 void funcIoStdRead(t_entero_bool** ejecucion);
 void funcIoStdWrite(t_entero_bool** ejecucion);

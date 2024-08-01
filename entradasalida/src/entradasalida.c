@@ -96,12 +96,6 @@ void finalizar_programa(){
     }
 }
 
-void conexionRecMem(){
-    pthread_t atiende_cliente_memoria; 
-    pthread_create(&atiende_cliente_memoria, NULL, (void *)recibirOpMemoria, (void *) (intptr_t) conexion_entradasalida_memoria);
-    pthread_detach(atiende_cliente_memoria);
-}
-
 void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
     int noFinalizar = 0;
     while (noFinalizar != -1) {
@@ -296,8 +290,8 @@ uint32_t* malloc_copiar_uint32(uint32_t valor) {
     return ptr;
 }
 
-void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
-    op_code operacion = recibir_operacion(SOCKET_CLIENTE_MEMORIA);
+void recibirOpMemoria(){
+    op_code operacion = recibir_operacion(conexion_entradasalida_memoria);
     log_info(log_entradasalida, "codop rec de memoria: %i",operacion);
     char *mensaje;
     uint32_t pid = *(uint32_t *)list_get(lista_pids, 0);
@@ -306,32 +300,35 @@ void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
             log_info(log_entradasalida, "Mensaje escrito correctamente");
             enviar_entero(conexion_entradasalida_kernel, pid, TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operación completada");
+            sem_post(&sem_termino);
             avanzar_a_siguiente_operacion();
         break;
         case IO_STDOUT_WRITE:
-            mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
+            mensaje = recibir_string(conexion_entradasalida_memoria,log_entradasalida);
             log_info(log_entradasalida, "Valor escrito en memoria: %p", mensaje);
             enviar_entero(conexion_entradasalida_kernel,pid,TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operacion completada");
+            sem_post(&sem_termino);
             avanzar_a_siguiente_operacion();
         break;
         case IO_FS_READ:  
             log_info(log_entradasalida, "Mensaje escrito correctamente");
             enviar_entero(conexion_entradasalida_kernel,pid,TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operacion completada");
+            sem_post(&sem_termino);
             avanzar_a_siguiente_operacion();
         break;
         case IO_FS_WRITE:
-            mensaje = recibir_string(SOCKET_CLIENTE_MEMORIA,log_entradasalida);
+            mensaje = recibir_string(conexion_entradasalida_memoria,log_entradasalida);
             dialfs_escribir_archivo(&fs,nombreArchivoRecibido,registroPunteroArchivoRecibido,tamañoRecibido,mensaje);
             enviar_entero(conexion_entradasalida_kernel,pid,TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operacion completada");
+            sem_post(&sem_termino);
             avanzar_a_siguiente_operacion();
         break;
         default:
         break;
     }
-    free(mensaje);
 }
 
 void funcIoGenSleep(t_entero_bool** ejecucion){
@@ -401,12 +398,9 @@ void funcIoStdRead(t_entero_bool** ejecucion) {
     mensaje->string = buffer;
 
     enviar_3_enteros_1_string(conexion_entradasalida_memoria, mensaje, IO_STDIN_READ);
-
-    conexionRecMem();
-
     free(mensaje);
+    recibirOpMemoria();
     free(buffer);
-    sem_post(&sem_termino);
 }
 
 void funcIoStdWrite(t_entero_bool** ejecucion){
@@ -419,9 +413,8 @@ void funcIoStdWrite(t_entero_bool** ejecucion){
     enviar_3_enteros(conexion_entradasalida_memoria,mensaje,IO_STDOUT_WRITE);
 
     //Que memoria me pase lo leido y yo lo muestro en pantalla
-    conexionRecMem();
-    sem_post(&sem_termino);
     free(mensaje);
+    recibirOpMemoria();
 }
 
 void funcIoFsWrite(t_entero_bool** ejecucion){
@@ -435,9 +428,8 @@ void funcIoFsWrite(t_entero_bool** ejecucion){
     enviar_3_enteros(conexion_entradasalida_memoria,mensaje,IO_FS_WRITE);
 
     //Escribo el valor en el archivo
-    conexionRecMem();
-    sem_post(&sem_termino);
     free(mensaje);
+    recibirOpMemoria();
 }
 
 void funcIoFsRead(t_entero_bool** ejecucion){
@@ -454,9 +446,8 @@ void funcIoFsRead(t_entero_bool** ejecucion){
     enviar_3_enteros_1_string(conexion_entradasalida_memoria,mensaje,IO_FS_READ);
 
     //recibo un OK de memoria o podemos hacer que se muestre lo que se escribio
-    conexionRecMem();
-    sem_post(&sem_termino);
     free(mensaje);
+    recibirOpMemoria();  
 }
 
 void funcIoFsTruncate(t_entero_bool** ejecucion) {
