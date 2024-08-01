@@ -707,7 +707,25 @@ void funcResize(t_instruccion* instruccion){
     eliminar_paquete(paquete);
     log_info(log_cpu, "Tamanio enviado");
 
-    conexionRecMem();
+    op_code operacion = recibir_operacion(conexion_memoria);
+
+    
+    switch (operacion){
+        case RESIZE_OK:
+            log_trace(log_cpu, "Entro en RESIZE COD : %d", operacion);
+            log_info(log_cpu, "Se ajusta tamanio de proceso");
+            break;
+        case OUT_OF_MEMORY:
+            log_trace(log_cpu, "Entro en OUT OF MEMORY COD : %d", operacion);
+            enviar_contexto(socket_cliente_kernel_interrupt, contexto, operacion);
+            break;
+        default:
+            log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", operacion);
+            break;
+    }
+
+    int codigo_operaciones = recibir_operacion(conexion_memoria);
+    // conexionRecMem();
 
 }
 
@@ -736,6 +754,7 @@ void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
             log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", operacion);
             break;
     }
+    
 }
 
 
@@ -1230,8 +1249,26 @@ void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, uint32_t t
     enviar_paquete(paquete, conexion_memoria);
     eliminar_paquete(paquete);
     log_trace(log_cpu, "MOV OUT enviado");
+
+    op_code operacion = recibir_operacion(conexion_memoria);
     
-    conexionRecMem_movOut(valor, direccionFisica);
+    switch (operacion){
+        case 0:
+            log_error(log_cpu, "Llego código operación 0");
+            break;
+        case MOV_OUT_OK:
+            log_info(log_cpu, "Código de operación recibido en cpu: %d", operacion);
+            log_info(log_cpu, "Valor escrito en memoria correctamente");
+            log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección física: %i - Valor: %s",
+                        contexto->pid, tamanio, valor);
+            break;
+        default:
+            log_warning(log_cpu, "Llegó un código de operación desconocido, %i", operacion);
+            break;
+        }
+    
+    int codigo_operaciones = recibir_operacion(conexion_memoria);
+    //conexionRecMem_movOut(valor, direccionFisica);
 
 }
 

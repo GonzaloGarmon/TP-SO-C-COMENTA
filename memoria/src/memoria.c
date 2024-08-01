@@ -177,11 +177,13 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
     
     enviar_string(socket_cliente_kernel,"hola desde memoria", MENSAJE);
     int codigoOperacion = 0;
+    sem_post(&sem);
     while(codigoOperacion != -1){
         int codOperacion = recibir_operacion(SOCKET_CLIENTE_KERNEL);
         switch (codOperacion)
         {
         case CREAR_PROCESO:
+            sem_wait(&sem);
             log_info(log_memoria, "Antes de levantar estruc admin");
             levantar_estructuras_administrativas();
             usleep(retardo_respuesta * 1000); // aca dice memoria_config.retardo rari
@@ -202,6 +204,7 @@ void recibir_kernel(int SOCKET_CLIENTE_KERNEL){
             
             cargar_instrucciones_desde_archivo(path, pid);
             sem_post(&sem);
+            
             //enviar_mensaje("Proceso creado", SOCKET_CLIENTE_KERNEL);
             
             break;
@@ -258,7 +261,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             sem_post(&sem);
             break;
         case RESIZE:
-            
+            sem_wait(&sem);
             usleep(retardo_respuesta * 1000);
             log_info(log_memoria, "MANDE RESPUESTA A CPU");
             t_2_enteros* resize = recibir_2_enteros(SOCKET_CLIENTE_CPU);
@@ -271,7 +274,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             enviar_paquete(paquete, SOCKET_CLIENTE_CPU);
             eliminar_paquete(paquete);
             log_info(log_memoria, "MANDE RESPUESTA A CPU");
-            
+            sem_post(&sem);
             break;
         case PEDIR_TAM_MEMORIA:
             usleep(retardo_respuesta * 1000);
@@ -574,7 +577,10 @@ tabla_pagina_t* obtenerTablaPorPID(uint32_t pid) {
     log_info(log_memoria,"TABLA DE PAGINAS INICIO"); //log obligatorio
     for (int i = 0; i < list_size(LISTA_TABLA_PAGINAS); i++) {
         tabla_pagina_t* tabla = list_get(LISTA_TABLA_PAGINAS, i);
+        log_info(log_memoria,"miro la tabla en la posicion %i", list_size(tabla->tabla_paginas) * tam_pagina);
+        
         if (tabla->pid == pid)
+            log_info(log_memoria,"pid actual %i", pid);
             return tabla;
     }
     return NULL;
@@ -642,7 +648,7 @@ op_code ajustar_tamanio_proceso(uint32_t nuevo_tam, uint32_t pid){
     log_info(log_memoria, "MANDE RESPUESTA A CPU"); 
         tabla_pagina_t* tabla = obtenerTablaPorPID(pid);
         log_info(log_memoria, "MANDE RESPUESTA A CPU");
-        uint32_t tamanio_actual = list_size(tabla->tabla_paginas) * tam_pagina;
+        int tamanio_actual = list_size(tabla->tabla_paginas) * tam_pagina;
         log_info(log_memoria, "MANDE RESPUESTA A CPU");
         op_code codigo_devolucion = RESIZE_OK;
         log_info(log_memoria, "MANDE RESPUESTA A CPU");
