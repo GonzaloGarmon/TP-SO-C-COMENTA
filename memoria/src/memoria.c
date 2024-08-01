@@ -311,7 +311,7 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             uint32_t tam_a_escribir = mov_out_data->entero3;
             char *escritura = mov_out_data->string;
 
-            char* valor_mov_out = malloc(sizeof(strlen(valor_mov_out)+1));
+            char* valor_mov_out = malloc(tam_a_escribir+1);
             strcpy(valor_mov_out, escritura);
             // Escribir en la dirección física
             escribir(direccion_fisica, valor_mov_out, tam_a_escribir);
@@ -432,7 +432,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t tam_a_escribir_io_write = io_write->entero2;
                 char* escritura_io = io_write->string;
 
-                char* valor_io_write = malloc(sizeof(strlen(valor_io_write)+1));
+                char* valor_io_write = malloc(tam_a_escribir_io_write+1);
 
                 strcpy(valor_io_write,escritura_io);
 
@@ -451,8 +451,8 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 pthread_mutex_lock(&mutex_memoria);
 
                 t_3_enteros* fread_data = recibir_3_enteros(SOCKET_CLIENTE_ENTRADASALIDA);
-                uint32_t pid_leer_archivo = fread_data->entero1;
-                uint32_t dir_fisica_leer_archivo = fread_data->entero2;
+                uint32_t dir_fisica_leer_archivo = fread_data->entero1;
+                uint32_t pid_leer_archivo = fread_data->entero2;
                 uint32_t tamanio_io_read = fread_data->entero3;
 
                 char* valor_leer_archivo = leer(dir_fisica_leer_archivo, tamanio_io_read);
