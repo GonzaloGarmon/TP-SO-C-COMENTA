@@ -5,11 +5,15 @@
 int main(int argc, char *argv[]){
     log_entradasalida = log_create("./entradasalida.log", "ENTRADASALIDA", 1, LOG_LEVEL_TRACE);
     log_info(log_entradasalida, "INICIA EL MODULO DE ENTRADASALIDA");
-    
+
     nombre_interfaz = malloc(100 * sizeof(char));
     ruta_archivo = malloc(100 * sizeof(char));
 
-    //ruta_completa = "/home/utnso/so-deploy/tp-2024-1c-GoC/entradasalida/config/";
+    if (nombre_interfaz == NULL || ruta_archivo == NULL) {
+        log_error(log_entradasalida, "Error al asignar memoria para nombre_interfaz o ruta_archivo");
+        return EXIT_FAILURE;
+    }
+
     ruta_completa = "/home/utnso/tp-2024-1c-GoC/entradasalida/config/";
     printf("Ingresa nombre de interfaz: ");
     scanf("%99s", nombre_interfaz);
@@ -17,8 +21,15 @@ int main(int argc, char *argv[]){
     scanf("%99s", ruta_archivo);
 
     char* ruta_final = malloc(strlen(ruta_completa) + strlen(ruta_archivo) + 1);
-    strcpy(ruta_final,ruta_completa);
-    strcat(ruta_final,ruta_archivo);
+    if (ruta_final == NULL) {
+        log_error(log_entradasalida, "Error al asignar memoria para ruta_final");
+        free(nombre_interfaz);
+        free(ruta_archivo);
+        return EXIT_FAILURE;
+    }
+
+    strcpy(ruta_final, ruta_completa);
+    strcat(ruta_final, ruta_archivo);
 
     crear_interfaz(nombre_interfaz, ruta_final);
 
@@ -26,9 +37,11 @@ int main(int argc, char *argv[]){
     inicializar_listas();
 
     pthread_t atiende_cliente_kernel;
-    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *) (intptr_t) conexion_entradasalida_kernel);
-    pthread_join(atiende_cliente_kernel,NULL);
+    pthread_create(&atiende_cliente_kernel, NULL, (void *)recibirOpKernel, (void *)(intptr_t)conexion_entradasalida_kernel);
+    pthread_join(atiende_cliente_kernel, NULL);
 
+    free(ruta_final);
+    finalizar_programa();
     return 0;
 }
 
@@ -73,11 +86,12 @@ void finalizar_programa(){
     liberar_conexion(conexion_entradasalida_kernel);
     liberar_conexion(conexion_entradasalida_memoria);
     free(nombre_interfaz);
-    free(ruta_archivo);         
+    free(ruta_archivo);
     log_destroy(log_entradasalida);
     config_destroy(config_entradasalida);
     liberar_listas();
-    if(tipoInterfaz == DIALFS_I){
+
+    if (tipoInterfaz == DIALFS_I) {
         dialfs_destroy(&fs);
     }
 }
@@ -114,6 +128,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
             case IO_STDIN_READ:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_StdRead;
+                    log_info(log_entradasalida, "entre a read");
                     pthread_create(&ejecutar_StdRead, NULL, (void*)funcIoStdRead, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_StdRead);
                 }
@@ -121,6 +136,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
             case IO_STDOUT_WRITE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_StdWrite;
+                    log_info(log_entradasalida, "entre a write");
                     pthread_create(&ejecutar_StdWrite, NULL, (void*)funcIoStdWrite, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_StdWrite);
                 }
@@ -128,6 +144,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
             case IO_FS_READ:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_FsRead;
+                    log_info(log_entradasalida, "entre a fs read");
                     pthread_create(&ejecutar_FsRead, NULL, (void*)funcIoFsRead, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_FsRead);
                 }
@@ -135,6 +152,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
             case IO_FS_WRITE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_FsWrite;
+                    log_info(log_entradasalida, "entre a fs write");
                     pthread_create(&ejecutar_FsWrite, NULL, (void*)funcIoFsWrite, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_FsWrite);
                 }
@@ -142,6 +160,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
             case IO_FS_CREATE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_FsCreate;
+                    log_info(log_entradasalida, "entre a fs create");
                     pthread_create(&ejecutar_FsCreate, NULL, (void*)funcIoFsCreate, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_FsCreate);
                 }
@@ -149,6 +168,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
             case IO_FS_DELETE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_FsDelete;
+                    log_info(log_entradasalida, "entre a fs delete");
                     pthread_create(&ejecutar_FsDelete, NULL, (void*)funcIoFsDelete, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_FsDelete);
                 }
@@ -156,6 +176,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
             case IO_FS_TRUNCATE:
                 if (strcmp(nombreInterfazRecibido, nombre_interfaz) == 0 && es_operacion_compatible(tipoInterfaz, operacionActual)) {
                     pthread_t ejecutar_FsTruncate;
+                    log_info(log_entradasalida, "entre a fs truncate");
                     pthread_create(&ejecutar_FsTruncate, NULL, (void*)funcIoFsTruncate, (void*)(intptr_t)&ejecucion);
                     pthread_detach(ejecutar_FsTruncate);
                 }
@@ -169,11 +190,6 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
                 break;
             default:
                 break;
-        }
-
-        if (ejecucion->operacion) {
-            avanzar_a_siguiente_operacion();
-            free(ejecucion);
         }
     }
 }
@@ -223,9 +239,6 @@ void recibir_y_procesar_paquete(int socket_cliente) {
                 list_add(lista_datos, nombreInterfazRecibido);
                 unidadesRecibidas = leer_entero_uint32(buffer, &desplazamiento);
                 list_add(lista_datos, malloc_copiar_uint32(unidadesRecibidas));
-                //enviar_string(conexion_entradasalida_kernel, "PENEEE",MENSAJE);
-                log_info(log_entradasalida, "nombre interfaz: %s", nombreInterfazRecibido);
-                log_info(log_entradasalida, "unidades: %d", unidadesRecibidas);
             break;
         case IO_STDIN_READ:
         case IO_STDOUT_WRITE:
@@ -304,6 +317,7 @@ void recibirOpMemoria(int SOCKET_CLIENTE_MEMORIA){
         default:
         break;
     }
+    free(mensaje);
 }
 
 void funcIoGenSleep(t_entero_bool** ejecucion){
@@ -371,6 +385,7 @@ void funcIoStdWrite(t_entero_bool** ejecucion){
     log_info(log_entradasalida, "Operacion completada");
     (*ejecucion)->operacion = true;
     avanzar_a_siguiente_operacion();
+    free(mensaje);
 }
 
 void funcIoFsWrite(t_entero_bool** ejecucion){
@@ -390,12 +405,13 @@ void funcIoFsWrite(t_entero_bool** ejecucion){
     (*ejecucion)->operacion = true;
 
     avanzar_a_siguiente_operacion();
+    free(mensaje);
 }
 
 void funcIoFsRead(t_entero_bool** ejecucion){
     log_info(log_entradasalida, "DialFS: PID: <%d> - Escribir Archivo.",pidRecibido);
 
-    dialfs_leer_archivo(&fs,nombreArchivoRecibido,direccionRecibida,tamañoRecibido,registroPunteroArchivoRecibido);
+    dialfs_leer_archivo(&fs, nombreArchivoRecibido, (void *)(intptr_t)direccionRecibida, tamañoRecibido, registroPunteroArchivoRecibido);
 
     //envio a memoria un paquete con el RegistroTamaño y el RegistroDireccion recibidos de kernel
     t_string_3enteros *mensaje = malloc(sizeof(t_string_3enteros));
@@ -412,6 +428,7 @@ void funcIoFsRead(t_entero_bool** ejecucion){
     (*ejecucion)->operacion = true;
 
     avanzar_a_siguiente_operacion();
+    free(mensaje);
 }
 
 void funcIoFsTruncate(t_entero_bool** ejecucion) {
@@ -595,43 +612,49 @@ void dialfs_init(DialFS *dialfs, int block_size, int block_count, const char *pa
     dialfs->block_count = block_count;
     dialfs->path_base = strdup(path_base);
 
-    // Crear el archivo de bloques
+    // Crear o abrir el archivo de bloques
     char bloques_path[256];
     sprintf(bloques_path, "%s/bloques.dat", path_base);
-    FILE *bloques_file = fopen(bloques_path, "w");
+    FILE *bloques_file = fopen(bloques_path, "r+");
     if (bloques_file == NULL) {
-        fprintf(stderr, "Error: No se pudo crear el archivo de bloques\n");
+        bloques_file = fopen(bloques_path, "w+");
+        if (bloques_file == NULL) {
+            perror("Error opening block file");
+            exit(EXIT_FAILURE);
+        }
+    }
+    ftruncate(fileno(bloques_file), block_size * block_count);
+    dialfs->blocks = mmap(NULL, block_size * block_count, PROT_READ | PROT_WRITE, MAP_SHARED, fileno(bloques_file), 0);
+    if (dialfs->blocks == MAP_FAILED) {
+        perror("Error mapping block file");
+        fclose(bloques_file);
         exit(EXIT_FAILURE);
     }
-    fseek(bloques_file, block_size * block_count - 1, SEEK_SET);
-    fputc('\0', bloques_file);
     fclose(bloques_file);
 
-    // Crear el archivo de bitmap
+    // Crear o abrir el archivo de bitmap
     char bitmap_path[256];
     sprintf(bitmap_path, "%s/bitmap.dat", path_base);
-    FILE *bitmap_file = fopen(bitmap_path, "w");
+    FILE *bitmap_file = fopen(bitmap_path, "r+");
     if (bitmap_file == NULL) {
-        fprintf(stderr, "Error: No se pudo crear el archivo de bitmap\n");
-        exit(EXIT_FAILURE);
+        bitmap_file = fopen(bitmap_path, "w+");
+        if (bitmap_file == NULL) {
+            perror("Error opening bitmap file");
+            exit(EXIT_FAILURE);
+        }
     }
     int bitmap_size = (block_count + 7) / 8;
-    uint8_t *bitmap_data = calloc(bitmap_size, sizeof(uint8_t));
-    fwrite(bitmap_data, sizeof(uint8_t), bitmap_size, bitmap_file);
-    fclose(bitmap_file);
-    free(bitmap_data);
-
-    // Inicialización del bitmap en memoria
-    dialfs->bitmap = bitarray_create_with_mode(bitmap_path, bitmap_size, LSB_FIRST);
-
-    // Inicialización de los bloques en memoria
-    dialfs->blocks = (Block *)malloc(block_count * sizeof(Block));
-    for (int i = 0; i < block_count; ++i) {
-        dialfs->blocks[i].data = (uint8_t *)malloc(block_size * sizeof(uint8_t));
-        memset(dialfs->blocks[i].data, 0, block_size * sizeof(uint8_t));
+    ftruncate(fileno(bitmap_file), bitmap_size);
+    void *bitmap_data = mmap(NULL, bitmap_size, PROT_READ | PROT_WRITE, MAP_SHARED, fileno(bitmap_file), 0);
+    if (bitmap_data == MAP_FAILED) {
+        perror("Error mapping bitmap file");
+        fclose(bitmap_file);
+        exit(EXIT_FAILURE);
     }
+    dialfs->bitmap = bitarray_create_with_mode(bitmap_data, bitmap_size, LSB_FIRST);
+    fclose(bitmap_file);
 
-    // Inicialización de la lista de archivos
+    // Inicializar la lista de archivos
     dialfs->archivos = list_create();
 }
 
@@ -645,10 +668,8 @@ void dialfs_destroy(DialFS *fs) {
     }
     list_destroy_and_destroy_elements(fs->archivos, (void *)free);
 
-    for (int i = 0; i < fs->block_count; ++i) {
-        free(fs->blocks[i].data);
-    }
-    free(fs->blocks);
+    munmap(fs->blocks, fs->block_size * fs->block_count);
+    munmap(fs->bitmap->bitarray, fs->bitmap->size);
     bitarray_destroy(fs->bitmap);
     free(fs->path_base);
 }
@@ -658,16 +679,17 @@ int dialfs_allocate_block(DialFS *fs) {
     for (int i = 0; i < fs->block_count; i++) {
         if (!bitarray_test_bit(fs->bitmap, i)) {
             bitarray_set_bit(fs->bitmap, i);
+            msync(fs->bitmap->bitarray, fs->bitmap->size, MS_SYNC);
             return i;
         }
     }
     return -1;
 }
 
-// Añadir esta función en entradasalida.c
 void dialfs_allocate_specific_block(DialFS *fs, int block_index) {
     if (block_index >= 0 && block_index < fs->block_count) {
         bitarray_set_bit(fs->bitmap, block_index);
+        msync(fs->bitmap->bitarray, fs->bitmap->size, MS_SYNC);
     }
 }
 
@@ -675,6 +697,7 @@ void dialfs_allocate_specific_block(DialFS *fs, int block_index) {
 void dialfs_free_block(DialFS *fs, int block_index) {
     if (block_index >= 0 && block_index < fs->block_count) {
         bitarray_clean_bit(fs->bitmap, block_index);
+        msync(fs->bitmap->bitarray, fs->bitmap->size, MS_SYNC);
     }
 }
 
@@ -691,13 +714,14 @@ int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo) {
 
     // Crear un nuevo archivo
     Archivo *nuevo_archivo = malloc(sizeof(Archivo));
-    strcpy(nuevo_archivo->nombre_archivo, nombre_archivo);
+    nuevo_archivo->nombre_archivo = strdup(nombre_archivo);
     nuevo_archivo->tamaño = 0;
 
     // Asignar al menos un bloque al archivo
     int bloque_asignado = dialfs_allocate_block(fs);
     if (bloque_asignado == -1) {
         fprintf(stderr, "Error: No hay bloques libres para crear el archivo.\n");
+        free(nuevo_archivo->nombre_archivo);
         free(nuevo_archivo);
         return -1;
     }
@@ -706,7 +730,7 @@ int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo) {
     list_add(fs->archivos, nuevo_archivo);
 
     // Crear el archivo de metadata
-    char* metadata_path = malloc(256);
+    char metadata_path[256];
     sprintf(metadata_path, "%s/%s", fs->path_base, nombre_archivo);
     FILE *metadata_file = fopen(metadata_path, "w");
     if (metadata_file == NULL) {
@@ -715,7 +739,8 @@ int dialfs_crear_archivo(DialFS *fs, const char *nombre_archivo) {
     }
     fprintf(metadata_file, "BLOQUE_INICIAL=%d\nTAMANIO_ARCHIVO=%d\n", bloque_asignado, 0);
     fclose(metadata_file);
-    free(metadata_path);
+
+    msync(fs->blocks, fs->block_size * fs->block_count, MS_SYNC);
     return bloque_asignado;
 }
 
@@ -750,47 +775,31 @@ void dialfs_eliminar_archivo(DialFS *fs, const char *nombre_archivo) {
     free(archivo);
 
     // Eliminar el archivo de metadata en el path base
-    char *path = malloc(256);
+    char path[256];
     sprintf(path, "%s/%s", fs->path_base, nombre_archivo);
-    free(path);
+    remove(path);
 
+    msync(fs->blocks, fs->block_size * fs->block_count, MS_SYNC);
     log_info(log_entradasalida, "DialFS: PID: <%d> - Eliminar Archivo: %s.", pidRecibido, nombre_archivo);
 }
-
 
 // Función para redimensionar un archivo en DialFS
 void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo_size) {
     usleep(tiempo_unidad_trabajo);
-    Archivo *archivo = NULL;
-
-    // Buscar el archivo en la lista de archivos
-    for (int i = 0; i < list_size(fs->archivos); ++i) {
-        Archivo *a = (Archivo *)list_get(fs->archivos, i);
-        if (strcmp(a->nombre_archivo, nombre_archivo) == 0) {
-            archivo = a;
-            break;
-        }
-    }
-
+    Archivo *archivo = buscar_archivo(fs, nombre_archivo);
     if (archivo == NULL) {
         fprintf(stderr, "Archivo '%s' no encontrado.\n", nombre_archivo);
         return;
     }
 
-    // Verificar si el tamaño del archivo necesita cambiar
     if (nuevo_size > archivo->tamaño) {
-        // Necesita asignar más bloques si el nuevo tamaño es mayor
         size_t bloques_actuales = (archivo->tamaño + fs->block_size - 1) / fs->block_size;
         size_t nuevos_bloques = (nuevo_size + fs->block_size - 1) / fs->block_size;
 
-        // Comprobar si hay suficiente espacio contiguo
         if (!espacioContiguoDisponible(fs, nuevos_bloques - bloques_actuales)) {
             dialfs_compactar_archivos(fs);
-
-            // Esperar el tiempo de RETRASO_COMPACTACION
             sleep(retraso_compactacion);
 
-            // Comprobar nuevamente si hay suficiente espacio contiguo
             if (!espacioContiguoDisponible(fs, nuevos_bloques - bloques_actuales)) {
                 fprintf(stderr, "No hay suficientes bloques libres para redimensionar el archivo incluso después de compactar.\n");
                 return;
@@ -805,7 +814,6 @@ void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo
             }
         }
     } else if (nuevo_size < archivo->tamaño) {
-        // Liberar bloques si el nuevo tamaño es menor
         size_t bloques_actuales = (archivo->tamaño + fs->block_size - 1) / fs->block_size;
         size_t nuevos_bloques = (nuevo_size + fs->block_size - 1) / fs->block_size;
 
@@ -815,9 +823,7 @@ void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo
     }
 
     archivo->tamaño = nuevo_size;
-
-    // Actualizar el archivo de metadata en el path base
-    char *path = malloc(256);
+    char path[256];
     sprintf(path, "%s/%s", fs->path_base, nombre_archivo);
 
     FILE *archivo_fisico = fopen(path, "w");
@@ -828,135 +834,71 @@ void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo
     fprintf(archivo_fisico, "BLOQUE_INICIAL=%d\nTAMANIO_ARCHIVO=%zu\n", archivo->bloque_inicio, nuevo_size);
     fclose(archivo_fisico);
 
+    msync(fs->blocks, fs->block_size * fs->block_count, MS_SYNC);
     log_info(log_entradasalida, "DialFS: PID: <%d> - Truncar Archivo: %s a tamaño %zu.", pidRecibido, nombre_archivo, nuevo_size);
-    free(path);
 }
 
 // Función para escribir datos en un archivo en DialFS
 void dialfs_escribir_archivo(DialFS *fs, const char *nombre_archivo, size_t offset, size_t size, const void *buffer) {
     usleep(tiempo_unidad_trabajo);
-    Archivo *archivo = NULL;
-
-    // Buscar el archivo en la lista de archivos
-    for (int i = 0; i < list_size(fs->archivos); ++i) {
-        Archivo *a = (Archivo *)list_get(fs->archivos, i);
-        if (strcmp(a->nombre_archivo, nombre_archivo) == 0) {
-            archivo = a;
-            break;
-        }
-    }
-
-    if (archivo == NULL) {
-        fprintf(stderr, "Archivo '%s' no encontrado.\n", nombre_archivo);
-        return;
-    }
-
-    // Verificar que la escritura no exceda el tamaño del archivo
-    if (offset + size > archivo->tamaño) {
-        fprintf(stderr, "Error: Intento de escritura fuera de los límites del archivo.\n");
-        return;
-    }
-
-    size_t bytes_escritos = 0;
-    size_t bloque_actual = archivo->bloque_inicio + offset / fs->block_size;
-    size_t desplazamiento_bloque = offset % fs->block_size;
-
-    while (bytes_escritos < size) {
-        size_t bytes_a_escribir = fs->block_size - desplazamiento_bloque;
-        if (bytes_a_escribir > size - bytes_escritos) {
-            bytes_a_escribir = size - bytes_escritos;
-        }
-
-        memcpy(fs->blocks[bloque_actual].data + desplazamiento_bloque, (const uint8_t *)buffer + bytes_escritos, bytes_a_escribir);
-        bytes_escritos += bytes_a_escribir;
-        bloque_actual++;
-        desplazamiento_bloque = 0;
-    }
-
-    log_info(log_entradasalida, "DialFS: PID: <%d> - Escribir Archivo: %s desde offset %zu, tamaño %zu.", pidRecibido, nombre_archivo, offset, size);
-}
-
-// Función para encontrar un archivo en la lista de archivos
-Archivo* buscar_archivo(DialFS *fs, const char *nombre_archivo) {
-    for (int i = 0; i < list_size(fs->archivos); ++i) {
-        Archivo *archivo = (Archivo *)list_get(fs->archivos, i);
-        if (strcmp(archivo->nombre_archivo, nombre_archivo) == 0) {
-            return archivo;
-        }
-    }
-    return NULL;
-}
-
-// Función para leer un archivo en DialFS
-void dialfs_leer_archivo(DialFS *fs, const char *nombre_archivo, int registro_direccion, int registro_tamaño, int registro_puntero_archivo) {
-    usleep(tiempo_unidad_trabajo);
-
-    // Encontrar el archivo en la lista de archivos
     Archivo *archivo = buscar_archivo(fs, nombre_archivo);
     if (archivo == NULL) {
         log_error(log_entradasalida, "DialFS: PID: <%d> - Archivo no encontrado: %s", pidRecibido, nombre_archivo);
         return;
     }
 
-    // Verificar que la lectura no exceda el tamaño del archivo
+    // Verificar que la escritura no exceda el tamaño del archivo
+    if (offset + size > archivo->tamaño) {
+        log_error(log_entradasalida, "DialFS: PID: <%d> - Intento de escritura fuera de los límites del archivo.", pidRecibido);
+        return;
+    }
+
+    memcpy((char*)fs->blocks + archivo->bloque_inicio * fs->block_size + offset, buffer, size);
+    msync(fs->blocks, fs->block_size * fs->block_count, MS_SYNC);
+    log_info(log_entradasalida, "DialFS: PID: <%d> - Escribir Archivo: %s desde offset %zu, tamaño %zu.", pidRecibido, nombre_archivo, offset, size);
+}
+
+// Función para leer datos de un archivo en DialFS
+void dialfs_leer_archivo(DialFS *fs, const char *nombre_archivo, void *registro_direccion, int registro_tamaño, int registro_puntero_archivo) {
+    pthread_mutex_lock(&mutex_dialfs);
+
+    usleep(tiempo_unidad_trabajo);
+    Archivo *archivo = buscar_archivo(fs, nombre_archivo);
+    if (archivo == NULL) {
+        log_error(log_entradasalida, "DialFS: PID: <%d> - Archivo no encontrado: %s", pidRecibido, nombre_archivo);
+        pthread_mutex_unlock(&mutex_dialfs);
+        return;
+    }
+
     if (registro_puntero_archivo + registro_tamaño > archivo->tamaño) {
-        log_error(log_entradasalida, "DialFS: PID: <%d> - Intento de lectura fuera de los límites del archivo: %s", pidRecibido, nombre_archivo);
+        log_error(log_entradasalida, "DialFS: PID: <%d> - Intento de lectura fuera de los límites del archivo.", pidRecibido);
+        pthread_mutex_unlock(&mutex_dialfs);
         return;
     }
 
-    // Calcular el bloque inicial y el desplazamiento dentro del bloque
-    int bloque_inicial = archivo->bloque_inicio + (registro_puntero_archivo / fs->block_size);
-    int desplazamiento_inicial = registro_puntero_archivo % fs->block_size;
-    int bytes_por_leer = registro_tamaño;
-
-    // Asignar memoria para mensajeLeido
-    mensajeLeido = (char *)malloc(registro_tamaño + 1); // +1 para el terminador null
-    if (mensajeLeido == NULL) {
-        log_error(log_entradasalida, "DialFS: PID: <%d> - Error al asignar memoria para mensajeLeido", pidRecibido);
-        return;
-    }
-
-    char *ptr_mensaje = mensajeLeido;
-
-    // Leer los datos desde los bloques
-    while (bytes_por_leer > 0) {
-        int bytes_a_copiar = fs->block_size - desplazamiento_inicial;
-        if (bytes_a_copiar > bytes_por_leer) {
-            bytes_a_copiar = bytes_por_leer;
-        }
-
-        memcpy(ptr_mensaje, fs->blocks[bloque_inicial].data + desplazamiento_inicial, bytes_a_copiar);
-
-        ptr_mensaje += bytes_a_copiar;
-        bytes_por_leer -= bytes_a_copiar;
-        desplazamiento_inicial = 0;
-        bloque_inicial++;
-    }
-
-    // Asegurar que el mensaje leído esté null-terminated
-    mensajeLeido[registro_tamaño] = '\0';
+    memcpy(registro_direccion, (char*)fs->blocks + archivo->bloque_inicio * fs->block_size + registro_puntero_archivo, registro_tamaño);
+    msync(fs->blocks, fs->block_size * fs->block_count, MS_SYNC);
 
     log_info(log_entradasalida, "DialFS: PID: <%d> - Leer Archivo: %s desde offset %d, tamaño %d.", pidRecibido, nombre_archivo, registro_puntero_archivo, registro_tamaño);
+
+    pthread_mutex_unlock(&mutex_dialfs);
 }
 
 // Función para compactar archivos en DialFS
 void dialfs_compactar_archivos(DialFS *fs) {
     usleep(tiempo_unidad_trabajo);
 
-    // Crear una copia de la lista de archivos ordenada por bloque de inicio
     t_list *archivos_ordenados = list_duplicate(fs->archivos);
     list_sort(archivos_ordenados, (void *)comparar_archivos_por_bloque_inicio);
 
-    // Compactar archivos
     int bloque_libre = 0;
     for (int i = 0; i < list_size(archivos_ordenados); ++i) {
         Archivo *archivo = (Archivo *)list_get(archivos_ordenados, i);
         size_t bloques_usados = (archivo->tamaño + fs->block_size - 1) / fs->block_size;
 
         if (archivo->bloque_inicio != bloque_libre) {
-            // Mover los bloques del archivo a la primera posición libre
             for (size_t j = 0; j < bloques_usados; ++j) {
-                memcpy(fs->blocks[bloque_libre + j].data, fs->blocks[archivo->bloque_inicio + j].data, fs->block_size);
+                memcpy((char*)fs->blocks + (bloque_libre + j) * fs->block_size, (char*)fs->blocks + (archivo->bloque_inicio + j) * fs->block_size, fs->block_size);
                 dialfs_free_block(fs, archivo->bloque_inicio + j);
                 dialfs_allocate_specific_block(fs, bloque_libre + j);
             }
@@ -966,10 +908,11 @@ void dialfs_compactar_archivos(DialFS *fs) {
     }
 
     list_destroy(archivos_ordenados);
-
+    msync(fs->blocks, fs->block_size * fs->block_count, MS_SYNC);
     log_info(log_entradasalida, "DialFS: PID: <%d> - Compactar Archivos.", pidRecibido);
 }
 
+// Función para verificar si hay espacio contiguo disponible
 bool espacioContiguoDisponible(DialFS *fs, size_t bloques_necesarios) {
     size_t bloques_libres_contiguos = 0;
 
@@ -994,6 +937,17 @@ int comparar_archivos_por_bloque_inicio(const void *a, const void *b) {
     return archivo_a->bloque_inicio - archivo_b->bloque_inicio;
 }
 
+// Función para buscar un archivo en la lista de archivos
+Archivo* buscar_archivo(DialFS *fs, const char *nombre_archivo) {
+    for (int i = 0; i < list_size(fs->archivos); ++i) {
+        Archivo *archivo = (Archivo *)list_get(fs->archivos, i);
+        if (strcmp(archivo->nombre_archivo, nombre_archivo) == 0) {
+            return archivo;
+        }
+    }
+    return NULL;
+}
+
 void inicializar_listas() {
     lista_operaciones = list_create();
     lista_pids = list_create();
@@ -1001,9 +955,9 @@ void inicializar_listas() {
 }
 
 void liberar_listas() {
-    list_destroy_and_destroy_elements(lista_operaciones,free);
-    list_destroy_and_destroy_elements(lista_pids,free);
-    list_destroy_and_destroy_elements(lista_datos,free);
+    list_destroy_and_destroy_elements(lista_operaciones, free);
+    list_destroy_and_destroy_elements(lista_pids, free);
+    list_destroy_and_destroy_elements(lista_datos, free);
 }
 
 void avanzar_a_siguiente_operacion() {

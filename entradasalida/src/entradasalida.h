@@ -4,12 +4,6 @@
 
 #include <utils/utils.h>
 
-// Estructura para representar un bloque de datos en DialFS
-typedef struct {
-    int is_allocated;
-    uint8_t *data;
-} Block;
-
 // Estructura para representar un archivo en DialFS
 typedef struct {
     char *nombre_archivo;
@@ -22,17 +16,10 @@ typedef struct {
     int block_count;
     int block_size;
     t_bitarray *bitmap;
-    Block *blocks;
+    void *blocks;
     t_list *archivos;
     char *path_base;
 } DialFS;
-
-// Tipo de archivo para crear
-typedef enum {
-    ARCHIVO_BITMAP,
-    ARCHIVO_BLOQUES,
-    ARCHIVO_USUARIO
-} TipoArchivo;
 
 DialFS fs;
 
@@ -41,6 +28,8 @@ t_config *config_entradasalida;
 
 char* ruta_archivo;
 char* ruta_completa;
+
+pthread_mutex_t mutex_dialfs = PTHREAD_MUTEX_INITIALIZER;
 
 //Datos recibidos de kernel
 //Todas
@@ -102,7 +91,7 @@ void dialfs_eliminar_archivo(DialFS *fs, const char *nombre_archivo);
 void dialfs_truncar_archivo(DialFS *fs, const char *nombre_archivo, size_t nuevo_size);
 void dialfs_escribir_archivo(DialFS *fs, const char *nombre_archivo, size_t offset, size_t size, const void *buffer);
 Archivo* buscar_archivo(DialFS *fs, const char *nombre_archivo);
-void dialfs_leer_archivo(DialFS *fs, const char *nombre_archivo, int registro_direccion, int registro_tamaño, int registro_puntero_archivo);
+void dialfs_leer_archivo(DialFS *fs, const char *nombre_archivo, void *registro_direccion, int registro_tamaño, int registro_puntero_archivo);
 void dialfs_compactar_archivos(DialFS *fs);
 bool espacioContiguoDisponible(DialFS *fs, size_t bloques_necesarios);
 int comparar_archivos_por_bloque_inicio(const void *a, const void *b);

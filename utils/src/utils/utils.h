@@ -5,7 +5,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <dirent.h>
 #include <commons/log.h> 
 #include <commons/config.h>
 #include <commons/bitarray.h>
@@ -20,6 +19,8 @@
 #include <netdb.h>
 #include <assert.h>
 #include <math.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 
 typedef struct{
     uint8_t AX;
