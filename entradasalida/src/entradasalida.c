@@ -348,6 +348,8 @@ void funcIoGenSleep(t_entero_bool** ejecucion){
     (*ejecucion)->operacion = true;
 
     avanzar_a_siguiente_operacion();
+    sem_post(&sem_termino);
+
 }
 
 void limpiar_buffer_entrada() {
