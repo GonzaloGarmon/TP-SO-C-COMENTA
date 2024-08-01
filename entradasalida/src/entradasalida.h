@@ -25,7 +25,7 @@ DialFS fs;
 
 t_log* log_entradasalida;
 t_config *config_entradasalida;
-
+sem_t sem_termino;
 char* ruta_archivo;
 char* ruta_completa;
 

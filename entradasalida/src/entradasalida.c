@@ -106,7 +106,7 @@ void recibirOpKernel(int SOCKET_CLIENTE_KERNEL) {
     int noFinalizar = 0;
     while (noFinalizar != -1) {
         recibir_y_procesar_paquete(SOCKET_CLIENTE_KERNEL);
-
+        sem_wait(&sem_termino);
         int *operacionActualPtr = (int *)list_get(lista_operaciones, 0);
         
         int operacionActual = *operacionActualPtr;
@@ -404,6 +404,7 @@ void funcIoStdRead(t_entero_bool** ejecucion) {
 
     free(mensaje);
     free(buffer);
+    sem_post(&sem_termino);
 }
 
 void funcIoStdWrite(t_entero_bool** ejecucion){
@@ -977,6 +978,7 @@ void inicializar_listas() {
     lista_operaciones = list_create();
     lista_pids = list_create();
     lista_datos = list_create();
+    sem_init(&sem_termino,0,1);
 }
 
 void liberar_listas() {
