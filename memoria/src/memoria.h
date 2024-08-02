@@ -1,7 +1,7 @@
 #ifndef MEMORIA_H_
 #define MEMORIA_H_
 
-#include <utils/utils.h>
+#include "utils/utils.h"
 
 // Creación de estructuras para paginación
 typedef struct {

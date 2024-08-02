@@ -5,7 +5,12 @@
         "utils.h": "c",
         "list.h": "c",
         "node.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

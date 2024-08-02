@@ -290,8 +290,14 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             uint32_t pid_mov = mov_in_data->entero2;
             uint32_t tam_a_leer = mov_in_data->entero3;
 
-            char* valor_mov_in = leer(dir_fisica, tam_a_leer);
-            enviar_paquete_string(SOCKET_CLIENTE_CPU, valor_mov_in, MOV_IN_OK, tam_a_leer);
+            void* valor_mov_in = malloc(sizeof(tam_a_leer));
+            memcpy(valor_mov_in, ESPACIO_USUARIO + dir_fisica, tam_a_leer);
+            log_info(log_memoria, "leido: %p",valor_mov_in);
+
+            t_paquete * paquete_movin = crear_paquete_op(MOV_IN_OK);
+            agregar_a_paquete(paquete_movin,valor_mov_in,tam_a_leer);
+            enviar_paquete(paquete_movin,SOCKET_CLIENTE_CPU);
+            eliminar_paquete(paquete_movin);
 
             log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
                         pid_mov, dir_fisica, tam_a_leer);
@@ -311,12 +317,13 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             uint32_t tam_a_escribir = mov_out_data->entero3;
             char *escritura = mov_out_data->string;
 
-            char* valor_mov_out = malloc(tam_a_escribir+1);
-            strcpy(valor_mov_out, escritura);
+            void* valor_mov_out = malloc(tam_a_escribir);
             // Escribir en la dirección física
             escribir(direccion_fisica, valor_mov_out, tam_a_escribir);
 
-            log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
+
+
+            log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %d",
                 pid_mov_out, direccion_fisica, tam_a_escribir);
 
             enviar_codop(SOCKET_CLIENTE_CPU, MOV_OUT_OK);
@@ -408,8 +415,11 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t pid_leer_archivo_stdin = stdin_data->entero2;
                 uint32_t tamanio_io_read_stdin = stdin_data->entero3;
 
-                char* valor_leer_archivo_stdin = leer(dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
-                log_info(log_memoria, "leido: %d",valor_leer_archivo_stdin);
+                
+                char* valor_leer_archivo_stdin = malloc(tamanio_io_read_stdin+1);
+                memcpy(valor_leer_archivo_stdin, ESPACIO_USUARIO + dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
+                
+                log_info(log_memoria, "leido: %s",valor_leer_archivo_stdin);
                 enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo_stdin, IO_STDOUT_WRITE, tamanio_io_read_stdin);
                 
                 log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
@@ -432,11 +442,9 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t tam_a_escribir_io_write = io_write->entero2;
                 char* escritura_io = io_write->string;
 
-                char* valor_io_write = malloc(tam_a_escribir_io_write+1);
+                void* valor_io_write = malloc(tam_a_escribir_io_write);
 
-                strcpy(valor_io_write,escritura_io);
-
-                escribir(direccion_fisica_io_write, escritura_io, tam_a_escribir_io_write);
+                escribir(direccion_fisica_io_write, valor_io_write, tam_a_escribir_io_write);
                 enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_FS_READ);
                 log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
                          pid_io_write, direccion_fisica_io_write, tam_a_escribir_io_write);
@@ -455,7 +463,9 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t pid_leer_archivo = fread_data->entero2;
                 uint32_t tamanio_io_read = fread_data->entero3;
 
-                char* valor_leer_archivo = leer(dir_fisica_leer_archivo, tamanio_io_read);
+                
+                void* valor_leer_archivo = malloc(tamanio_io_read);
+                memcpy(valor_leer_archivo, ESPACIO_USUARIO + dir_fisica_leer_archivo, tamanio_io_read);
                 enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo, IO_FS_WRITE, tamanio_io_read);
                 
 
@@ -556,8 +566,9 @@ void marco_libre(uint32_t numero_marco) {
 }
 
 void escribir(uint32_t dir_fisca, void* data, uint32_t size) {
-    //log_warning(log_memoria,"el size en escribir es :%d", size);
+    
     memcpy(ESPACIO_USUARIO + dir_fisca, data, size);
+
 }
 
 char* leer(uint32_t dir_fisca , uint32_t size) {
