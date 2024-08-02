@@ -325,6 +325,26 @@ void recibirOpMemoria(){
             avanzar_a_siguiente_operacion();
             sem_post(&sem_termino);
         break;
+        case IO_FS_READ_ERROR:
+            log_error(log_entradasalida, "ERROR DE IO FS READ");
+            avanzar_a_siguiente_operacion();
+            sem_post(&sem_termino);
+        break;
+        case IO_FS_WRITE_ERROR:
+            log_error(log_entradasalida, "ERROR DE IO FS WRITE");
+            avanzar_a_siguiente_operacion();
+            sem_post(&sem_termino);
+        break;
+        case IO_STDIN_READ_ERROR:
+            log_error(log_entradasalida, "ERROR DE IO STDIN READ");
+            avanzar_a_siguiente_operacion();
+            sem_post(&sem_termino);
+        break;
+        case IO_STDOUT_WRITE_ERROR:
+            log_error(log_entradasalida, "ERROR DE IO STDOUT WRITE");
+            avanzar_a_siguiente_operacion();
+            sem_post(&sem_termino);
+        break;
         default:
         break;
     }

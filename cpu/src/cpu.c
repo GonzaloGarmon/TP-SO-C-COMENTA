@@ -1037,6 +1037,10 @@ char *leer_valor_de_memoria(uint32_t direccionFisica, uint32_t tamanio) {
         log_info(log_cpu, "Recibo string :%s", valor_recibido);
         return valor_recibido;
         break;
+    case MOV_IN_ERROR:
+            log_error(log_cpu, "ERROR DE MOV IN");
+        return;
+        break;
     default:
         log_warning(log_cpu, "Llego un codigo de operacion desconocido, %d", cod_op);
         break;
@@ -1261,6 +1265,8 @@ void escribir_valor_en_memoria(uint32_t direccionFisica, char *valor, uint32_t t
             log_info(log_cpu, "PID: %d - Acción: ESCRIBIR - Dirección física: %i - Valor: %s",
                         contexto->pid, tamanio, valor);
             break;
+        case MOV_OUT_ERROR:
+            log_error(log_cpu, "ERROR DE MOV OUT");
         default:
             log_warning(log_cpu, "Llegó un código de operación desconocido, %i", operacion);
             break;
