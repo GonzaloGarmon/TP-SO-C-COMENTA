@@ -14,7 +14,7 @@ int main(int argc, char *argv[]){
         return EXIT_FAILURE;
     }
 
-    ruta_completa = "/home/utnso/tp-2024-1c-GoC/entradasalida/config/";
+    ruta_completa = "/home/utnso/so-deploy/tp-2024-1c-GoC/entradasalida/config/";
     printf("Ingresa nombre de interfaz: ");
     scanf("%99s", nombre_interfaz);
     printf("\nIngresa el config: ");
