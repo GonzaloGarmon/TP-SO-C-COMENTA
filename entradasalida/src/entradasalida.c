@@ -299,31 +299,31 @@ void recibirOpMemoria(){
             log_info(log_entradasalida, "Mensaje escrito correctamente");
             enviar_entero(conexion_entradasalida_kernel, pid, TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operación completada");
-            sem_post(&sem_termino);
             avanzar_a_siguiente_operacion();
+            sem_post(&sem_termino);
         break;
         case IO_STDOUT_WRITE:
             mensaje = recibir_string(conexion_entradasalida_memoria,log_entradasalida);
             log_info(log_entradasalida, "Valor escrito en memoria: %p", mensaje);
             enviar_entero(conexion_entradasalida_kernel,pid,TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operacion completada");
-            sem_post(&sem_termino);
             avanzar_a_siguiente_operacion();
+            sem_post(&sem_termino);
         break;
         case IO_FS_READ:  
             log_info(log_entradasalida, "Mensaje escrito correctamente");
             enviar_entero(conexion_entradasalida_kernel,pid,TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operacion completada");
-            sem_post(&sem_termino);
             avanzar_a_siguiente_operacion();
+            sem_post(&sem_termino);
         break;
         case IO_FS_WRITE:
             mensaje = recibir_string(conexion_entradasalida_memoria,log_entradasalida);
             dialfs_escribir_archivo(&fs,nombreArchivoRecibido,registroPunteroArchivoRecibido,tamañoRecibido,mensaje);
             enviar_entero(conexion_entradasalida_kernel,pid,TERMINO_INTERFAZ);
             log_info(log_entradasalida, "Operacion completada");
-            sem_post(&sem_termino);
             avanzar_a_siguiente_operacion();
+            sem_post(&sem_termino);
         break;
         default:
         break;
@@ -345,7 +345,6 @@ void funcIoGenSleep(t_entero_bool** ejecucion){
 
     avanzar_a_siguiente_operacion();
     sem_post(&sem_termino);
-
 }
 
 void limpiar_buffer_entrada() {
@@ -456,6 +455,7 @@ void funcIoFsTruncate(t_entero_bool** ejecucion) {
     (*ejecucion)->operacion = true;
 
     avanzar_a_siguiente_operacion();
+    sem_post(&sem_termino);
 }
 
 void funcIoFsCreate(t_entero_bool** ejecucion) {
@@ -472,6 +472,7 @@ void funcIoFsCreate(t_entero_bool** ejecucion) {
     (*ejecucion)->operacion = true;
 
     avanzar_a_siguiente_operacion();
+    sem_post(&sem_termino);
 }
 
 void funcIoFsDelete(t_entero_bool** ejecucion) {
@@ -481,6 +482,7 @@ void funcIoFsDelete(t_entero_bool** ejecucion) {
     (*ejecucion)->operacion = true;
 
     avanzar_a_siguiente_operacion();
+    sem_post(&sem_termino);
 }
 
 void generar_conexiones(){   

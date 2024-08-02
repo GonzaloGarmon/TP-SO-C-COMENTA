@@ -361,7 +361,6 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
 
 void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
     log_info(log_memoria, "eempece el hilo");
-    enviar_string(SOCKET_CLIENTE_ENTRADASALIDA,"hola desde memoria", MENSAJE);
     log_info(log_memoria, "envie mensaje a entrada salida");
     int codigoOperacion = 0;
     while (codigoOperacion != -1) {
@@ -410,6 +409,7 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t tamanio_io_read_stdin = stdin_data->entero3;
 
                 char* valor_leer_archivo_stdin = leer(dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
+                log_info(log_memoria, "leido: %d",valor_leer_archivo_stdin);
                 enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo_stdin, IO_STDOUT_WRITE, tamanio_io_read_stdin);
                 
                 log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
@@ -561,7 +561,7 @@ void escribir(uint32_t dir_fisca, void* data, uint32_t size) {
 }
 
 char* leer(uint32_t dir_fisca , uint32_t size) {
-    void* data = malloc(size);
+    char* data = malloc(size);
     memcpy(data, ESPACIO_USUARIO + dir_fisca, size);
     return data;
 }
