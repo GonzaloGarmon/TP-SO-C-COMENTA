@@ -33,9 +33,13 @@ int tam_pagina;
 char* path_instrucciones;
 int retardo_respuesta;
 pthread_mutex_t mutex_memoria;
+pthread_mutex_t mutex_escritura;
+pthread_mutex_t mutex_lectura;
 pthread_mutex_t mutex_de_tabla_Paginas;
 sem_t sem;
 
+
+t_bitarray * bitarray;
 t_list* pids_ejecucion;
 t_list** listas_instrucciones;
 

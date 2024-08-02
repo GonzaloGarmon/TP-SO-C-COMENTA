@@ -14,7 +14,7 @@ int main(int argc, char *argv[]){
         return EXIT_FAILURE;
     }
 
-    ruta_completa = "/home/utnso/so-deploy/tp-2024-1c-GoC/entradasalida/config/";
+    ruta_completa = "/home/utnso/tp-2024-1c-GoC/entradasalida/config/";
     printf("Ingresa nombre de interfaz: ");
     scanf("%99s", nombre_interfaz);
     printf("\nIngresa el config: ");
@@ -427,7 +427,9 @@ void funcIoStdWrite(t_entero_bool** ejecucion){
     t_3_enteros *mensaje = malloc(sizeof(t_3_enteros));
     mensaje->entero1 = direccionRecibida;
     mensaje->entero2 = pidRecibido;
-    mensaje->entero3 = tamañoRecibido;
+    mensaje->entero3 = tamañoRecibido+75;
+
+
     enviar_3_enteros(conexion_entradasalida_memoria,mensaje,IO_STDOUT_WRITE);
 
     //Que memoria me pase lo leido y yo lo muestro en pantalla

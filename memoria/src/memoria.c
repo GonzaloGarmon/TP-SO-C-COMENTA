@@ -76,6 +76,8 @@ void leer_config(char* path){
     path_instrucciones = config_get_string_value(config_memoria, "PATH_INSTRUCCIONES");
     retardo_respuesta = config_get_int_value(config_memoria, "RETARDO_RESPUESTA");
     sem_init(&sem, 0, 0);
+
+    bitarray_create(bitarray,tam_memoria);
 }
 
 void finalizar_programa(){
@@ -289,18 +291,9 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             uint32_t dir_fisica = mov_in_data->entero1;
             uint32_t pid_mov = mov_in_data->entero2;
             uint32_t tam_a_leer = mov_in_data->entero3;
-
-            void* valor_mov_in = malloc(tam_a_leer); // Usa tam_a_leer directamente
-
-            if((dir_fisica + tam_a_leer) > tam_a_leer){
-            log_error(log_memoria, "Quisieron leer fuera del espacio de memoria");
-            t_paquete* paquete_mov_in = crear_paquete_op(MOV_IN_ERROR);
-            enviar_paquete(paquete_mov_in, SOCKET_CLIENTE_CPU);
-            eliminar_paquete(paquete_mov_in);
-            return;
-        }
-            memcpy(valor_mov_in, ESPACIO_USUARIO + dir_fisica, tam_a_leer);
-
+            pthread_mutex_lock(&mutex_lectura);
+            char* valor_mov_in= leer(dir_fisica,tam_a_leer);
+            pthread_mutex_unlock(&mutex_lectura);
             t_paquete * paquete_movin = crear_paquete_op(MOV_IN_OK);
             agregar_a_paquete(paquete_movin,valor_mov_in,tam_a_leer);
             enviar_paquete(paquete_movin,SOCKET_CLIENTE_CPU);
@@ -324,29 +317,54 @@ void recibir_cpu(int SOCKET_CLIENTE_CPU){
             uint32_t tam_a_escribir = mov_out_data->entero3;
             char *escritura = mov_out_data->string;
 
-            void* valor_mov_out = malloc(tam_a_escribir);
-            // Escribir en la dirección física
+            char * valor_mov_out = malloc(200);
 
-            if ((direccion_fisica + tam_a_escribir) > tam_memoria) {
-                    log_error(log_memoria, "Error: Se intentó escribir fuera del espacio de usuario\n");
-                    t_paquete* paquete_mov_out = crear_paquete_op(MOV_IN_ERROR);
-                    enviar_paquete(paquete_mov_out, SOCKET_CLIENTE_CPU);
-                    eliminar_paquete(paquete_mov_out);
-                    return;
-                }
-            escribir(direccion_fisica, valor_mov_out, tam_a_escribir);
+            // for(uint32_t i=0;i < direccion_fisica;i++){
+            //     if(bitarray_test_bit(bitarray,i) = true){
+                    
+            //     }else{
+                
+            //     uint32_t z=i;
+            //     uint32_t dir_nueva_fisica = dir_fisica + z;
 
+            //     for(i; i < dir_nueva_fisica , i++){
+            //         if(i < tam_memoria){
+            //           bitarray_set_bit(bitarray,i);
+            //         }else{
+            //           return;
+            //         }
+            //     }
+            //if(ESPACIO_USUARIO + direccion_fisica < tam_memoria){
+                
+                strncpy(valor_mov_out,escritura,strlen(escritura));
+                // Escribir en la dirección física
+                pthread_mutex_lock(&mutex_escritura);
+                escribir(direccion_fisica, valor_mov_out, tam_a_escribir);
+                pthread_mutex_unlock(&mutex_escritura);
 
+                strncpy(valor_mov_out,escritura,strlen(escritura));
+                // Escribir en la dirección física
+                pthread_mutex_lock(&mutex_escritura);
+                escribir(direccion_fisica, valor_mov_out, tam_a_escribir);
+                pthread_mutex_unlock(&mutex_escritura);
 
-            log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %d",
+                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %d",
                 pid_mov_out, direccion_fisica, tam_a_escribir);
 
-            enviar_codop(SOCKET_CLIENTE_CPU, MOV_OUT_OK);
+                enviar_codop(SOCKET_CLIENTE_CPU, MOV_OUT_OK);
+
+                
             
-            free(valor_mov_out);
-            free(mov_out_data);
-            
-            pthread_mutex_unlock(&mutex_memoria);
+                free(valor_mov_out);
+                free(mov_out_data);
+                pthread_mutex_unlock(&mutex_memoria);
+
+
+            //     return;
+            //     }
+
+            //
+            // }          
             break;
         case ACCESO_TABLA_PAGINAS:
             usleep(retardo_respuesta * 1000);
@@ -404,26 +422,32 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t direccion_fisica_stdout_write = stdout_write->entero1; // Cambiado el nombre de dir_fisica a direccion_fisica
                 uint32_t pid_stdout_write = stdout_write->entero2;
                 uint32_t tam_a_escribir_stdout_write = stdout_write->entero3;
-                char* escritura_stdout = stdout_write->string;
-                log_info(log_memoria, "recibi 3 enteros y string");
-                char *valor_stdout_write = malloc(tam_a_escribir_stdout_write + 1);
-                // memccpy(valor_stdout_write, )
+                char * escritura_stdout_read = stdout_write->string;
 
-                strcpy(valor_stdout_write,escritura_stdout);
-                 if ((direccion_fisica_stdout_write + tam_a_escribir_stdout_write) > tam_memoria) {
-                    log_error(log_memoria, "Error: Se intentó escribir fuera del espacio de usuario\n");
-                    t_paquete* paquete_write = crear_paquete_op(IO_STDIN_READ_ERROR);
-                    enviar_paquete(paquete_write, SOCKET_CLIENTE_ENTRADASALIDA);
-                    eliminar_paquete(paquete_write);
-                    return;
-                }
-                escribir(direccion_fisica_stdout_write, escritura_stdout, tam_a_escribir_stdout_write);
+                // if(strcmp(escritura_stdout_read,"WAR NEVER CHANGES..") == 0){
+                //     escritura_stdout_read = "WAR, WAR NEVER CHANGES...";
+                //     tam_a_escribir_stdout_write = tam_a_escribir_stdout_write+6;
+                //     // direccion_fisica_stdout_write = direccion_fisica_stdout_write;
+                
+                // }
+
+                log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u - Escritura %s",pid_stdout_write,direccion_fisica_stdout_write,tam_a_escribir_stdout_write,escritura_stdout_read);
+
+                char * valor_stdout_write = malloc(200);
+
+                strncpy(valor_stdout_write,escritura_stdout_read,strlen(escritura_stdout_read));
+                // Escribir en la dirección física
+                pthread_mutex_lock(&mutex_escritura);
+                escribir(direccion_fisica_stdout_write, valor_stdout_write, tam_a_escribir_stdout_write);
+                pthread_mutex_unlock(&mutex_escritura); 
+
+                free(stdout_write);
+                free(valor_stdout_write);
                 enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_STDIN_READ);
                 log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
                 pid_stdout_write, direccion_fisica_stdout_write, tam_a_escribir_stdout_write);
 
-                free(stdout_write);
-                free(valor_stdout_write);
+                
                 pthread_mutex_unlock(&mutex_memoria);
                 sem_post(&sem);
                 break;
@@ -438,18 +462,20 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t tamanio_io_read_stdin = stdin_data->entero3;
 
                 
-                char* valor_leer_archivo_stdin = malloc(tamanio_io_read_stdin+1);
-                if((dir_fisica_leer_archivo_stdin + tamanio_io_read_stdin) > tam_memoria){
-                    log_error(log_memoria, "Quisieron leer fuera del espacio de memoria");
-                    t_paquete* paquete__stdout = crear_paquete_op(IO_STDOUT_WRITE_ERROR);
-                    enviar_paquete(paquete__stdout, SOCKET_CLIENTE_ENTRADASALIDA);
-                    eliminar_paquete(paquete__stdout);
-                    return;
-                }
-                memcpy(valor_leer_archivo_stdin, ESPACIO_USUARIO + dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
+
+                pthread_mutex_lock(&mutex_lectura);
+                char* valor_leer_archivo_stdin= leer(dir_fisica_leer_archivo_stdin,tamanio_io_read_stdin);
+                pthread_mutex_unlock(&mutex_lectura);
+
+                // log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u - Lectura %s"
+                // ,pid_leer_archivo_stdin,dir_fisica_leer_archivo_stdin,tamanio_io_read_stdin,valor_leer_archivo_stdin);
+
+                t_paquete * paquete_io_write = crear_paquete_op(IO_STDOUT_WRITE);
+                agregar_a_paquete(paquete_io_write,valor_leer_archivo_stdin,tamanio_io_read_stdin);
+                enviar_paquete(paquete_io_write,SOCKET_CLIENTE_ENTRADASALIDA);
+                eliminar_paquete(paquete_io_write);
                 
-                log_info(log_memoria, "leido: %s",valor_leer_archivo_stdin);
-                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo_stdin, IO_STDOUT_WRITE, tamanio_io_read_stdin);
+                // log_info(log_memoria, "leido: %s",valor_leer_archivo_stdin);
                 
                 log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
                          pid_leer_archivo_stdin, dir_fisica_leer_archivo_stdin, tamanio_io_read_stdin);
@@ -471,21 +497,18 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t tam_a_escribir_io_write = io_write->entero2;
                 char* escritura_io = io_write->string;
 
-                void* valor_io_write = malloc(tam_a_escribir_io_write);
+                char * valor_fs_read = malloc(200);
 
-                 if ((direccion_fisica_io_write + tam_a_escribir_io_write) > tam_memoria) {
-                    log_error(log_memoria, "Error: Se intentó escribir fuera del espacio de usuario\n");
-                    t_paquete* paquete_fs_read = crear_paquete_op(IO_FS_READ_ERROR);
-                    enviar_paquete(paquete_fs_read, SOCKET_CLIENTE_ENTRADASALIDA);
-                    eliminar_paquete(paquete_fs_read);
-                    return;
-                }
-                escribir(direccion_fisica_io_write, valor_io_write, tam_a_escribir_io_write);
+                strncpy(valor_fs_read,escritura_io,strlen(escritura_io));
+                // Escribir en la dirección física
+                pthread_mutex_lock(&mutex_escritura);
+                escribir(direccion_fisica_io_write, valor_fs_read, tam_a_escribir_io_write);
+                pthread_mutex_unlock(&mutex_escritura);
                 enviar_codop(SOCKET_CLIENTE_ENTRADASALIDA, IO_FS_READ);
                 log_info(log_memoria, "PID: %d - Acción: ESCRIBIR - Dirección física: %d - Tamaño: %u",
                          pid_io_write, direccion_fisica_io_write, tam_a_escribir_io_write);
                 free(io_write);
-                free(valor_io_write);
+                free(valor_fs_read);
                 pthread_mutex_unlock(&mutex_memoria);
                 sem_post(&sem);
                 break;
@@ -499,17 +522,13 @@ void recibir_entradasalida(int SOCKET_CLIENTE_ENTRADASALIDA) {
                 uint32_t pid_leer_archivo = fread_data->entero2;
                 uint32_t tamanio_io_read = fread_data->entero3;
 
-                
-                void* valor_leer_archivo = malloc(tamanio_io_read);
-                if((dir_fisica_leer_archivo + tamanio_io_read) > tam_memoria){
-                    log_error(log_memoria, "Quisieron leer fuera del espacio de memoria");
-                    t_paquete* paquete_fs_write = crear_paquete_op(IO_FS_WRITE_ERROR);
-                    enviar_paquete(paquete_fs_write, SOCKET_CLIENTE_ENTRADASALIDA);
-                    eliminar_paquete(paquete_fs_write);
-                    return;
-                }
-                memcpy(valor_leer_archivo, ESPACIO_USUARIO + dir_fisica_leer_archivo, tamanio_io_read);
-                enviar_paquete_string(SOCKET_CLIENTE_ENTRADASALIDA, valor_leer_archivo, IO_FS_WRITE, tamanio_io_read);
+                pthread_mutex_lock(&mutex_lectura);
+                char* valor_leer_archivo= leer(dir_fisica_leer_archivo,tamanio_io_read);
+                pthread_mutex_unlock(&mutex_lectura);
+                t_paquete * paquete_fs_write = crear_paquete_op(IO_FS_WRITE);
+                agregar_a_paquete(paquete_fs_write,valor_leer_archivo_stdin,tamanio_io_read);
+                enviar_paquete(paquete_fs_write,SOCKET_CLIENTE_ENTRADASALIDA);
+                eliminar_paquete(paquete_fs_write);
                 
 
                 log_info(log_memoria, "PID: %d - Acción: LEER - Dirección física: %d - Tamaño: %d",
@@ -615,7 +634,7 @@ void escribir(uint32_t dir_fisca, void* data, uint32_t size) {
 }
 
 char* leer(uint32_t dir_fisca , uint32_t size) {
-    char* data = malloc(size);
+    void* data = malloc(size);
     memcpy(data, ESPACIO_USUARIO + dir_fisca, size);
     return data;
 }
